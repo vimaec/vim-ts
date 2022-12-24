@@ -214,3 +214,9 @@ describe('testing objectModel.ts get-all getter', () => {
         expect(levels!.length).toBe(13)
     })
 })
+
+describe('failing test', () => {
+    test('fail', async () => {
+        fail()
+    })
+})
