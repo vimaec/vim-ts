@@ -1,5 +1,10 @@
-name: CI
-on: push
+name: Test
+
+on:
+  pull_request:
+    branches:
+      - develop
+
 jobs:
   build:
     runs-on: ubuntu-latest
