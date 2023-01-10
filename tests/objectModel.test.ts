@@ -20,7 +20,7 @@ function loadFile(path: string) {
     })
 }
 
-const vimFilePath = "/Users/vadim/projects/vim/vim-ts/data/Wolford_Residence.r2023.vim"
+const vimFilePath = `${__dirname}/../data/Wolford_Residence.r2023.vim`
 
 describe('testing VIM loading file', () => {
     test('loading VIM file', async () => {
