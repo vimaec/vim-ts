@@ -1,24 +1,6 @@
 import { VimDocument } from '../src/objectModel'
 import { BFast } from '../src/bfast'
-import * as fs from 'fs'
-
-function loadFile(path: string) {
-    return new Promise<ArrayBuffer | undefined>((resolve, reject) => {
-        fs.readFile(path, (err, data) => {
-            if (err)
-                reject(err)
-            else {
-                var arrbuf = new ArrayBuffer(data.length)
-                const view = new Uint8Array(arrbuf)
-                for (var i = 0; i < data.length; i++) {
-                    view[i] = data[i]
-                }
-
-                resolve(arrbuf)
-            }
-        })
-    })
-}
+import { loadFile } from './helpers'
 
 const vimFilePath = `${__dirname}/../data/Wolford_Residence.r2023.vim`
 
