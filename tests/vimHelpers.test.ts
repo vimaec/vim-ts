@@ -13,8 +13,6 @@ describe('testing vimHelpers.ts getElementParameters', () => {
         const doc = await VimDocument.createFromBfast(bfast)
         const parameters = await VimHelpers.getElementParameters(doc!, 1)
 
-        console.log(parameters)
-
         expect(parameters).toEqual([
             {
                 name: 'View Name',

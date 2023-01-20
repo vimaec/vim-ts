@@ -8,34 +8,44 @@ export class VimHelpers {
    */
   static async getElementParameters (document: VimDocument, element: number) {
     const result: ElementParameter[] = []
-    const instance = await this.getElementsParameters(document, [element], true)
-    instance?.forEach((i) => result.push(i))
+    
+    await Promise.all([
+      this.getElementsParameters(document, [element], true).then(p => p?.forEach(i => result.push(i))),
+      this.getAllFamilyParameters(document, element).then(p => p?.forEach(i => result.push(i)))
+    ])
 
+    return result
+  }
+
+  private static async getAllFamilyParameters (document: VimDocument, element: number) {
     const familyInstance = await this.getElementFamilyInstance(document, element)
 
     const familyType = familyInstance
       ? await document.familyInstance?.getFamilyTypeIndex(familyInstance)
       : undefined
 
-    const family = familyType
-      ? await document.familyType?.getFamilyIndex(familyType)
-      : undefined
+    let family: number | undefined
+    let familyTypeElement: number | undefined
 
-    const familyTypeElement = familyType
-      ? await document.familyType?.getElementIndex(familyType)
-      : undefined
+    if (familyType)
+      await Promise.all([
+        document.familyType?.getFamilyIndex(familyType).then((f) => family = f),
+        document.familyType?.getElementIndex(familyType).then((fte) => familyTypeElement = fte)
+      ])
 
     const familyElement = family
       ? await document.family?.getElementIndex(family)
       : undefined
 
     const elements: number[] = []
-    if (familyTypeElement) elements.push(familyTypeElement)
-    if (familyElement) elements.push(familyElement)
-    const type = await this.getElementsParameters(document, elements, false)
-    type?.forEach((i) => result.push(i))
 
-    return result
+    if (familyTypeElement)
+      elements.push(familyTypeElement)
+
+    if (familyElement)
+      elements.push(familyElement)
+
+    return await this.getElementsParameters(document, elements, false)
   }
 
   private static async getElementsParameters (document: VimDocument, elements: number[], isInstance: boolean) {
@@ -67,15 +77,20 @@ export class VimHelpers {
     const result: ElementParameter[] = []
 
     await Promise.all(elementIndices.map(async (e, i) => {
-      if (set.has(e)) {
-        const d = elementIndices[i]
-        result.push({
-          name: await getParameterName(d),
-          value: await getParameterDisplayValue(i),
-          group: await getParameterGroup(d),
-          isInstance
-        })
-      }
+      if (!set.has(e))
+        return
+
+      let name: string | undefined
+      let value: string | undefined
+      let group: string | undefined
+
+      await Promise.all([
+        getParameterName(e).then((n) => name = n),
+        getParameterDisplayValue(i).then((v) => value = v),
+        getParameterGroup(e).then((g) => group = g)
+      ])
+
+      result.push({ name, value, group, isInstance })
     }))
 
     return result
