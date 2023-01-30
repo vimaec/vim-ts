@@ -1,15 +1,26 @@
 {
   "name": "vim-object-model",
   "version": "1.0.0",
-  "description": "",
+  "description": "VIM object model",
   "directories": {
     "test": "tests"
   },
   "scripts": {
+    "declarations": "tsc --declaration --emitDeclarationOnly --outdir ./dist/types",
+    "build": "tsc",
     "test": "jest"
   },
-  "author": "",
-  "license": "ISC",
+  "author": "VIM <hello@vimaec.com>",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/vimaec/vim-ts.git"
+  },
+  "declaration": true,
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist/**"
+  ],
   "devDependencies": {
     "@types/jest": "^29.2.2",
     "@types/node": "^18.11.17",

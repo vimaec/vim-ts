@@ -1,3 +1,7 @@
+/**
+ * @module vim-ts
+ */
+
 import { BFast } from "./bfast"
 
 export class VimLoader {

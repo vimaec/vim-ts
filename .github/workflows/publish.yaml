@@ -19,6 +19,8 @@ jobs:
         run: npm ci && npm run build
       - name: Run tests
         run: npm test
+      - name: Emit declarations
+        run: npm declarations
       - name: Publish package on NPM 📦
         run: npm publish
         env:

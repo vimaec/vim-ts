@@ -1,3 +1,7 @@
+/**
+ * @module vim-ts
+ */
+
 import { VimDocument } from "./objectModel"
 
 export class VimHelpers {
