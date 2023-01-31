@@ -1,3 +1,7 @@
+/**
+ * @module vim-ts
+ */
+
 import { Vector2, Vector3, Vector4, AABox, AABox2D, AABox4D, Matrix4x4 } from "./structures"
 
 export interface IConverter<T> {

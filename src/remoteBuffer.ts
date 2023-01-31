@@ -1,5 +1,5 @@
 /**
- * @module vim-loader
+ * @module vim-ts
  */
 
 import { Range } from './bfast'
