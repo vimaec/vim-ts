@@ -1,7 +1,7 @@
 {
-  "name": "vim-object-model",
+  "name": "vim-format",
   "version": "1.0.0",
-  "description": "VIM object model",
+  "description": "The VIM format is a modern and efficient open 3D data interchange format designed for BIM and manufacturing data optimized for efficient loading and rendering on low-power devices.",
   "directories": {
     "test": "tests"
   },
