@@ -18,6 +18,7 @@
   },
   "declaration": true,
   "types": "dist/index.d.ts",
+  "module": "/dist/index.js",
   "files": [
     "dist/**"
   ],
