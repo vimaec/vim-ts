@@ -7505,6 +7505,179 @@ export class BasePointTable implements IBasePointTable {
     
 }
 
+export interface IPhaseFilter {
+    index: number
+    new?: number
+    existing?: number
+    demolished?: number
+    temporary?: number
+    
+    elementIndex?: number
+    element?: IElement
+}
+
+export interface IPhaseFilterTable {
+    getCount(): Promise<number>
+    get(phaseFilterIndex: number, recursive?: boolean): Promise<IPhaseFilter>
+    getAll(): Promise<IPhaseFilter[]>
+    
+    getNew(phaseFilterIndex: number): Promise<number | undefined>
+    getAllNew(): Promise<number[] | undefined>
+    getExisting(phaseFilterIndex: number): Promise<number | undefined>
+    getAllExisting(): Promise<number[] | undefined>
+    getDemolished(phaseFilterIndex: number): Promise<number | undefined>
+    getAllDemolished(): Promise<number[] | undefined>
+    getTemporary(phaseFilterIndex: number): Promise<number | undefined>
+    getAllTemporary(): Promise<number[] | undefined>
+    
+    getElementIndex(phaseFilterIndex: number): Promise<number | undefined>
+    getAllElementIndex(): Promise<number[] | undefined>
+    getElement(phaseFilterIndex: number, recursive?: boolean): Promise<IElement | undefined>
+}
+
+export class PhaseFilter implements IPhaseFilter {
+    index: number
+    new?: number
+    existing?: number
+    demolished?: number
+    temporary?: number
+    
+    elementIndex?: number
+    element?: IElement
+    
+    static async createFromTable(table: IPhaseFilterTable, index: number, recursive: boolean = false): Promise<IPhaseFilter> {
+        let result = new PhaseFilter()
+        result.index = index
+        
+        await Promise.all([
+            table.getNew(index).then(v => result.new = v),
+            table.getExisting(index).then(v => result.existing = v),
+            table.getDemolished(index).then(v => result.demolished = v),
+            table.getTemporary(index).then(v => result.temporary = v),
+            table.getElementIndex(index).then(v => result.elementIndex = v),
+        ])
+        
+        if (recursive) {
+            await Promise.all([
+                table.getElement(index).then(v => result.element = v),
+            ])
+        }
+        
+        return result
+    }
+}
+
+export class PhaseFilterTable implements IPhaseFilterTable {
+    private document: VimDocument
+    private entityTable: EntityTable
+    
+    static async createFromDocument(document: VimDocument): Promise<IPhaseFilterTable | undefined> {
+        const entity = await document.entities.getBfast("Vim.PhaseFilter")
+        
+        if (!entity) {
+            return undefined
+        }
+        
+        let table = new PhaseFilterTable()
+        table.document = document
+        table.entityTable = new EntityTable(entity, document.strings)
+        
+        return table
+    }
+    
+    async getCount(): Promise<number> {
+        return (await this.entityTable.getArray("int:New"))?.length ?? 0
+    }
+    
+    async get(phaseFilterIndex: number, recursive?: boolean): Promise<IPhaseFilter> {
+        return await PhaseFilter.createFromTable(this, phaseFilterIndex, recursive)
+    }
+    
+    async getAll(): Promise<IPhaseFilter[]> {
+        const localTable = await this.entityTable.getLocal()
+        
+        let new: number[] | undefined
+        let existing: number[] | undefined
+        let demolished: number[] | undefined
+        let temporary: number[] | undefined
+        let elementIndex: number[] | undefined
+        
+        await Promise.all([
+            localTable.getArray("int:New").then(a => new = a),
+            localTable.getArray("int:Existing").then(a => existing = a),
+            localTable.getArray("int:Demolished").then(a => demolished = a),
+            localTable.getArray("int:Temporary").then(a => temporary = a),
+            localTable.getArray("index:Vim.Element:Element").then(a => elementIndex = a),
+        ])
+        
+        let phaseFilter: IPhaseFilter[] = []
+        
+        for (let i = 0; i <= new!.length; i++) {
+            phaseFilter.push({
+                index: i,
+                new: new ? new[i] : undefined,
+                existing: existing ? existing[i] : undefined,
+                demolished: demolished ? demolished[i] : undefined,
+                temporary: temporary ? temporary[i] : undefined,
+                elementIndex: elementIndex ? elementIndex[i] : undefined
+            })
+        }
+        
+        return phaseFilter
+    }
+    
+    async getNew(phaseFilterIndex: number): Promise<number | undefined>{
+        return await this.entityTable.getNumber(phaseFilterIndex, "int:New")
+    }
+    
+    async getAllNew(): Promise<number[] | undefined>{
+        return await this.entityTable.getArray("int:New")
+    }
+    
+    async getExisting(phaseFilterIndex: number): Promise<number | undefined>{
+        return await this.entityTable.getNumber(phaseFilterIndex, "int:Existing")
+    }
+    
+    async getAllExisting(): Promise<number[] | undefined>{
+        return await this.entityTable.getArray("int:Existing")
+    }
+    
+    async getDemolished(phaseFilterIndex: number): Promise<number | undefined>{
+        return await this.entityTable.getNumber(phaseFilterIndex, "int:Demolished")
+    }
+    
+    async getAllDemolished(): Promise<number[] | undefined>{
+        return await this.entityTable.getArray("int:Demolished")
+    }
+    
+    async getTemporary(phaseFilterIndex: number): Promise<number | undefined>{
+        return await this.entityTable.getNumber(phaseFilterIndex, "int:Temporary")
+    }
+    
+    async getAllTemporary(): Promise<number[] | undefined>{
+        return await this.entityTable.getArray("int:Temporary")
+    }
+    
+    async getElementIndex(phaseFilterIndex: number): Promise<number | undefined> {
+        return await this.entityTable.getNumber(phaseFilterIndex, "index:Vim.Element:Element")
+    }
+    
+    async getAllElementIndex(): Promise<number[] | undefined> {
+        return await this.entityTable.getArray("index:Vim.Element:Element")
+    }
+    
+    async getElement(phaseFilterIndex: number, recursive?: boolean): Promise<IElement | undefined> {
+        const index = await this.getElementIndex(phaseFilterIndex)
+        
+        if (index === undefined) {
+            return undefined
+        }
+        
+        return await this.document.element?.get(index, recursive)
+    }
+    
+}
+
 export class VimDocument {
     asset: IAssetTable | undefined
     displayUnit: IDisplayUnitTable | undefined
@@ -7544,6 +7717,7 @@ export class VimDocument {
     warning: IWarningTable | undefined
     elementInWarning: IElementInWarningTable | undefined
     basePoint: IBasePointTable | undefined
+    phaseFilter: IPhaseFilterTable | undefined
     
     entities: BFast
     strings: string[]
@@ -7599,6 +7773,7 @@ export class VimDocument {
         doc.warning = await WarningTable.createFromDocument(doc)
         doc.elementInWarning = await ElementInWarningTable.createFromDocument(doc)
         doc.basePoint = await BasePointTable.createFromDocument(doc)
+        doc.phaseFilter = await PhaseFilterTable.createFromDocument(doc)
         
         return doc
     }
