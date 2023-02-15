@@ -7678,6 +7678,209 @@ export class PhaseFilterTable implements IPhaseFilterTable {
     
 }
 
+export interface IGrid {
+    index: number
+    startPoint?: Vector3
+    endPoint?: Vector3
+    isCurved?: boolean
+    extents?: AABox
+    
+    elementIndex?: number
+    element?: IElement
+}
+
+export interface IGridTable {
+    getCount(): Promise<number>
+    get(gridIndex: number, recursive?: boolean): Promise<IGrid>
+    getAll(): Promise<IGrid[]>
+    
+    getStartPoint(gridIndex: number): Promise<Vector3 | undefined>
+    getAllStartPoint(): Promise<Vector3[] | undefined>
+    getEndPoint(gridIndex: number): Promise<Vector3 | undefined>
+    getAllEndPoint(): Promise<Vector3[] | undefined>
+    getIsCurved(gridIndex: number): Promise<boolean | undefined>
+    getAllIsCurved(): Promise<boolean[] | undefined>
+    getExtents(gridIndex: number): Promise<AABox | undefined>
+    getAllExtents(): Promise<AABox[] | undefined>
+    
+    getElementIndex(gridIndex: number): Promise<number | undefined>
+    getAllElementIndex(): Promise<number[] | undefined>
+    getElement(gridIndex: number, recursive?: boolean): Promise<IElement | undefined>
+}
+
+export class Grid implements IGrid {
+    index: number
+    startPoint?: Vector3
+    endPoint?: Vector3
+    isCurved?: boolean
+    extents?: AABox
+    
+    elementIndex?: number
+    element?: IElement
+    
+    static async createFromTable(table: IGridTable, index: number, recursive: boolean = false): Promise<IGrid> {
+        let result = new Grid()
+        result.index = index
+        
+        await Promise.all([
+            table.getStartPoint(index).then(v => result.startPoint = v),
+            table.getEndPoint(index).then(v => result.endPoint = v),
+            table.getIsCurved(index).then(v => result.isCurved = v),
+            table.getExtents(index).then(v => result.extents = v),
+            table.getElementIndex(index).then(v => result.elementIndex = v),
+        ])
+        
+        if (recursive) {
+            await Promise.all([
+                table.getElement(index).then(v => result.element = v),
+            ])
+        }
+        
+        return result
+    }
+}
+
+export class GridTable implements IGridTable {
+    private document: VimDocument
+    private entityTable: EntityTable
+    
+    static async createFromDocument(document: VimDocument): Promise<IGridTable | undefined> {
+        const entity = await document.entities.getBfast("Vim.Grid")
+        
+        if (!entity) {
+            return undefined
+        }
+        
+        let table = new GridTable()
+        table.document = document
+        table.entityTable = new EntityTable(entity, document.strings)
+        
+        return table
+    }
+    
+    async getCount(): Promise<number> {
+        return (await this.entityTable.getArray("float:StartPoint" + new Converters.Vector3Converter().columns[0]))?.length ?? 0
+    }
+    
+    async get(gridIndex: number, recursive?: boolean): Promise<IGrid> {
+        return await Grid.createFromTable(this, gridIndex, recursive)
+    }
+    
+    async getAll(): Promise<IGrid[]> {
+        const localTable = await this.entityTable.getLocal()
+        
+        const startPointConverter = new Converters.Vector3Converter()
+        let startPoint: Vector3[] | undefined
+        const endPointConverter = new Converters.Vector3Converter()
+        let endPoint: Vector3[] | undefined
+        let isCurved: boolean[] | undefined
+        const extentsConverter = new Converters.AABoxConverter()
+        let extents: AABox[] | undefined
+        let elementIndex: number[] | undefined
+        
+        await Promise.all([
+            Promise.all(startPointConverter.columns.map(c => this.entityTable.getArray("float:StartPoint" + c)))
+                .then(a => startPoint = Converters.convertArray(startPointConverter, a)),
+            Promise.all(endPointConverter.columns.map(c => this.entityTable.getArray("float:EndPoint" + c)))
+                .then(a => endPoint = Converters.convertArray(endPointConverter, a)),
+            localTable.getBooleanArray("byte:IsCurved").then(a => isCurved = a),
+            Promise.all(extentsConverter.columns.map(c => this.entityTable.getArray("float:Extents" + c)))
+                .then(a => extents = Converters.convertArray(extentsConverter, a)),
+            localTable.getArray("index:Vim.Element:Element").then(a => elementIndex = a),
+        ])
+        
+        let grid: IGrid[] = []
+        
+        for (let i = 0; i <= startPoint!.length; i++) {
+            grid.push({
+                index: i,
+                startPoint: startPoint ? startPoint[i] : undefined,
+                endPoint: endPoint ? endPoint[i] : undefined,
+                isCurved: isCurved ? isCurved[i] : undefined,
+                extents: extents ? extents[i] : undefined,
+                elementIndex: elementIndex ? elementIndex[i] : undefined
+            })
+        }
+        
+        return grid
+    }
+    
+    async getStartPoint(gridIndex: number): Promise<Vector3 | undefined>{
+        const converter = new Converters.Vector3Converter()
+        
+        let numbers = await Promise.all(converter.columns.map(c => this.entityTable.getNumber(gridIndex, "float:StartPoint" + c)))
+        
+        return Converters.convert(converter, numbers)
+    }
+    
+    async getAllStartPoint(): Promise<Vector3[] | undefined>{
+        const converter = new Converters.Vector3Converter()
+        
+        let numbers = await Promise.all(converter.columns.map(c => this.entityTable.getArray("float:StartPoint" + c)))
+        
+        return Converters.convertArray(converter, numbers)
+    }
+    
+    async getEndPoint(gridIndex: number): Promise<Vector3 | undefined>{
+        const converter = new Converters.Vector3Converter()
+        
+        let numbers = await Promise.all(converter.columns.map(c => this.entityTable.getNumber(gridIndex, "float:EndPoint" + c)))
+        
+        return Converters.convert(converter, numbers)
+    }
+    
+    async getAllEndPoint(): Promise<Vector3[] | undefined>{
+        const converter = new Converters.Vector3Converter()
+        
+        let numbers = await Promise.all(converter.columns.map(c => this.entityTable.getArray("float:EndPoint" + c)))
+        
+        return Converters.convertArray(converter, numbers)
+    }
+    
+    async getIsCurved(gridIndex: number): Promise<boolean | undefined>{
+        return await this.entityTable.getBoolean(gridIndex, "byte:IsCurved")
+    }
+    
+    async getAllIsCurved(): Promise<boolean[] | undefined>{
+        return await this.entityTable.getBooleanArray("byte:IsCurved")
+    }
+    
+    async getExtents(gridIndex: number): Promise<AABox | undefined>{
+        const converter = new Converters.AABoxConverter()
+        
+        let numbers = await Promise.all(converter.columns.map(c => this.entityTable.getNumber(gridIndex, "float:Extents" + c)))
+        
+        return Converters.convert(converter, numbers)
+    }
+    
+    async getAllExtents(): Promise<AABox[] | undefined>{
+        const converter = new Converters.AABoxConverter()
+        
+        let numbers = await Promise.all(converter.columns.map(c => this.entityTable.getArray("float:Extents" + c)))
+        
+        return Converters.convertArray(converter, numbers)
+    }
+    
+    async getElementIndex(gridIndex: number): Promise<number | undefined> {
+        return await this.entityTable.getNumber(gridIndex, "index:Vim.Element:Element")
+    }
+    
+    async getAllElementIndex(): Promise<number[] | undefined> {
+        return await this.entityTable.getArray("index:Vim.Element:Element")
+    }
+    
+    async getElement(gridIndex: number, recursive?: boolean): Promise<IElement | undefined> {
+        const index = await this.getElementIndex(gridIndex)
+        
+        if (index === undefined) {
+            return undefined
+        }
+        
+        return await this.document.element?.get(index, recursive)
+    }
+    
+}
+
 export class VimDocument {
     asset: IAssetTable | undefined
     displayUnit: IDisplayUnitTable | undefined
@@ -7718,6 +7921,7 @@ export class VimDocument {
     elementInWarning: IElementInWarningTable | undefined
     basePoint: IBasePointTable | undefined
     phaseFilter: IPhaseFilterTable | undefined
+    grid: IGridTable | undefined
     
     entities: BFast
     strings: string[]
@@ -7774,6 +7978,7 @@ export class VimDocument {
         doc.elementInWarning = await ElementInWarningTable.createFromDocument(doc)
         doc.basePoint = await BasePointTable.createFromDocument(doc)
         doc.phaseFilter = await PhaseFilterTable.createFromDocument(doc)
+        doc.grid = await GridTable.createFromDocument(doc)
         
         return doc
     }
