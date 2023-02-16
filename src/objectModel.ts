@@ -7881,6 +7881,334 @@ export class GridTable implements IGridTable {
     
 }
 
+export interface IArea {
+    index: number
+    value?: number
+    perimeter?: number
+    number?: string
+    isGrossInterior?: boolean
+    
+    areaSchemeIndex?: number
+    areaScheme?: IAreaScheme
+    elementIndex?: number
+    element?: IElement
+}
+
+export interface IAreaTable {
+    getCount(): Promise<number>
+    get(areaIndex: number, recursive?: boolean): Promise<IArea>
+    getAll(): Promise<IArea[]>
+    
+    getValue(areaIndex: number): Promise<number | undefined>
+    getAllValue(): Promise<number[] | undefined>
+    getPerimeter(areaIndex: number): Promise<number | undefined>
+    getAllPerimeter(): Promise<number[] | undefined>
+    getNumber(areaIndex: number): Promise<string | undefined>
+    getAllNumber(): Promise<string[] | undefined>
+    getIsGrossInterior(areaIndex: number): Promise<boolean | undefined>
+    getAllIsGrossInterior(): Promise<boolean[] | undefined>
+    
+    getAreaSchemeIndex(areaIndex: number): Promise<number | undefined>
+    getAllAreaSchemeIndex(): Promise<number[] | undefined>
+    getAreaScheme(areaIndex: number, recursive?: boolean): Promise<IAreaScheme | undefined>
+    getElementIndex(areaIndex: number): Promise<number | undefined>
+    getAllElementIndex(): Promise<number[] | undefined>
+    getElement(areaIndex: number, recursive?: boolean): Promise<IElement | undefined>
+}
+
+export class Area implements IArea {
+    index: number
+    value?: number
+    perimeter?: number
+    number?: string
+    isGrossInterior?: boolean
+    
+    areaSchemeIndex?: number
+    areaScheme?: IAreaScheme
+    elementIndex?: number
+    element?: IElement
+    
+    static async createFromTable(table: IAreaTable, index: number, recursive: boolean = false): Promise<IArea> {
+        let result = new Area()
+        result.index = index
+        
+        await Promise.all([
+            table.getValue(index).then(v => result.value = v),
+            table.getPerimeter(index).then(v => result.perimeter = v),
+            table.getNumber(index).then(v => result.number = v),
+            table.getIsGrossInterior(index).then(v => result.isGrossInterior = v),
+            table.getAreaSchemeIndex(index).then(v => result.areaSchemeIndex = v),
+            table.getElementIndex(index).then(v => result.elementIndex = v),
+        ])
+        
+        if (recursive) {
+            await Promise.all([
+                table.getAreaScheme(index).then(v => result.areaScheme = v),
+                table.getElement(index).then(v => result.element = v),
+            ])
+        }
+        
+        return result
+    }
+}
+
+export class AreaTable implements IAreaTable {
+    private document: VimDocument
+    private entityTable: EntityTable
+    
+    static async createFromDocument(document: VimDocument): Promise<IAreaTable | undefined> {
+        const entity = await document.entities.getBfast("Vim.Area")
+        
+        if (!entity) {
+            return undefined
+        }
+        
+        let table = new AreaTable()
+        table.document = document
+        table.entityTable = new EntityTable(entity, document.strings)
+        
+        return table
+    }
+    
+    async getCount(): Promise<number> {
+        return (await this.entityTable.getArray("double:Value"))?.length ?? 0
+    }
+    
+    async get(areaIndex: number, recursive?: boolean): Promise<IArea> {
+        return await Area.createFromTable(this, areaIndex, recursive)
+    }
+    
+    async getAll(): Promise<IArea[]> {
+        const localTable = await this.entityTable.getLocal()
+        
+        let value: number[] | undefined
+        let perimeter: number[] | undefined
+        let number: string[] | undefined
+        let isGrossInterior: boolean[] | undefined
+        let areaSchemeIndex: number[] | undefined
+        let elementIndex: number[] | undefined
+        
+        await Promise.all([
+            localTable.getArray("double:Value").then(a => value = a),
+            localTable.getArray("double:Perimeter").then(a => perimeter = a),
+            localTable.getStringArray("string:Number").then(a => number = a),
+            localTable.getBooleanArray("byte:IsGrossInterior").then(a => isGrossInterior = a),
+            localTable.getArray("index:Vim.AreaScheme:AreaScheme").then(a => areaSchemeIndex = a),
+            localTable.getArray("index:Vim.Element:Element").then(a => elementIndex = a),
+        ])
+        
+        let area: IArea[] = []
+        
+        for (let i = 0; i <= value!.length; i++) {
+            area.push({
+                index: i,
+                value: value ? value[i] : undefined,
+                perimeter: perimeter ? perimeter[i] : undefined,
+                number: number ? number[i] : undefined,
+                isGrossInterior: isGrossInterior ? isGrossInterior[i] : undefined,
+                areaSchemeIndex: areaSchemeIndex ? areaSchemeIndex[i] : undefined,
+                elementIndex: elementIndex ? elementIndex[i] : undefined
+            })
+        }
+        
+        return area
+    }
+    
+    async getValue(areaIndex: number): Promise<number | undefined>{
+        return await this.entityTable.getNumber(areaIndex, "double:Value")
+    }
+    
+    async getAllValue(): Promise<number[] | undefined>{
+        return await this.entityTable.getArray("double:Value")
+    }
+    
+    async getPerimeter(areaIndex: number): Promise<number | undefined>{
+        return await this.entityTable.getNumber(areaIndex, "double:Perimeter")
+    }
+    
+    async getAllPerimeter(): Promise<number[] | undefined>{
+        return await this.entityTable.getArray("double:Perimeter")
+    }
+    
+    async getNumber(areaIndex: number): Promise<string | undefined>{
+        return await this.entityTable.getString(areaIndex, "string:Number")
+    }
+    
+    async getAllNumber(): Promise<string[] | undefined>{
+        return await this.entityTable.getStringArray("string:Number")
+    }
+    
+    async getIsGrossInterior(areaIndex: number): Promise<boolean | undefined>{
+        return await this.entityTable.getBoolean(areaIndex, "byte:IsGrossInterior")
+    }
+    
+    async getAllIsGrossInterior(): Promise<boolean[] | undefined>{
+        return await this.entityTable.getBooleanArray("byte:IsGrossInterior")
+    }
+    
+    async getAreaSchemeIndex(areaIndex: number): Promise<number | undefined> {
+        return await this.entityTable.getNumber(areaIndex, "index:Vim.AreaScheme:AreaScheme")
+    }
+    
+    async getAllAreaSchemeIndex(): Promise<number[] | undefined> {
+        return await this.entityTable.getArray("index:Vim.AreaScheme:AreaScheme")
+    }
+    
+    async getAreaScheme(areaIndex: number, recursive?: boolean): Promise<IAreaScheme | undefined> {
+        const index = await this.getAreaSchemeIndex(areaIndex)
+        
+        if (index === undefined) {
+            return undefined
+        }
+        
+        return await this.document.areaScheme?.get(index, recursive)
+    }
+    
+    async getElementIndex(areaIndex: number): Promise<number | undefined> {
+        return await this.entityTable.getNumber(areaIndex, "index:Vim.Element:Element")
+    }
+    
+    async getAllElementIndex(): Promise<number[] | undefined> {
+        return await this.entityTable.getArray("index:Vim.Element:Element")
+    }
+    
+    async getElement(areaIndex: number, recursive?: boolean): Promise<IElement | undefined> {
+        const index = await this.getElementIndex(areaIndex)
+        
+        if (index === undefined) {
+            return undefined
+        }
+        
+        return await this.document.element?.get(index, recursive)
+    }
+    
+}
+
+export interface IAreaScheme {
+    index: number
+    isGrossBuildingArea?: boolean
+    
+    elementIndex?: number
+    element?: IElement
+}
+
+export interface IAreaSchemeTable {
+    getCount(): Promise<number>
+    get(areaSchemeIndex: number, recursive?: boolean): Promise<IAreaScheme>
+    getAll(): Promise<IAreaScheme[]>
+    
+    getIsGrossBuildingArea(areaSchemeIndex: number): Promise<boolean | undefined>
+    getAllIsGrossBuildingArea(): Promise<boolean[] | undefined>
+    
+    getElementIndex(areaSchemeIndex: number): Promise<number | undefined>
+    getAllElementIndex(): Promise<number[] | undefined>
+    getElement(areaSchemeIndex: number, recursive?: boolean): Promise<IElement | undefined>
+}
+
+export class AreaScheme implements IAreaScheme {
+    index: number
+    isGrossBuildingArea?: boolean
+    
+    elementIndex?: number
+    element?: IElement
+    
+    static async createFromTable(table: IAreaSchemeTable, index: number, recursive: boolean = false): Promise<IAreaScheme> {
+        let result = new AreaScheme()
+        result.index = index
+        
+        await Promise.all([
+            table.getIsGrossBuildingArea(index).then(v => result.isGrossBuildingArea = v),
+            table.getElementIndex(index).then(v => result.elementIndex = v),
+        ])
+        
+        if (recursive) {
+            await Promise.all([
+                table.getElement(index).then(v => result.element = v),
+            ])
+        }
+        
+        return result
+    }
+}
+
+export class AreaSchemeTable implements IAreaSchemeTable {
+    private document: VimDocument
+    private entityTable: EntityTable
+    
+    static async createFromDocument(document: VimDocument): Promise<IAreaSchemeTable | undefined> {
+        const entity = await document.entities.getBfast("Vim.AreaScheme")
+        
+        if (!entity) {
+            return undefined
+        }
+        
+        let table = new AreaSchemeTable()
+        table.document = document
+        table.entityTable = new EntityTable(entity, document.strings)
+        
+        return table
+    }
+    
+    async getCount(): Promise<number> {
+        return (await this.entityTable.getArray("byte:IsGrossBuildingArea"))?.length ?? 0
+    }
+    
+    async get(areaSchemeIndex: number, recursive?: boolean): Promise<IAreaScheme> {
+        return await AreaScheme.createFromTable(this, areaSchemeIndex, recursive)
+    }
+    
+    async getAll(): Promise<IAreaScheme[]> {
+        const localTable = await this.entityTable.getLocal()
+        
+        let isGrossBuildingArea: boolean[] | undefined
+        let elementIndex: number[] | undefined
+        
+        await Promise.all([
+            localTable.getBooleanArray("byte:IsGrossBuildingArea").then(a => isGrossBuildingArea = a),
+            localTable.getArray("index:Vim.Element:Element").then(a => elementIndex = a),
+        ])
+        
+        let areaScheme: IAreaScheme[] = []
+        
+        for (let i = 0; i <= isGrossBuildingArea!.length; i++) {
+            areaScheme.push({
+                index: i,
+                isGrossBuildingArea: isGrossBuildingArea ? isGrossBuildingArea[i] : undefined,
+                elementIndex: elementIndex ? elementIndex[i] : undefined
+            })
+        }
+        
+        return areaScheme
+    }
+    
+    async getIsGrossBuildingArea(areaSchemeIndex: number): Promise<boolean | undefined>{
+        return await this.entityTable.getBoolean(areaSchemeIndex, "byte:IsGrossBuildingArea")
+    }
+    
+    async getAllIsGrossBuildingArea(): Promise<boolean[] | undefined>{
+        return await this.entityTable.getBooleanArray("byte:IsGrossBuildingArea")
+    }
+    
+    async getElementIndex(areaSchemeIndex: number): Promise<number | undefined> {
+        return await this.entityTable.getNumber(areaSchemeIndex, "index:Vim.Element:Element")
+    }
+    
+    async getAllElementIndex(): Promise<number[] | undefined> {
+        return await this.entityTable.getArray("index:Vim.Element:Element")
+    }
+    
+    async getElement(areaSchemeIndex: number, recursive?: boolean): Promise<IElement | undefined> {
+        const index = await this.getElementIndex(areaSchemeIndex)
+        
+        if (index === undefined) {
+            return undefined
+        }
+        
+        return await this.document.element?.get(index, recursive)
+    }
+    
+}
+
 export class VimDocument {
     asset: IAssetTable | undefined
     displayUnit: IDisplayUnitTable | undefined
@@ -7922,6 +8250,8 @@ export class VimDocument {
     basePoint: IBasePointTable | undefined
     phaseFilter: IPhaseFilterTable | undefined
     grid: IGridTable | undefined
+    area: IAreaTable | undefined
+    areaScheme: IAreaSchemeTable | undefined
     
     entities: BFast
     strings: string[]
@@ -7979,6 +8309,8 @@ export class VimDocument {
         doc.basePoint = await BasePointTable.createFromDocument(doc)
         doc.phaseFilter = await PhaseFilterTable.createFromDocument(doc)
         doc.grid = await GridTable.createFromDocument(doc)
+        doc.area = await AreaTable.createFromDocument(doc)
+        doc.areaScheme = await AreaSchemeTable.createFromDocument(doc)
         
         return doc
     }
