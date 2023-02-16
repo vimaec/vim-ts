@@ -15,7 +15,7 @@
  export class Range {
    start: number
    end: number
-   get count () {
+   get length () {
      return this.end - this.start
    }
  
@@ -29,7 +29,7 @@
    }
  }
  
- function typeSize (type: string) {
+ export function typeSize (type: string) {
    switch (type) {
      case 'byte':
        return 1
@@ -219,24 +219,45 @@
     * @param index row index
     */
    async getValue (name: string, index: number) {
-     const ranges = await this.getRanges()
-     const range = ranges.get(name)
-     if (!range) return
- 
-     const type = name.split(':')[0]
-     const size = typeSize(type)
-     const start = range.start + index * size
-     const buffer = await this.request(
-       new Range(start, start + size),
-       `${name}[${index.toString()}]`
-     )
-     if (!buffer) return
-     const Ctor = typeConstructor(type)
-     const array = new Ctor(buffer)
-     return array[0]
+    const array = await this.getValues(name, index, 1)
+    return array?.[0]
    }
- 
+
+   async getRange(name:string){
+    const ranges = await this.getRanges()
+    return ranges.get(name)
+   }
+
    /**
+    * Returns a single value from given buffer name
+    * @param name buffer name
+    * @param index row index
+    */
+   async getValues (name: string, index: number, count: number) {
+    if(index < 0 || count < 1) return
+    const range = await this.getRange(name)
+    if (!range) return
+
+    //Could be done in-place.
+    const type = name.split(':')[0]
+    const size = typeSize(type)
+    const start = Math.min(range.start + index * size, range.end)
+    const end = Math.min(start + size * count, range.end)
+    const dataRange = new Range(start, end)
+    if(dataRange.length <= 0) return
+
+    const buffer = await this.request(
+      dataRange,
+      `${name}[${index.toString()}]`
+    )
+    if (!buffer) return
+    const Ctor = typeConstructor(type)
+    const array = new Ctor(buffer)
+
+    return array
+  }
+  /**
+   
     * Returns the buffer with given name as a byte array
     * @param name buffer name
     */
@@ -366,7 +387,7 @@
        throw new Error(`Could not load vim at ${this.source}`)
      }
  
-     if (buffer.byteLength > range.count) {
+     if (buffer.byteLength > range.length) {
        this.source = buffer
        return this.local(range, label)
      }
@@ -390,7 +411,7 @@
      if (!(this.source instanceof RemoteBuffer)) return
      const r = range?.offset(this.offset)
      const buffer = await this.source.http(r, `${this.name}.${label}`)
-     if (range && (buffer?.byteLength ?? 0) < range.count) {
+     if (range && (buffer?.byteLength ?? 0) < range.length) {
        console.log('Range request request failed.')
        return
      }
