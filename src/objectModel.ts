@@ -5057,6 +5057,171 @@ export class AssetInViewTable implements IAssetInViewTable {
     
 }
 
+export interface ILevelInView {
+    index: number
+    extents?: AABox
+    
+    levelIndex?: number
+    level?: ILevel
+    viewIndex?: number
+    view?: IView
+}
+
+export interface ILevelInViewTable {
+    getCount(): Promise<number>
+    get(levelInViewIndex: number, recursive?: boolean): Promise<ILevelInView>
+    getAll(): Promise<ILevelInView[]>
+    
+    getExtents(levelInViewIndex: number): Promise<AABox | undefined>
+    getAllExtents(): Promise<AABox[] | undefined>
+    
+    getLevelIndex(levelInViewIndex: number): Promise<number | undefined>
+    getAllLevelIndex(): Promise<number[] | undefined>
+    getLevel(levelInViewIndex: number, recursive?: boolean): Promise<ILevel | undefined>
+    getViewIndex(levelInViewIndex: number): Promise<number | undefined>
+    getAllViewIndex(): Promise<number[] | undefined>
+    getView(levelInViewIndex: number, recursive?: boolean): Promise<IView | undefined>
+}
+
+export class LevelInView implements ILevelInView {
+    index: number
+    extents?: AABox
+    
+    levelIndex?: number
+    level?: ILevel
+    viewIndex?: number
+    view?: IView
+    
+    static async createFromTable(table: ILevelInViewTable, index: number, recursive: boolean = false): Promise<ILevelInView> {
+        let result = new LevelInView()
+        result.index = index
+        
+        await Promise.all([
+            table.getExtents(index).then(v => result.extents = v),
+            table.getLevelIndex(index).then(v => result.levelIndex = v),
+            table.getViewIndex(index).then(v => result.viewIndex = v),
+        ])
+        
+        if (recursive) {
+            await Promise.all([
+                table.getLevel(index).then(v => result.level = v),
+                table.getView(index).then(v => result.view = v),
+            ])
+        }
+        
+        return result
+    }
+}
+
+export class LevelInViewTable implements ILevelInViewTable {
+    private document: VimDocument
+    private entityTable: EntityTable
+    
+    static async createFromDocument(document: VimDocument): Promise<ILevelInViewTable | undefined> {
+        const entity = await document.entities.getBfast("Vim.LevelInView")
+        
+        if (!entity) {
+            return undefined
+        }
+        
+        let table = new LevelInViewTable()
+        table.document = document
+        table.entityTable = new EntityTable(entity, document.strings)
+        
+        return table
+    }
+    
+    async getCount(): Promise<number> {
+        return (await this.entityTable.getArray("double:Extents" + new Converters.AABoxConverter().columns[0]))?.length ?? 0
+    }
+    
+    async get(levelInViewIndex: number, recursive?: boolean): Promise<ILevelInView> {
+        return await LevelInView.createFromTable(this, levelInViewIndex, recursive)
+    }
+    
+    async getAll(): Promise<ILevelInView[]> {
+        const localTable = await this.entityTable.getLocal()
+        
+        const extentsConverter = new Converters.AABoxConverter()
+        let extents: AABox[] | undefined
+        let levelIndex: number[] | undefined
+        let viewIndex: number[] | undefined
+        
+        await Promise.all([
+            Promise.all(extentsConverter.columns.map(c => this.entityTable.getArray("double:Extents" + c)))
+                .then(a => extents = Converters.convertArray(extentsConverter, a)),
+            localTable.getArray("index:Vim.Level:Level").then(a => levelIndex = a),
+            localTable.getArray("index:Vim.View:View").then(a => viewIndex = a),
+        ])
+        
+        let levelInView: ILevelInView[] = []
+        
+        for (let i = 0; i <= extents!.length; i++) {
+            levelInView.push({
+                index: i,
+                extents: extents ? extents[i] : undefined,
+                levelIndex: levelIndex ? levelIndex[i] : undefined,
+                viewIndex: viewIndex ? viewIndex[i] : undefined
+            })
+        }
+        
+        return levelInView
+    }
+    
+    async getExtents(levelInViewIndex: number): Promise<AABox | undefined>{
+        const converter = new Converters.AABoxConverter()
+        
+        let numbers = await Promise.all(converter.columns.map(c => this.entityTable.getNumber(levelInViewIndex, "double:Extents" + c)))
+        
+        return Converters.convert(converter, numbers)
+    }
+    
+    async getAllExtents(): Promise<AABox[] | undefined>{
+        const converter = new Converters.AABoxConverter()
+        
+        let numbers = await Promise.all(converter.columns.map(c => this.entityTable.getArray("double:Extents" + c)))
+        
+        return Converters.convertArray(converter, numbers)
+    }
+    
+    async getLevelIndex(levelInViewIndex: number): Promise<number | undefined> {
+        return await this.entityTable.getNumber(levelInViewIndex, "index:Vim.Level:Level")
+    }
+    
+    async getAllLevelIndex(): Promise<number[] | undefined> {
+        return await this.entityTable.getArray("index:Vim.Level:Level")
+    }
+    
+    async getLevel(levelInViewIndex: number, recursive?: boolean): Promise<ILevel | undefined> {
+        const index = await this.getLevelIndex(levelInViewIndex)
+        
+        if (index === undefined) {
+            return undefined
+        }
+        
+        return await this.document.level?.get(index, recursive)
+    }
+    
+    async getViewIndex(levelInViewIndex: number): Promise<number | undefined> {
+        return await this.entityTable.getNumber(levelInViewIndex, "index:Vim.View:View")
+    }
+    
+    async getAllViewIndex(): Promise<number[] | undefined> {
+        return await this.entityTable.getArray("index:Vim.View:View")
+    }
+    
+    async getView(levelInViewIndex: number, recursive?: boolean): Promise<IView | undefined> {
+        const index = await this.getViewIndex(levelInViewIndex)
+        
+        if (index === undefined) {
+            return undefined
+        }
+        
+        return await this.document.view?.get(index, recursive)
+    }
+    
+}
+
 export interface ICamera {
     index: number
     id?: number
@@ -7759,7 +7924,7 @@ export class GridTable implements IGridTable {
     }
     
     async getCount(): Promise<number> {
-        return (await this.entityTable.getArray("float:StartPoint" + new Converters.Vector3Converter().columns[0]))?.length ?? 0
+        return (await this.entityTable.getArray("double:StartPoint" + new Converters.Vector3Converter().columns[0]))?.length ?? 0
     }
     
     async get(gridIndex: number, recursive?: boolean): Promise<IGrid> {
@@ -7779,12 +7944,12 @@ export class GridTable implements IGridTable {
         let elementIndex: number[] | undefined
         
         await Promise.all([
-            Promise.all(startPointConverter.columns.map(c => this.entityTable.getArray("float:StartPoint" + c)))
+            Promise.all(startPointConverter.columns.map(c => this.entityTable.getArray("double:StartPoint" + c)))
                 .then(a => startPoint = Converters.convertArray(startPointConverter, a)),
-            Promise.all(endPointConverter.columns.map(c => this.entityTable.getArray("float:EndPoint" + c)))
+            Promise.all(endPointConverter.columns.map(c => this.entityTable.getArray("double:EndPoint" + c)))
                 .then(a => endPoint = Converters.convertArray(endPointConverter, a)),
             localTable.getBooleanArray("byte:IsCurved").then(a => isCurved = a),
-            Promise.all(extentsConverter.columns.map(c => this.entityTable.getArray("float:Extents" + c)))
+            Promise.all(extentsConverter.columns.map(c => this.entityTable.getArray("double:Extents" + c)))
                 .then(a => extents = Converters.convertArray(extentsConverter, a)),
             localTable.getArray("index:Vim.Element:Element").then(a => elementIndex = a),
         ])
@@ -7808,7 +7973,7 @@ export class GridTable implements IGridTable {
     async getStartPoint(gridIndex: number): Promise<Vector3 | undefined>{
         const converter = new Converters.Vector3Converter()
         
-        let numbers = await Promise.all(converter.columns.map(c => this.entityTable.getNumber(gridIndex, "float:StartPoint" + c)))
+        let numbers = await Promise.all(converter.columns.map(c => this.entityTable.getNumber(gridIndex, "double:StartPoint" + c)))
         
         return Converters.convert(converter, numbers)
     }
@@ -7816,7 +7981,7 @@ export class GridTable implements IGridTable {
     async getAllStartPoint(): Promise<Vector3[] | undefined>{
         const converter = new Converters.Vector3Converter()
         
-        let numbers = await Promise.all(converter.columns.map(c => this.entityTable.getArray("float:StartPoint" + c)))
+        let numbers = await Promise.all(converter.columns.map(c => this.entityTable.getArray("double:StartPoint" + c)))
         
         return Converters.convertArray(converter, numbers)
     }
@@ -7824,7 +7989,7 @@ export class GridTable implements IGridTable {
     async getEndPoint(gridIndex: number): Promise<Vector3 | undefined>{
         const converter = new Converters.Vector3Converter()
         
-        let numbers = await Promise.all(converter.columns.map(c => this.entityTable.getNumber(gridIndex, "float:EndPoint" + c)))
+        let numbers = await Promise.all(converter.columns.map(c => this.entityTable.getNumber(gridIndex, "double:EndPoint" + c)))
         
         return Converters.convert(converter, numbers)
     }
@@ -7832,7 +7997,7 @@ export class GridTable implements IGridTable {
     async getAllEndPoint(): Promise<Vector3[] | undefined>{
         const converter = new Converters.Vector3Converter()
         
-        let numbers = await Promise.all(converter.columns.map(c => this.entityTable.getArray("float:EndPoint" + c)))
+        let numbers = await Promise.all(converter.columns.map(c => this.entityTable.getArray("double:EndPoint" + c)))
         
         return Converters.convertArray(converter, numbers)
     }
@@ -7848,7 +8013,7 @@ export class GridTable implements IGridTable {
     async getExtents(gridIndex: number): Promise<AABox | undefined>{
         const converter = new Converters.AABoxConverter()
         
-        let numbers = await Promise.all(converter.columns.map(c => this.entityTable.getNumber(gridIndex, "float:Extents" + c)))
+        let numbers = await Promise.all(converter.columns.map(c => this.entityTable.getNumber(gridIndex, "double:Extents" + c)))
         
         return Converters.convert(converter, numbers)
     }
@@ -7856,7 +8021,7 @@ export class GridTable implements IGridTable {
     async getAllExtents(): Promise<AABox[] | undefined>{
         const converter = new Converters.AABoxConverter()
         
-        let numbers = await Promise.all(converter.columns.map(c => this.entityTable.getArray("float:Extents" + c)))
+        let numbers = await Promise.all(converter.columns.map(c => this.entityTable.getArray("double:Extents" + c)))
         
         return Converters.convertArray(converter, numbers)
     }
@@ -8233,6 +8398,7 @@ export class VimDocument {
     elementInView: IElementInViewTable | undefined
     shapeInView: IShapeInViewTable | undefined
     assetInView: IAssetInViewTable | undefined
+    levelInView: ILevelInViewTable | undefined
     camera: ICameraTable | undefined
     material: IMaterialTable | undefined
     materialInElement: IMaterialInElementTable | undefined
@@ -8292,6 +8458,7 @@ export class VimDocument {
         doc.elementInView = await ElementInViewTable.createFromDocument(doc)
         doc.shapeInView = await ShapeInViewTable.createFromDocument(doc)
         doc.assetInView = await AssetInViewTable.createFromDocument(doc)
+        doc.levelInView = await LevelInViewTable.createFromDocument(doc)
         doc.camera = await CameraTable.createFromDocument(doc)
         doc.material = await MaterialTable.createFromDocument(doc)
         doc.materialInElement = await MaterialInElementTable.createFromDocument(doc)
