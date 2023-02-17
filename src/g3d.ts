@@ -1,5 +1,5 @@
 /**
- * @module vim-loader
+ * @module vim-ts
  */
 
 import { BFast } from './bfast'

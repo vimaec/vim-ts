@@ -1,15 +1,27 @@
 {
-  "name": "vim-object-model",
-  "version": "1.0.0",
-  "description": "",
+  "name": "vim-format",
+  "version": "1.0.1",
+  "description": "The VIM format is a modern and efficient open 3D data interchange format designed for BIM and manufacturing data optimized for efficient loading and rendering on low-power devices.",
   "directories": {
     "test": "tests"
   },
   "scripts": {
+    "declarations": "tsc --declaration --emitDeclarationOnly --outdir ./dist/types",
+    "build": "tsc",
     "test": "jest"
   },
-  "author": "",
-  "license": "ISC",
+  "author": "VIM <hello@vimaec.com>",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/vimaec/vim-ts.git"
+  },
+  "declaration": true,
+  "types": "dist/index.d.ts",
+  "module": "/dist/index.js",
+  "files": [
+    "dist/**"
+  ],
   "devDependencies": {
     "@types/jest": "^29.2.2",
     "@types/node": "^18.11.17",
