@@ -1,8 +1,4 @@
 // AUTO-GENERATED FILE, DO NOT MODIFY.
-/**
- * @module vim-ts
- */
-
 import { BFast } from "./bfast"
 import { EntityTable } from "./entityTable"
 import { VimLoader } from "./vimLoader"
@@ -7676,7 +7672,7 @@ export class BasePointTable implements IBasePointTable {
 
 export interface IPhaseFilter {
     index: number
-    new?: number
+    _new?: number
     existing?: number
     demolished?: number
     temporary?: number
@@ -7706,7 +7702,7 @@ export interface IPhaseFilterTable {
 
 export class PhaseFilter implements IPhaseFilter {
     index: number
-    new?: number
+    _new?: number
     existing?: number
     demolished?: number
     temporary?: number
@@ -7719,7 +7715,7 @@ export class PhaseFilter implements IPhaseFilter {
         result.index = index
         
         await Promise.all([
-            table.getNew(index).then(v => result.new = v),
+            table.getNew(index).then(v => result._new = v),
             table.getExisting(index).then(v => result.existing = v),
             table.getDemolished(index).then(v => result.demolished = v),
             table.getTemporary(index).then(v => result.temporary = v),
@@ -7765,14 +7761,14 @@ export class PhaseFilterTable implements IPhaseFilterTable {
     async getAll(): Promise<IPhaseFilter[]> {
         const localTable = await this.entityTable.getLocal()
         
-        let new: number[] | undefined
+        let _new: number[] | undefined
         let existing: number[] | undefined
         let demolished: number[] | undefined
         let temporary: number[] | undefined
         let elementIndex: number[] | undefined
         
         await Promise.all([
-            localTable.getArray("int:New").then(a => new = a),
+            localTable.getArray("int:New").then(a => _new = a),
             localTable.getArray("int:Existing").then(a => existing = a),
             localTable.getArray("int:Demolished").then(a => demolished = a),
             localTable.getArray("int:Temporary").then(a => temporary = a),
@@ -7781,10 +7777,10 @@ export class PhaseFilterTable implements IPhaseFilterTable {
         
         let phaseFilter: IPhaseFilter[] = []
         
-        for (let i = 0; i <= new!.length; i++) {
+        for (let i = 0; i <= _new!.length; i++) {
             phaseFilter.push({
                 index: i,
-                new: new ? new[i] : undefined,
+                _new: _new ? _new[i] : undefined,
                 existing: existing ? existing[i] : undefined,
                 demolished: demolished ? demolished[i] : undefined,
                 temporary: temporary ? temporary[i] : undefined,
