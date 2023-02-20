@@ -140,29 +140,6 @@ export class G3dAttribute {
   }
 }
 
-export function typeSize(dataType: string){
-  switch (dataType) {
-    case 'float64':
-      return 8
-    case 'float32':
-    case 'int32':
-    case 'uint32':
-      return 4
-    case 'uint8':
-    case 'int8':
-      return 1
-    case 'int16':
-      case 'uint16':
-      return 2
-    case 'int64':
-    case 'uint64':
-      console.error('G3d: 64-bit buffers unsuported')
-      return
-    default:
-      console.error('Unrecognized attribute data type ' + dataType)
-  }
-} 
-
 /**
  * G3D is a simple, efficient, generic binary format for storing and transmitting geometry.
  * The G3D format is designed to be used either as a serialization format or as an in-memory data structure.
