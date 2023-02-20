@@ -8,9 +8,12 @@
  type ArrayConstructor =
    | Int8ArrayConstructor
    | Int16ArrayConstructor
+   | Uint16ArrayConstructor
+   | Int32ArrayConstructor
+   | Uint32ArrayConstructor
    | Float32ArrayConstructor
    | Float64ArrayConstructor
-   | Int32ArrayConstructor
+
  
  export class Range {
    start: number
@@ -28,7 +31,34 @@
      return new Range(this.start + offset, this.end + offset)
    }
  }
- 
+
+export function parseName(name: string): [number, ArrayConstructor]{
+  if(name.startsWith('g3d')){
+    const result = name.includes('int8') ? [1, Int8Array] // inlcludes uint8
+     :name.includes('uint16') ? [2, Uint16Array]
+     :name.includes('int16') ? [2, Int16Array]
+     :name.includes('int32') ? [4, Int32Array]
+     :name.includes('float32') ? [4, Float32Array]
+     :name.includes('uint32') ? [4, Uint32Array]
+     : undefined 
+     
+    if(result === undefined){
+      throw new Error('Unsupported g3d range name ' + name)
+    }
+    return result as [number, ArrayConstructor]
+  }
+  else{
+    const result = name.startsWith('byte') ? [1, Int8Array]
+     :name.startsWith('short') ? [2, Int16Array]
+     :name.startsWith('int') ? [4, Int32Array]
+     :name.startsWith('float') ? [4, Float32Array]
+     :name.startsWith('long') ? [8, Float64Array]
+     :name.startsWith('double') ? [8,Float64Array]
+     : [4, Int32Array] 
+     return result as [number, ArrayConstructor]
+  }
+}
+
  export function typeSize (type: string) {
    switch (type) {
      case 'byte':
@@ -239,10 +269,10 @@
     if (!range) return
 
     //Could be done in-place.
-    const type = name.split(':')[0]
-    const size = typeSize(type)
+    const [size, ctor] = parseName(name)
     const start = Math.min(range.start + index * size, range.end)
     const end = Math.min(start + size * count, range.end)
+    
     const dataRange = new Range(start, end)
     if(dataRange.length <= 0) return
 
@@ -251,8 +281,7 @@
       `${name}[${index.toString()}]`
     )
     if (!buffer) return
-    const Ctor = typeConstructor(type)
-    const array = new Ctor(buffer)
+    const array = new ctor(buffer)
 
     return array
   }
@@ -399,7 +428,7 @@
     */
    private local (range: Range, label: string) {
      if (!(this.source instanceof ArrayBuffer)) return
-     console.log(`Returning local ${this.name}.${label}`)
+     //console.log(`Returning local ${this.name}.${label}`)
      const r = range.offset(this.offset)
      return this.source.slice(r.start, r.end)
    }

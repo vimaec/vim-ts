@@ -26,11 +26,11 @@ class G3dRemoteAttribute {
   }
 
   async getValue(index: number){
-    return await this.bfast.getValues(this.descriptor.description, index, this.descriptor.dataArity)
+    return await this.bfast.getValues(this.descriptor.description, index * this.descriptor.dataArity, this.descriptor.dataArity)
   }
 
   async getValues(index: number, count: number){
-    return await this.bfast.getValues(this.descriptor.description, index, count * this.descriptor.dataArity)
+    return await this.bfast.getValues(this.descriptor.description, index*this.descriptor.dataArity , count*this.descriptor.dataArity)
   }
 
   async getCount(){
@@ -87,8 +87,8 @@ export class RemoteG3d {
   instanceTransforms: G3dRemoteAttribute
   instanceFlags: G3dRemoteAttribute
   meshSubmeshes: G3dRemoteAttribute
-  submeshIndexOffset: G3dRemoteAttribute
-  submeshMaterial: G3dRemoteAttribute
+  submeshIndexOffsets: G3dRemoteAttribute
+  submeshMaterials: G3dRemoteAttribute
   materialColors: G3dRemoteAttribute
 
   // consts
@@ -104,10 +104,10 @@ export class RemoteG3d {
     this.indices = g3d.findAttribute(VimAttributes.indices)
 
     this.meshSubmeshes = g3d.findAttribute(VimAttributes.meshSubmeshes)
-    this.submeshIndexOffset = g3d.findAttribute(
+    this.submeshIndexOffsets = g3d.findAttribute(
       VimAttributes.submeshIndexOffsets
     )
-    this.submeshMaterial = g3d.findAttribute(VimAttributes.submeshMaterials)
+    this.submeshMaterials = g3d.findAttribute(VimAttributes.submeshMaterials)
     this.materialColors = g3d.findAttribute(VimAttributes.materialColors)
     this.instanceMeshes = g3d.findAttribute(VimAttributes.instanceMeshes)
     this.instanceTransforms = g3d.findAttribute(
@@ -122,72 +122,113 @@ export class RemoteG3d {
     return new RemoteG3d(abstract)
   }
 
-  async getG3d(instance: number){
-    const matrix = await this.instanceTransforms.getNumber(instance)
-    const mesh = await this.instanceMeshes.getNumber(instance)
-    const flags = await this.instanceFlags.getNumber(instance)
-    const _instanceTransforms = new Int32Array([0])
-    const _instanceMeshes = new Int32Array(mesh >= 0 ? 0: -1)
-    const _instanceFlags = new Int32Array([flags])
-
-    if(mesh < 0) return
-    const _meshSubmeshes = new Int32Array([0])
-
-    const submeshStart = await this.getMeshSubmeshStart(mesh)
-    const submeshEnd = await this.getMeshSubmeshEnd(mesh)
-    const originalOffsets = await this.submeshIndexOffset.getValues(submeshStart, submeshEnd - submeshStart)
-    const firstOffset =  originalOffsets[0]
-    const _submeshIndexOffsets = originalOffsets.map(i => i-firstOffset)
-    
-    const originalSubmeshMaterials = await this.submeshMaterial.getValues(submeshStart, submeshEnd - submeshStart)
-    const map = new Map<number, number[]>()
-    originalSubmeshMaterials.forEach((m,i) => {
-      if(m >= 0){
-        const set = map.get(m) ?? []
-        set.push(i)
-        map.set(m, set)
-      }
-    })
-    const _submeshMaterials = new Int32Array(originalSubmeshMaterials.length)
-    const materialColors = [] 
-    let i =0
-    map.forEach(async (set, mat) => {
-      const color = await this.materialColors.getValue(mat)
-      color.forEach(v => materialColors.push(v))
-      set.forEach((s) => _submeshMaterials[i] = i)
-      i++
-    })
-    const _materialColors = new Float32Array(materialColors)
-
-    const indices = await this.getMeshIndices(mesh)
-    //get min and max vertex
-    let minVertex = Number.MAX_SAFE_INTEGER
-    let maxVertex = Number.MIN_SAFE_INTEGER
-    for(let i=0;i < indices.length; i++){
-      minVertex = Math.min(minVertex, indices[i])
-      maxVertex = Math.max(maxVertex, indices[i])
-    } 
-
-    //rebase indices i-min
-    const _localIndices = indices.map(i => i - minVertex)
-
-    //slice vertices from min to max.
-    const _vertices = await this.positions.getValues(minVertex, maxVertex - minVertex)
-
-
+  async toG3d(){
     const attributes = []
+
+    const _instanceTransforms = await this.instanceTransforms.getAll()
+    const _instanceFlags = await this.instanceFlags.getAll()
+    const _instanceMeshes = await this.instanceMeshes.getAll()
+    const _meshSubmeshes = await this.meshSubmeshes.getAll()
+    const _submeshIndexOffsets = await this. submeshIndexOffsets.getAll()
+    const _submeshMaterials = await this.submeshMaterials.getAll()
+    const _indices = await this.indices.getAll()
+    const _positions = await this.positions.getAll()
+    const _materialColors = await this.materialColors.getAll()
+
     attributes.push(G3dAttribute.fromString(VimAttributes.instanceTransforms, new Uint8Array(_instanceTransforms.buffer)))
     attributes.push(G3dAttribute.fromString(VimAttributes.instanceFlags, new Uint8Array(_instanceFlags.buffer)))
     attributes.push(G3dAttribute.fromString(VimAttributes.instanceMeshes, new Uint8Array(_instanceMeshes.buffer)))
     attributes.push(G3dAttribute.fromString(VimAttributes.meshSubmeshes, new Uint8Array(_meshSubmeshes.buffer)))
     attributes.push(G3dAttribute.fromString(VimAttributes.submeshIndexOffsets, new Uint8Array(_submeshIndexOffsets.buffer)))
     attributes.push(G3dAttribute.fromString(VimAttributes.submeshMaterials, new Uint8Array(_submeshMaterials.buffer)))
-    attributes.push(G3dAttribute.fromString(VimAttributes.indices, new Uint8Array(_localIndices.buffer)))
-    attributes.push(G3dAttribute.fromString(VimAttributes.positions, new Uint8Array(_vertices.buffer)))
+    attributes.push(G3dAttribute.fromString(VimAttributes.indices, new Uint8Array(_indices.buffer)))
+    attributes.push(G3dAttribute.fromString(VimAttributes.positions, new Uint8Array(_positions.buffer)))
     attributes.push(G3dAttribute.fromString(VimAttributes.materialColors, new Uint8Array(_materialColors.buffer)))
 
     const abstract = new AbstractG3d('woot', attributes)
     const g3d = new G3d(abstract)
+    return g3d
+  }
+
+  async slice(instance: number){
+
+    const attributes = []
+
+    const mesh = await this.instanceMeshes.getNumber(instance)
+    const flags = await this.instanceFlags.getNumber(instance) ?? 0
+    const _instanceTransforms = await this.instanceTransforms.getValue(instance)
+    const _instanceMeshes = new Int32Array([mesh >= 0 ? 0 : -1])
+    const _instanceFlags = new Int16Array([flags])
+
+    attributes.push(G3dAttribute.fromString(VimAttributes.instanceTransforms, new Uint8Array(_instanceTransforms.buffer)))
+    attributes.push(G3dAttribute.fromString(VimAttributes.instanceFlags, new Uint8Array(_instanceFlags.buffer)))
+    attributes.push(G3dAttribute.fromString(VimAttributes.instanceMeshes, new Uint8Array(_instanceMeshes.buffer)))
+
+    if(mesh >= 0){
+      const _meshSubmeshes = new Int32Array([0])
+
+      const submeshStart = await this.getMeshSubmeshStart(mesh)
+      const submeshEnd = await this.getMeshSubmeshEnd(mesh)
+      const originalOffsets = await this.submeshIndexOffsets.getValues(submeshStart, submeshEnd - submeshStart)
+      const firstOffset =  originalOffsets[0]
+      const _submeshIndexOffsets = originalOffsets.map(i => i-firstOffset)
+      
+      const originalSubmeshMaterials = await this.submeshMaterials.getValues(submeshStart, submeshEnd - submeshStart)
+      const map = new Map<number, number[]>()
+      originalSubmeshMaterials.forEach((m,i) => {
+          const set = map.get(m) ?? []
+          set.push(i)
+          map.set(m, set)
+      })
+
+      const _submeshMaterials = new Int32Array(map.size)
+      map.get(-1)?.forEach(s => _submeshMaterials[s] = -1)
+      const mapAsArray = Array.from(map).filter(pair => pair[0] >=0)
+      const materialColors = [] 
+      await Promise.all(mapAsArray.map(async ([mat, set], index) => {
+        if(mat >= 0){
+          const color = await this.materialColors.getValue(mat)
+          color.forEach(v => materialColors.push(v))
+        }
+        set.forEach((s) => _submeshMaterials[s] = index)
+      })
+      )
+      const _materialColors = new Float32Array(materialColors)
+
+
+      const indices = await this.getMeshIndices(mesh)
+      //get min and max vertex
+      let minVertex = Number.MAX_SAFE_INTEGER
+      let maxVertex = Number.MIN_SAFE_INTEGER
+      for(let i=0;i < indices.length; i++){
+        minVertex = Math.min(minVertex, indices[i])
+        maxVertex = Math.max(maxVertex, indices[i])
+      } 
+  
+      //rebase indices i-min
+      const _localIndices = indices.map(i => i - minVertex)
+  
+      //slice vertices from min to max.
+      const _vertices = await this.positions.getValues(minVertex, maxVertex - minVertex +1)
+
+      attributes.push(G3dAttribute.fromString(VimAttributes.meshSubmeshes, new Uint8Array(_meshSubmeshes.buffer)))
+      attributes.push(G3dAttribute.fromString(VimAttributes.submeshIndexOffsets, new Uint8Array(_submeshIndexOffsets.buffer)))
+      attributes.push(G3dAttribute.fromString(VimAttributes.submeshMaterials, new Uint8Array(_submeshMaterials.buffer)))
+      attributes.push(G3dAttribute.fromString(VimAttributes.indices, new Uint8Array(_localIndices.buffer)))
+      attributes.push(G3dAttribute.fromString(VimAttributes.positions, new Uint8Array(_vertices.buffer)))
+      attributes.push(G3dAttribute.fromString(VimAttributes.materialColors, new Uint8Array(_materialColors.buffer)))
+    } else{
+      attributes.push(G3dAttribute.fromString(VimAttributes.meshSubmeshes, new Uint8Array()))
+      attributes.push(G3dAttribute.fromString(VimAttributes.submeshIndexOffsets, new Uint8Array()))
+      attributes.push(G3dAttribute.fromString(VimAttributes.submeshMaterials, new Uint8Array()))
+      attributes.push(G3dAttribute.fromString(VimAttributes.indices, new Uint8Array()))
+      attributes.push(G3dAttribute.fromString(VimAttributes.positions, new Uint8Array()))
+      attributes.push(G3dAttribute.fromString(VimAttributes.materialColors, new Uint8Array()))
+    }
+   
+    const abstract = new AbstractG3d('woot', attributes)
+    const g3d = new G3d(abstract)
+    return g3d
   }
 
 
@@ -427,7 +468,7 @@ export class RemoteG3d {
   // ------------- Meshes -----------------
   getMeshCount = () => this.meshSubmeshes.getCount()
 
-  getSubmeshCount = () => this.submeshIndexOffset.getCount()
+  getSubmeshCount = () => this.submeshIndexOffsets.getCount()
 
   async getMeshIndexStart (mesh: number, section: MeshSection = 'all') {
     const sub = await this.getMeshSubmeshStart(mesh, section)
@@ -494,16 +535,16 @@ export class RemoteG3d {
   // // ------------- Submeshes -----------------
 
   async getSubmeshIndexStart (submesh: number) {
-    const submeshCount = await this.submeshIndexOffset.getCount()
+    const submeshCount = await this.submeshIndexOffsets.getCount()
     return submesh < submeshCount
-      ? this.submeshIndexOffset.getNumber(submesh)
+      ? this.submeshIndexOffsets.getNumber(submesh)
       : await this.indices.getCount()
   }
 
   async getSubmeshIndexEnd (submesh: number) {
-    const submeshCount = await this.submeshIndexOffset.getCount()
+    const submeshCount = await this.submeshIndexOffsets.getCount()
     return submesh < submeshCount - 1
-      ? this.submeshIndexOffset.getNumber(submesh + 1)
+      ? this.submeshIndexOffsets.getNumber(submesh + 1)
       : await this.indices.getCount()
   }
 

@@ -140,6 +140,29 @@ export class G3dAttribute {
   }
 }
 
+export function typeSize(dataType: string){
+  switch (dataType) {
+    case 'float64':
+      return 8
+    case 'float32':
+    case 'int32':
+    case 'uint32':
+      return 4
+    case 'uint8':
+    case 'int8':
+      return 1
+    case 'int16':
+      case 'uint16':
+      return 2
+    case 'int64':
+    case 'uint64':
+      console.error('G3d: 64-bit buffers unsuported')
+      return
+    default:
+      console.error('Unrecognized attribute data type ' + dataType)
+  }
+} 
+
 /**
  * G3D is a simple, efficient, generic binary format for storing and transmitting geometry.
  * The G3D format is designed to be used either as a serialization format or as an in-memory data structure.
@@ -279,6 +302,8 @@ export class G3d {
       (g3d.findAttribute(VimAttributes.instanceFlags)?.data as Uint16Array) ??
       new Uint16Array(this.instanceMeshes.length)
 
+
+    const mesh = this.getInstanceMesh(1366) ?? this.getInstanceMesh(0) 
     this.meshVertexOffsets = this.computeMeshVertexOffsets()
     this.rebaseIndices()
     this.meshInstances = this.computeMeshInstances()
@@ -512,7 +537,7 @@ export class G3d {
 
     const matrix = this.instanceTransforms.slice(instance*16, (instance+1) *16)
     const mesh =  this.instanceMeshes[instance]
-    const flags =  this.instanceFlags[instance]
+    const flags =  this.instanceFlags[instance] ?? 0
     const _instanceTransforms = new Float32Array([...matrix])
     const _instanceMeshes = new Int32Array([mesh >= 0 ? 0: -1])
     const _instanceFlags = new Uint16Array([flags])
@@ -538,20 +563,20 @@ export class G3d {
       const originalSubmeshMaterials = this.submeshMaterial.slice(submeshStart, submeshEnd)
       const map = new Map<number, number[]>()
       originalSubmeshMaterials.forEach((m,i) => {
-        if(m >=0){
           const set = map.get(m) ?? []
           set.push(i)
           map.set(m, set)
-        }
       })
+
+      
       const _submeshMaterials = new Int32Array(map.size)
+      map.get(-1)?.forEach(s => _submeshMaterials[s] = -1)
+      const mapAsArray = Array.from(map).filter(pair => pair[0] >=0)
       const materialColors = [] 
-      let i =0
-      map.forEach(async (set, mat) => {
+      mapAsArray.forEach(([mat, set], index) => {
         const color = this.materialColors.slice(mat*4, mat*4+4)
         color.forEach(v => materialColors.push(v))
-        set.forEach((s) => _submeshMaterials[i] = i)
-        i++
+        set.forEach((s) => _submeshMaterials[s] = index)
       })
       const _materialColors = new Float32Array(materialColors)
 

@@ -201,8 +201,10 @@ describe('testing Remote G3d', () => {
   
 })
 */
+
 describe('slice', () => {
-/*
+
+  /*
   test('size', async () =>{
     const g3d = await loadG3d()
     
@@ -231,13 +233,14 @@ describe('slice', () => {
       expect(g?.materialColors.length).toBe(materialCount * 4)
     }
 
-    for(let i=0; i < g3d.getInstanceCount(); i++){
+    for(let i=428; i < g3d.getInstanceCount(); i++){
       console.log(i)
       compare(i)
     }
   })
 */
 
+/*
     test('content', async () =>{
       const g3d = await loadG3d()
       
@@ -253,9 +256,9 @@ describe('slice', () => {
         expect(g.meshSubmeshes[0]).toBe(hasMesh ? 0: undefined)
         
         // Materials
-        const mats = g3d.submeshMaterial.slice(g3d.getMeshSubmeshStart(mesh), g3d.getMeshSubmeshEnd(mesh)).filter(m => m >=0)
-        const gColors = Array.from(g.submeshMaterial).map(m => g.materialColors.slice(m*4, (m+1)*4))
-        const g3dColors = Array.from(mats).map(m => g3d.materialColors.slice(m*4, (m+1)*4))
+        const mats = g3d.submeshMaterial.slice(g3d.getMeshSubmeshStart(mesh), g3d.getMeshSubmeshEnd(mesh))
+        const gColors = Array.from(g.submeshMaterial).map(m => g.getMaterialColor(m))
+        const g3dColors = Array.from(mats).map(m => g3d.getMaterialColor(m))
         expect(gColors).toEqual(g3dColors)
 
         // Indices per submeshes
@@ -275,9 +278,56 @@ describe('slice', () => {
       }
       
       for(let i=0; i < g3d.getInstanceCount(); i++){
+        //console.log(i)
         compare(i)
       }
-      
     })
+    */
+    
+   /*
+    test('remote.toG3d', async () =>{
+      const [g3d, remote] = await loadBoth()
+      const r = await remote.toG3d()
 
+      expect(r.instanceFlags).toEqual(g3d.instanceFlags)
+      expect(r.instanceMeshes).toEqual(g3d.instanceMeshes)
+      expect(r.instanceTransforms).toEqual(g3d.instanceTransforms)
+      expect(r.meshSubmeshes).toEqual(g3d.meshSubmeshes)
+      expect(r.submeshIndexOffset).toEqual(g3d.submeshIndexOffset)
+      expect(r.submeshMaterial).toEqual(g3d.submeshMaterial)
+      expect(r.positions).toEqual(g3d.positions)
+      expect(r.indices).toEqual(g3d.indices)
+      expect(r.materialColors).toEqual(g3d.materialColors)
+    })  
+*/
+
+  test('remote.slice', async () =>{
+    const [g3d, remote] = await loadBoth()
+
+    function compare(r: G3d, g: G3d ){
+      expect(r?.instanceFlags).toEqual(g.instanceFlags)
+      expect(r?.instanceTransforms).toEqual(g.instanceTransforms)
+      expect(r?.instanceMeshes).toEqual(g.instanceMeshes)
+      expect(r?.meshSubmeshes).toEqual(g.meshSubmeshes)
+
+      expect(r?.submeshIndexOffset).toEqual(g.submeshIndexOffset)
+
+      // Test colors and materials together.
+      const rColors = Array.from(r.submeshMaterial).map(m => r.getMaterialColor(m))
+      const gColors = Array.from(g.submeshMaterial).map(m => g.getMaterialColor(m))
+      expect(rColors).toEqual(gColors)
+
+      expect(r?.positions).toEqual(g.positions)
+      expect(r?.indices).toEqual(g.indices)
+    }
+
+    for(let i = 0; i < g3d.getInstanceCount(); i++ ){
+      console.log('compare ' + i)
+      const r = await remote.slice(i)
+      const g = await g3d.slice(i)
+      
+      compare(r,g)
+    }
+  })  
+  
 })

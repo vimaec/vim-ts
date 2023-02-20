@@ -191,7 +191,7 @@ export class RemoteBuffer {
     const xhr = new XMLHttpRequest()
     xhr.open('HEAD', this.url)
     xhr.send()
-    console.log(`Requesting header for ${this.url}`)
+    //console.log(`Requesting header for ${this.url}`)
 
     const promise = new Promise<string | undefined>((resolve, reject) => {
       xhr.onload = (_) => {
@@ -209,7 +209,7 @@ export class RemoteBuffer {
     const encoding = await promise
     const encoded = !!encoding
 
-    console.log(`Encoding for ${this.url} = ${encoding}`)
+    //console.log(`Encoding for ${this.url} = ${encoding}`)
     if (encoded) {
       console.log(
         `Defaulting to download strategy for encoded content at ${this.url}`
@@ -276,6 +276,6 @@ export class RemoteBuffer {
     this.queue.shift()
     this.active.add(next)
     next.send()
-    console.log('Starting ' + next.msg)
+    //console.log('Starting ' + next.msg)
   }
 }
