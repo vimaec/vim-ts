@@ -1,4 +1,7 @@
 // AUTO-GENERATED FILE, DO NOT MODIFY.
+/**
+ * @module vim-ts
+ */
 import { BFast } from "./bfast"
 import { EntityTable } from "./entityTable"
 import { VimLoader } from "./vimLoader"
