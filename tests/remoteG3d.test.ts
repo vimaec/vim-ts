@@ -5,6 +5,7 @@ import { VimHelpers } from '../src/vimHelpers'
 import { G3d } from '../src/g3d'
 import { RemoteG3d } from '../src/remoteG3d'
 import exp from 'constants'
+import { randomInt } from 'crypto'
 
 const vimFilePath = `${__dirname}/../data/Wolford_Residence.r2023.vim`
 
@@ -241,7 +242,7 @@ describe('slice', () => {
 */
 
 /*
-    test('content', async () =>{
+    test('g3d.slice', async () =>{
       const g3d = await loadG3d()
       
       function compare(instance: number){
@@ -278,11 +279,12 @@ describe('slice', () => {
       }
       
       for(let i=0; i < g3d.getInstanceCount(); i++){
-        //console.log(i)
+        console.log(i)
         compare(i)
       }
     })
-    */
+*/
+    
     
    /*
     test('remote.toG3d', async () =>{
@@ -300,7 +302,7 @@ describe('slice', () => {
       expect(r.materialColors).toEqual(g3d.materialColors)
     })  
 */
-
+/*
   test('remote.slice', async () =>{
     const [g3d, remote] = await loadBoth()
 
@@ -329,5 +331,108 @@ describe('slice', () => {
       compare(r,g)
     }
   })  
+*/
+/*
+  test('g3d.append', async () =>{
+    const g3d = await loadG3d()
+
+    function compare(r: G3d, g: G3d ){
+
+      expect(r.instanceFlags).toEqual(g.instanceFlags)
+
+      expect(r.instanceMeshes).toEqual(g.instanceMeshes)
+      expect(r.instanceTransforms).toEqual(g.instanceTransforms)
+      expect(r.meshSubmeshes).toEqual(g.meshSubmeshes)
+      expect(r.submeshIndexOffset).toEqual(g.submeshIndexOffset)
+      expect(r.submeshMaterial).toEqual(g.submeshMaterial)
+      expect(r.materialColors).toEqual(g.materialColors)
+      expect(r.positions).toEqual(g.positions)
+      expect(r.indices).toEqual(g.indices)
+    }
+
+    for(let i = 0; i < g3d.getInstanceCount(); i++ ){
+      console.log(i)
+      const s1 = g3d.slice(i)
+      const merge = s1.append(s1)
+      const merge0 = merge.slice(0)
+      const merge1 = merge.slice(1)
+      compare(merge0, s1)
+      compare(merge1, s1)
+    }
+  })  
+*/
+  /*
+  test('g3d.filter (slice)', async () =>{
+    const g3d = await loadG3d()
+
+    function compare(value: G3d, expected: G3d ){
+
+      expect(value.instanceFlags).toEqual(expected.instanceFlags)
+
+      expect(value.instanceMeshes).toEqual(expected.instanceMeshes)
+      expect(value.instanceTransforms).toEqual(expected.instanceTransforms)
+
+      expect(value.meshSubmeshes).toEqual(expected.meshSubmeshes)
+      expect(value.submeshIndexOffset).toEqual(expected.submeshIndexOffset)
+
+      expect(value.submeshMaterial).toEqual(expected.submeshMaterial)
+      expect(value.materialColors).toEqual(expected.materialColors)
+      expect(value.positions).toEqual(expected.positions)
+      expect(value.indices).toEqual(expected.indices)
+    }
   
+    for(let i =2; i < g3d.getInstanceCount(); i ++){
+      console.log(i)
+      const filter = g3d.filter([i])
+      compare(filter, g3d.slice(i))
+    }
+  })
+  */
+
+  test('g3d.filter (2)', async () =>{
+    const g3d = await loadG3d()
+
+    function compare(value: G3d, expected: G3d ){
+
+      expect(value.instanceFlags).toEqual(expected.instanceFlags)
+
+      console.log(value.instanceMeshes)
+      console.log(expected.instanceMeshes)
+
+      expect(value.instanceMeshes).toEqual(expected.instanceMeshes)
+      expect(value.instanceTransforms).toEqual(expected.instanceTransforms)
+
+      expect(value.meshSubmeshes).toEqual(expected.meshSubmeshes)
+      expect(value.submeshIndexOffset).toEqual(expected.submeshIndexOffset)
+
+      // Test colors and materials together.
+      const valueColors = Array.from(value.submeshMaterial).map(m => value.getMaterialColor(m))
+      const expectedColors = Array.from(expected.submeshMaterial).map(m => expected.getMaterialColor(m))
+      expect(valueColors).toEqual(expectedColors)
+
+      expect(value.positions).toEqual(expected.positions)
+      expect(value.indices).toEqual(expected.indices)
+    }
+  
+
+
+    console.log(g3d.instanceMeshes[346])
+    console.log(g3d.instanceMeshes[487])
+    const filter = g3d.filter([346, 487])
+    compare(filter, g3d.slice(346).append(g3d.slice(487)))
+
+    
+
+    /*
+    for(let i =0; i < g3d.getInstanceCount()-1; i ++){
+      for(let j = i +1; j < g3d.getInstanceCount() ; j ++){
+        if(randomInt(100) !== 0) continue
+        console.log([i, j])
+        
+        const filter = g3d.filter([i, j])
+        compare(filter, g3d.slice(i).append(g3d.slice(j)))
+      }
+    }
+    */
+  })
 })
