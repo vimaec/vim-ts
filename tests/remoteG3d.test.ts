@@ -240,8 +240,8 @@ describe('slice', () => {
     }
   })
 */
-
 /*
+
     test('g3d.slice', async () =>{
       const g3d = await loadG3d()
       
@@ -277,7 +277,7 @@ describe('slice', () => {
 
         expect(g.positions).toEqual(vertices)
       }
-      
+
       for(let i=0; i < g3d.getInstanceCount(); i++){
         console.log(i)
         compare(i)
@@ -388,7 +388,71 @@ describe('slice', () => {
     }
   })
   */
+/*
+  test('g3d.uses_all_material', async () =>{
+    const g3d = await loadG3d()
+    const set = new Set(g3d.submeshMaterial)
+    for(let i = 0; i < g3d.getMaterialCount(); i++){
+      expect(set.has(i)).toBeTruthy()
+    }
+  })
 
+  test('g3d.uses_all_meshes', async () =>{
+    const g3d = await loadG3d()
+    const set = new Set(g3d.instanceMeshes)
+    for(let i = 0; i < g3d.getMeshCount(); i++){
+      expect(set.has(i)).toBeTruthy()
+    }
+  })
+*/
+/*
+  test('g3d.equals', async () =>{
+    const g3d = await loadG3d()
+    for(let i=0; i < g3d.getInstanceCount(); i ++){
+      expect(instanceAreEqual(g3d, i, g3d, i)).toBeTruthy()
+    }
+  })
+  */
+  /*
+  test('g3d.slice equals', async () =>{
+    const g3d = await loadG3d()
+    
+    for(let i=2; i < g3d.getInstanceCount(); i ++){
+      const slice = g3d.slice(i)
+      console.log(i)
+
+      expect(instanceAreEqual(g3d, i, slice, 0)).toBeTruthy()
+    }
+  })
+  */
+/*
+  test('g3d.equals (all)', async () =>{
+    const g3d = await loadG3d()
+    expect(g3dAreEqual(g3d, g3d)).toBeTruthy()
+  })
+  */
+
+  test('g3d.filter (each)', async () => {
+    const g3d = await loadG3d()
+
+    for(let i = 0; i < g3d.getInstanceCount() ; i++){
+      const filter = g3d.filter([i])
+      const slice = g3d.slice(i)
+      expect(g3dAreEqual(filter, slice)).toBeTruthy()
+    }
+  })
+
+  test('g3d.filter (all)', async () => {
+    const g3d = await loadG3d()
+
+    const instances = g3d.instanceMeshes.map((_,i) => i)
+    const filter = g3d.filter([...instances])
+    expect(g3dAreEqual(filter, g3d)).toBeTruthy()
+  })
+  
+  
+
+  /*
   test('g3d.filter (2)', async () =>{
     const g3d = await loadG3d()
 
@@ -414,16 +478,7 @@ describe('slice', () => {
       expect(value.indices).toEqual(expected.indices)
     }
   
-
-
-    console.log(g3d.instanceMeshes[346])
-    console.log(g3d.instanceMeshes[487])
-    const filter = g3d.filter([346, 487])
-    compare(filter, g3d.slice(346).append(g3d.slice(487)))
-
     
-
-    /*
     for(let i =0; i < g3d.getInstanceCount()-1; i ++){
       for(let j = i +1; j < g3d.getInstanceCount() ; j ++){
         if(randomInt(100) !== 0) continue
@@ -433,6 +488,147 @@ describe('slice', () => {
         compare(filter, g3d.slice(i).append(g3d.slice(j)))
       }
     }
-    */
+    
   })
+  */
 })
+
+function g3dAreEqual(self: G3d, other: G3d){
+  if (self.instanceMeshes.length !== other.instanceMeshes.length){
+    console.log('instances count !=')
+    return false
+  }
+  for(let i =0; i < self.instanceMeshes.length; i++){
+    
+    if(!instanceAreEqual(self, i, other, i)){
+      console.log('instance != ' + i)
+      return false
+    }
+  }
+  return true
+}
+
+
+function instanceAreEqual(self: G3d, instance: number, other:G3d, otherInstance: number){
+  const selfFlag = self.instanceFlags[instance]
+  const otherFlag = other.instanceFlags[otherInstance]
+  if(selfFlag !== otherFlag){
+    console.log('flags !=')
+    return false
+  }
+  for(let i=0; i < 16; i++){
+    if(self.instanceTransforms[instance *16 + i] !== other.instanceTransforms[otherInstance *16 + i]){
+      console.log('transform !=')
+      return false
+    }
+  }
+  const selfMesh = self.instanceMeshes[instance]
+  const otherMesh = other.instanceMeshes[otherInstance]
+  return meshAreEqual(self, selfMesh, other, otherMesh)
+}
+
+function meshAreEqual(self: G3d, mesh: number, other:G3d, otherMesh: number){
+  if(mesh === -1 && otherMesh === -1){
+    return true
+  }
+  if(mesh === -1 || otherMesh === -1){
+    return false
+  }
+
+  const selfSubStart = self.getMeshSubmeshStart(mesh)
+  const selfSubEnd = self.getMeshSubmeshEnd(mesh)
+  const selfCount = selfSubEnd - selfSubStart
+
+  const otherSubStart = other.getMeshSubmeshStart(otherMesh)
+  const otherSubEnd = other.getMeshSubmeshEnd(otherMesh)
+  const otherCount = otherSubEnd - otherSubStart
+
+  if(selfCount !== otherCount){
+    console.log([mesh,otherMesh])
+    console.log([selfCount,otherCount])
+    console.log('SubCount !=')
+    return false
+  }
+  for(let i = 0 ; i < selfCount; i ++){
+    const selfSub = selfSubStart + i
+    const otherSub = otherSubStart + i
+    if(!submeshAreEqual(self, mesh, selfSub, other, otherMesh, otherSub)){
+      console.log('Sub !=')
+      return false
+    }
+  }
+  return true
+}
+
+function submeshAreEqual(self: G3d, mesh: number, submesh: number, other:G3d, otherMesh: number, otherSubmesh: number){
+  if(!submeshMaterialIsEqual(self, submesh, other, otherSubmesh)){
+    console.log('mat !=')
+    return false
+  }
+  if(!submeshGeometryIsEqual(self, mesh, submesh, other, otherMesh, otherSubmesh)){
+    console.log('sub !=')
+    return false
+  }
+  return true
+}
+
+function submeshMaterialIsEqual(self: G3d, submesh: number, other:G3d, otherSubmesh: number){
+  const selfColor = self.getSubmeshColor(submesh)
+  const otherColor = other.getSubmeshColor(otherSubmesh)
+  if(selfColor.length !== otherColor.length){
+    console.log('mat length !=')
+    return false
+  }
+  for(let i =0 ; i < selfColor.length; i ++){
+    if(selfColor[i] !== otherColor[i]){
+      console.log('color !=')
+      console.log(selfColor)
+      console.log(otherColor)
+      return false
+    }
+  }
+  return true
+}
+
+function submeshGeometryIsEqual(self: G3d, mesh: number, submesh: number, other:G3d, otherMesh: number, otherSubmesh: number){
+  const selfIndexStart = self.getSubmeshIndexStart(submesh)
+  const selfIndexEnd = self.getSubmeshIndexEnd(submesh)
+  const selfIndexCount = selfIndexEnd - selfIndexStart
+
+  const otherIndexStart = other.getSubmeshIndexStart(otherSubmesh)
+  const otherIndexEnd = other.getSubmeshIndexEnd(otherSubmesh)
+  const otherIndexCount = otherIndexEnd - otherIndexStart
+
+  const selfVertexStart = self.meshVertexOffsets[mesh]
+  const otherVertexStart = other.meshVertexOffsets[otherMesh]
+
+  if(selfIndexCount !== otherIndexCount){
+    console.log('index count !=')
+    return false
+  }
+  for(let i =0; i < selfIndexCount; i++){
+    const selfLocalVertex = self.indices[selfIndexStart + i] 
+    const otherLocalVertex = other.indices[otherIndexStart + i]
+    
+    if (selfLocalVertex !== otherLocalVertex){
+      console.log('vertex !=')
+      return false
+    }
+    
+    const selfVertex = selfLocalVertex  + selfVertexStart
+    const otherVertex = otherLocalVertex  + otherVertexStart
+    for(let p=0; p<3; p++){
+      
+      const selfPosition = self.positions[selfVertex*3 + p]
+      const otherPosition = other.positions[otherVertex*3 + p]
+      if (selfPosition !== otherPosition){
+        console.log([mesh, submesh, selfLocalVertex, selfVertexStart, selfVertex, selfPosition])
+        console.log([otherMesh, otherSubmesh, otherLocalVertex, otherVertexStart, otherVertex, otherPosition])
+        console.log('position !=')
+        return false
+      }
+    }
+  }
+  return true
+}
+
