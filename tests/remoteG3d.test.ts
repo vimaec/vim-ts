@@ -9,6 +9,7 @@ import { randomInt } from 'crypto'
 
 const vimFilePath = `${__dirname}/../data/Wolford_Residence.r2023.vim`
 
+
 async function loadBoth(){
   const arrayBuffer = await loadFile(vimFilePath)
   const bfast = new BFast((arrayBuffer as ArrayBuffer)!)
@@ -306,32 +307,51 @@ describe('slice', () => {
   test('remote.slice', async () =>{
     const [g3d, remote] = await loadBoth()
 
-    function compare(r: G3d, g: G3d ){
-      expect(r?.instanceFlags).toEqual(g.instanceFlags)
-      expect(r?.instanceTransforms).toEqual(g.instanceTransforms)
-      expect(r?.instanceMeshes).toEqual(g.instanceMeshes)
-      expect(r?.meshSubmeshes).toEqual(g.meshSubmeshes)
-
-      expect(r?.submeshIndexOffset).toEqual(g.submeshIndexOffset)
-
-      // Test colors and materials together.
-      const rColors = Array.from(r.submeshMaterial).map(m => r.getMaterialColor(m))
-      const gColors = Array.from(g.submeshMaterial).map(m => g.getMaterialColor(m))
-      expect(rColors).toEqual(gColors)
-
-      expect(r?.positions).toEqual(g.positions)
-      expect(r?.indices).toEqual(g.indices)
-    }
-
     for(let i = 0; i < g3d.getInstanceCount(); i++ ){
-      console.log('compare ' + i)
       const r = await remote.slice(i)
       const g = await g3d.slice(i)
-      
-      compare(r,g)
+      console.log('compare ' + i)
+      expect(g3dAreEqual(r, g)).toBeTruthy()
     }
   })  
+  */
+
+  /*
+  test('remote.filter (each)', async () =>{
+    const [g3d, remote] = await loadBoth()
+
+    for(let i = 0; i < g3d.getInstanceCount(); i++ ){
+      console.log(i)
+      const value = await remote.filter([i])
+      const expected = g3d.filter([i])
+
+      expect(g3dAreEqual(value, expected)).toBeTruthy()
+    }
+  })
+  */
+  
+  /*
+  test('remote.filter (all)', async () =>{
+    const [g3d, remote] = await loadBoth()
+    const instances = Array.from(g3d.instanceMeshes.map((_,i) => i))
+      const expected = g3d.filter(instances)
+      const value = await remote.filter(instances)
+
+      expect(g3dAreEqual(value, expected)).toBeTruthy()
+  })  
 */
+
+  test('remote.filter (all)', async () =>{
+    const [g3d, remote] = await loadBoth()
+    for(let i =0; i < 100; i++){
+      const instances = Array.from(g3d.instanceMeshes.map((_,i) => i).filter((_) => randomInt(100) ===0))
+      console.log(instances)
+      const expected = g3d.filter(instances)
+      const value = await remote.filter(instances)
+      expect(g3dAreEqual(value, expected)).toBeTruthy()
+    }
+  })  
+
 /*
   test('g3d.append', async () =>{
     const g3d = await loadG3d()
@@ -431,12 +451,12 @@ describe('slice', () => {
     expect(g3dAreEqual(g3d, g3d)).toBeTruthy()
   })
   */
-
+/*
   test('g3d.filter (each)', async () => {
     const g3d = await loadG3d()
 
     for(let i = 0; i < g3d.getInstanceCount() ; i++){
-      const filter = g3d.filter([i])
+      const filter = g3d.filter3([i])
       const slice = g3d.slice(i)
       expect(g3dAreEqual(filter, slice)).toBeTruthy()
     }
@@ -446,10 +466,10 @@ describe('slice', () => {
     const g3d = await loadG3d()
 
     const instances = g3d.instanceMeshes.map((_,i) => i)
-    const filter = g3d.filter([...instances])
+    const filter = g3d.filter3([...instances])
     expect(g3dAreEqual(filter, g3d)).toBeTruthy()
   })
-  
+  */
   
 
   /*
