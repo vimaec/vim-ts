@@ -569,6 +569,167 @@ export class G3d {
     return result
   }
 
+
+
+  // ------------- All -----------------
+  getVertexCount = () => this.positions.length / this.POSITION_SIZE
+
+  // ------------- Meshes -----------------
+  getMeshCount = () => this.meshSubmeshes.length
+
+  getMeshIndexStart (mesh: number, section: MeshSection = 'all'): number {
+    const sub = this.getMeshSubmeshStart(mesh, section)
+    return this.getSubmeshIndexStart(sub)
+  }
+
+  getMeshIndexEnd (mesh: number, section: MeshSection = 'all'): number {
+    const sub = this.getMeshSubmeshEnd(mesh, section)
+    return this.getSubmeshIndexEnd(sub - 1)
+  }
+
+  getMeshIndexCount (mesh: number, section: MeshSection = 'all'): number {
+    return (
+      this.getMeshIndexEnd(mesh, section) -
+      this.getMeshIndexStart(mesh, section)
+    )
+  }
+
+  getMeshVertexStart (mesh: number): number {
+    return this.meshVertexOffsets[mesh]
+  }
+
+  getMeshVertexEnd (mesh: number): number {
+    return mesh < this.meshVertexOffsets.length - 1
+      ? this.meshVertexOffsets[mesh + 1]
+      : this.getVertexCount()
+  }
+
+  getMeshVertexCount (mesh: number): number {
+    return this.getMeshVertexEnd(mesh) - this.getMeshVertexStart(mesh)
+  }
+
+  getMeshSubmeshStart (mesh: number, section: MeshSection = 'all'): number {
+    if (section === 'transparent') {
+      return this.getMeshSubmeshEnd(mesh, 'opaque')
+    }
+
+    return this.meshSubmeshes[mesh]
+  }
+
+  getMeshSubmeshEnd (mesh: number, section: MeshSection = 'all'): number {
+    if (section === 'opaque') {
+      return this.meshSubmeshes[mesh] + this.meshOpaqueCount[mesh]
+    }
+
+    return mesh < this.meshSubmeshes.length - 1
+      ? this.meshSubmeshes[mesh + 1]
+      : this.getSubmeshCount()
+  }
+
+  getMeshSubmeshCount (mesh: number, section: MeshSection = 'all'): number {
+    const end = this.getMeshSubmeshEnd(mesh, section)
+    const start = this.getMeshSubmeshStart(mesh, section)
+    return end - start
+  }
+
+  getMeshHasTransparency (mesh: number) {
+    return this.getMeshSubmeshCount(mesh, 'transparent') > 0
+  }
+
+  // ------------- Submeshes -----------------
+
+  getSubmeshIndexStart (submesh: number): number {
+    return submesh < this.submeshIndexOffset.length
+      ? this.submeshIndexOffset[submesh]
+      : this.indices.length
+  }
+
+  getSubmeshIndexEnd (submesh: number): number {
+    return submesh < this.submeshIndexOffset.length - 1
+      ? this.submeshIndexOffset[submesh + 1]
+      : this.indices.length
+  }
+
+  getSubmeshIndexCount (submesh: number): number {
+    return this.getSubmeshIndexEnd(submesh) - this.getSubmeshIndexStart(submesh)
+  }
+
+  /**
+   * Returns color of given submesh as a 4-number array (RGBA)
+   * @param submesh g3d submesh index
+   */
+  getSubmeshColor (submesh: number): Float32Array {
+    return this.getMaterialColor(this.submeshMaterial[submesh])
+  }
+
+  /**
+   * Returns color of given submesh as a 4-number array (RGBA)
+   * @param submesh g3d submesh index
+   */
+  getSubmeshAlpha (submesh: number): number {
+    return this.getMaterialAlpha(this.submeshMaterial[submesh])
+  }
+
+  /**
+   * Returns true if submesh is transparent.
+   * @param submesh g3d submesh index
+   */
+  getSubmeshIsTransparent (submesh: number): boolean {
+    return this.getSubmeshAlpha(submesh) < 1
+  }
+
+  /**
+   * Returns the total number of mesh in the g3d
+   */
+  getSubmeshCount (): number {
+    return this.submeshIndexOffset.length
+  }
+
+  // ------------- Instances -----------------
+  getInstanceCount = () => this.instanceMeshes.length
+
+  /**
+   * Returns mesh index of given instance
+   * @param instance g3d instance index
+   */
+  getInstanceMesh (instance: number): number {
+    return this.instanceMeshes[instance]
+  }
+
+  /**
+   * Returns an 16 number array representation of the matrix for given instance
+   * @param instance g3d instance index
+   */
+  getInstanceMatrix (instance: number): Float32Array {
+    return this.instanceTransforms.subarray(
+      instance * this.MATRIX_SIZE,
+      (instance + 1) * this.MATRIX_SIZE
+    )
+  }
+
+  // ------------- Material -----------------
+
+  getMaterialCount = () => this.materialColors.length / this.COLOR_SIZE
+
+  /**
+   * Returns color of given material as a 4-number array (RGBA)
+   * @param material g3d material index
+   */
+  getMaterialColor (material: number): Float32Array {
+    if (material < 0) return this.DEFAULT_COLOR
+    return this.materialColors.subarray(
+      material * this.COLOR_SIZE,
+      (material + 1) * this.COLOR_SIZE
+    )
+  }
+
+  getMaterialAlpha (material: number): number {
+    if (material < 0) return 1
+    const index = material * this.COLOR_SIZE + this.COLOR_SIZE - 1
+    const result = this.materialColors[index]
+    return result
+  }
+
   append(other: G3d){
     const _instanceFlags = new Uint16Array(this.instanceFlags.length +  other.instanceFlags.length)
     _instanceFlags.set(this.instanceFlags)
@@ -813,165 +974,6 @@ export class G3d {
     )
     
     return g3d
-  }
-
-  // ------------- All -----------------
-  getVertexCount = () => this.positions.length / this.POSITION_SIZE
-
-  // ------------- Meshes -----------------
-  getMeshCount = () => this.meshSubmeshes.length
-
-  getMeshIndexStart (mesh: number, section: MeshSection = 'all'): number {
-    const sub = this.getMeshSubmeshStart(mesh, section)
-    return this.getSubmeshIndexStart(sub)
-  }
-
-  getMeshIndexEnd (mesh: number, section: MeshSection = 'all'): number {
-    const sub = this.getMeshSubmeshEnd(mesh, section)
-    return this.getSubmeshIndexEnd(sub - 1)
-  }
-
-  getMeshIndexCount (mesh: number, section: MeshSection = 'all'): number {
-    return (
-      this.getMeshIndexEnd(mesh, section) -
-      this.getMeshIndexStart(mesh, section)
-    )
-  }
-
-  getMeshVertexStart (mesh: number): number {
-    return this.meshVertexOffsets[mesh]
-  }
-
-  getMeshVertexEnd (mesh: number): number {
-    return mesh < this.meshVertexOffsets.length - 1
-      ? this.meshVertexOffsets[mesh + 1]
-      : this.getVertexCount()
-  }
-
-  getMeshVertexCount (mesh: number): number {
-    return this.getMeshVertexEnd(mesh) - this.getMeshVertexStart(mesh)
-  }
-
-  getMeshSubmeshStart (mesh: number, section: MeshSection = 'all'): number {
-    if (section === 'transparent') {
-      return this.getMeshSubmeshEnd(mesh, 'opaque')
-    }
-
-    return this.meshSubmeshes[mesh]
-  }
-
-  getMeshSubmeshEnd (mesh: number, section: MeshSection = 'all'): number {
-    if (section === 'opaque') {
-      return this.meshSubmeshes[mesh] + this.meshOpaqueCount[mesh]
-    }
-
-    return mesh < this.meshSubmeshes.length - 1
-      ? this.meshSubmeshes[mesh + 1]
-      : this.getSubmeshCount()
-  }
-
-  getMeshSubmeshCount (mesh: number, section: MeshSection = 'all'): number {
-    const end = this.getMeshSubmeshEnd(mesh, section)
-    const start = this.getMeshSubmeshStart(mesh, section)
-    return end - start
-  }
-
-  getMeshHasTransparency (mesh: number) {
-    return this.getMeshSubmeshCount(mesh, 'transparent') > 0
-  }
-
-  // ------------- Submeshes -----------------
-
-  getSubmeshIndexStart (submesh: number): number {
-    return submesh < this.submeshIndexOffset.length
-      ? this.submeshIndexOffset[submesh]
-      : this.indices.length
-  }
-
-  getSubmeshIndexEnd (submesh: number): number {
-    return submesh < this.submeshIndexOffset.length - 1
-      ? this.submeshIndexOffset[submesh + 1]
-      : this.indices.length
-  }
-
-  getSubmeshIndexCount (submesh: number): number {
-    return this.getSubmeshIndexEnd(submesh) - this.getSubmeshIndexStart(submesh)
-  }
-
-  /**
-   * Returns color of given submesh as a 4-number array (RGBA)
-   * @param submesh g3d submesh index
-   */
-  getSubmeshColor (submesh: number): Float32Array {
-    return this.getMaterialColor(this.submeshMaterial[submesh])
-  }
-
-  /**
-   * Returns color of given submesh as a 4-number array (RGBA)
-   * @param submesh g3d submesh index
-   */
-  getSubmeshAlpha (submesh: number): number {
-    return this.getMaterialAlpha(this.submeshMaterial[submesh])
-  }
-
-  /**
-   * Returns true if submesh is transparent.
-   * @param submesh g3d submesh index
-   */
-  getSubmeshIsTransparent (submesh: number): boolean {
-    return this.getSubmeshAlpha(submesh) < 1
-  }
-
-  /**
-   * Returns the total number of mesh in the g3d
-   */
-  getSubmeshCount (): number {
-    return this.submeshIndexOffset.length
-  }
-
-  // ------------- Instances -----------------
-  getInstanceCount = () => this.instanceMeshes.length
-
-  /**
-   * Returns mesh index of given instance
-   * @param instance g3d instance index
-   */
-  getInstanceMesh (instance: number): number {
-    return this.instanceMeshes[instance]
-  }
-
-  /**
-   * Returns an 16 number array representation of the matrix for given instance
-   * @param instance g3d instance index
-   */
-  getInstanceMatrix (instance: number): Float32Array {
-    return this.instanceTransforms.subarray(
-      instance * this.MATRIX_SIZE,
-      (instance + 1) * this.MATRIX_SIZE
-    )
-  }
-
-  // ------------- Material -----------------
-
-  getMaterialCount = () => this.materialColors.length / this.COLOR_SIZE
-
-  /**
-   * Returns color of given material as a 4-number array (RGBA)
-   * @param material g3d material index
-   */
-  getMaterialColor (material: number): Float32Array {
-    if (material < 0) return this.DEFAULT_COLOR
-    return this.materialColors.subarray(
-      material * this.COLOR_SIZE,
-      (material + 1) * this.COLOR_SIZE
-    )
-  }
-
-  getMaterialAlpha (material: number): number {
-    if (material < 0) return 1
-    const index = material * this.COLOR_SIZE + this.COLOR_SIZE - 1
-    const result = this.materialColors[index]
-    return result
   }
 
   validate () {
