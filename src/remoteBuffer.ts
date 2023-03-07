@@ -5,6 +5,11 @@
 import { Range } from './bfast'
 import { RemoteValue } from './remoteValue'
 
+let RemoteBufferMaxConcurency = 10
+export function setRemoteBufferMaxConcurency(value: number){
+  RemoteBufferMaxConcurency =value
+}
+
 /**
  * Represents the state of a single web request
  */
@@ -177,7 +182,7 @@ export class RemoteBuffer {
   logger: RequestLogger
   queue: RetryRequest[] = []
   active: Set<RetryRequest> = new Set<RetryRequest>()
-  maxConcurency: number = 10
+  maxConcurency: number = RemoteBufferMaxConcurency
   encoded: RemoteValue<boolean>
 
   constructor (url: string, logger: RequestLogger = new RequestLogger(url)) {

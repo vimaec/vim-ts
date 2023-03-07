@@ -194,7 +194,6 @@ export class RemoteG3d {
     const end = await  this.getSubmeshIndexEnd(submesh)
     return end - start
   }
-
   
   async toG3d(){
     const _instanceMeshes = await this.instanceMeshes.getAll() as Int32Array
@@ -276,7 +275,7 @@ export class RemoteG3d {
       //slice vertices from min to max.
       const _vertices = await this.positions.getValues(minVertex, maxVertex - minVertex +1) as Float32Array
 
-      return new G3d(
+      return new G3d( 
         _instanceMeshes,
         _instanceFlags,
         _instanceTransforms,
@@ -305,166 +304,64 @@ export class RemoteG3d {
     }
   }
 
-
-
-
-
   async filter(instances: number[]){
     
     // Instances
-    const instanceAttributes = await this.filterInstances(instances)
+    const instanceData = await this.filterInstances(instances)
 
     // Meshes
-    const meshes = await this.filterMesh(instanceAttributes.instanceMeshes)
-    if(!meshes.hasMeshes) return instanceAttributes.toG3d()
+    const meshes = await this.filterMesh(instanceData.meshes)
+    if(!meshes.hasMeshes) return instanceData.toG3d()
 
-    // Remamp Instance Meshes
-    instanceAttributes.remapMeshes(meshes.map)
+    instanceData.remapMeshes(meshes.map)
 
     const [indiceCount, submeshCount] = await meshes.getAttributeCounts(this)
 
-    const [_submeshIndexOffsets, _submeshMaterials] = await this.filterSubmeshes(meshes, submeshCount)
-
-    // Meshes
-    let indices_i = 0
-    let positions_i = 0
-    let submesh_i =0
-    let submeshOffset = 0
-    let positionCount = 0
-    const _indices = new Uint32Array(indiceCount)
-    const meshVertexStart = new Int32Array(meshes.count +1)
-
-    for(let mesh=0; mesh < meshes.count; mesh ++){
-      if(!meshes.set.has(mesh)) continue
-
-      /*
-      // submeshes
-      const subStart = await this.getMeshSubmeshStart(mesh)
-      const subEnd = await this.getMeshSubmeshEnd(mesh)
-      
-      for(let j = subStart; j < subEnd ; j++){
-        const start =  await this.submeshIndexOffsets.getNumber(subStart)
-        _submeshIndexOffsets[submesh_i] = (await this.submeshIndexOffsets.getNumber(j)) - start + submeshOffset
-        _submeshMaterials[submesh_i] = await this.submeshMaterials.getNumber(j)
-        submesh_i++
-      }
-      submeshOffset += await this.getMeshIndexCount(mesh)
-      */
-     
-      // indices
-      const indexStart = await this.getMeshIndexStart(mesh)
-      const indexEnd = await this.getMeshIndexEnd(mesh)
-      const indices = await this.indices.getValues(indexStart, indexEnd - indexStart)
-      _indices.set(indices, indices_i)
-
-      let min = Number.MAX_SAFE_INTEGER
-      let max = Number.MIN_SAFE_INTEGER
-      for(let i = 0; i < indices.length ; i++){
-        min = Math.min(indices[i], min)
-        max = Math.max(indices[i] + 1, max)
-      }
-
-      for(let i = 0; i < indices.length ; i++){
-        _indices[indices_i + i] = _indices[indices_i + i] - min + positionCount
-      }
-
-      meshVertexStart[mesh] = min
-      meshVertexStart[mesh+1] = max
-      indices_i += indices.length
-      positionCount += max-min 
+    let submeshes: SubmeshData
+    let materials : MaterialData
+    const A = async ()=>{
+      submeshes = await this.filterSubmeshes(meshes, submeshCount)
+      materials = await this.filterMaterials(submeshes.materials)
     }
 
-    const _positions = new Float32Array(positionCount*3)
-    for(let mesh=0; mesh < meshes.count; mesh ++){
-      if(!meshes.set.has(mesh)) continue
-      // vertices
-      const vertexStart = meshVertexStart[mesh]
-      const vertexEnd = meshVertexStart[mesh +1]
-      const vertices = await this.positions.getValues(vertexStart, vertexEnd - vertexStart)
-      _positions.set(vertices, positions_i)
-      positions_i += vertices.length
-    }
-    
-    // Material Colors
-    const materialCount = await this.materialColors.getCount()
-
-    let color_i =0
-    const materialSet = new Set(_submeshMaterials)
-    const materialMap = new Map<number, number>()
-    const _materialColors = new Float32Array(materialSet.size * 4)
-    for(let i =0; i < materialCount; i ++){
-      if(materialSet.has(i)){
-        materialMap.set(i, color_i)
-        const colors = await this.materialColors.getValue(i)
-        _materialColors.set(colors, color_i*4)
-        color_i ++
-      }
+    let vertices : VertexData
+    let positions : Float32Array
+    const B = async() => {
+      vertices = await this.filterIndices(meshes, indiceCount)
+      positions = await this.filterPositions(vertices, meshes)
     }
 
-    // Remap Submesh Materials
-    for(let i=0; i < _submeshMaterials.length; i++){
-      _submeshMaterials[i] = _submeshMaterials[i] < 0 ? -1 : materialMap.get(_submeshMaterials[i])
-    }
+    await Promise.all([A(), B()])
+
+    submeshes.remapMaterials(materials.map)
 
     return new G3d(
-      instanceAttributes.instanceMeshes,
-      instanceAttributes.instanceFlags,
-      instanceAttributes.instanceTransforms,
-      instanceAttributes.instanceNodes,
-      meshes.meshSubmeshes,
-      _submeshIndexOffsets,
-      _submeshMaterials,
-      _indices,
-      _positions,
-      _materialColors
+      instanceData.meshes,
+      instanceData.flags,
+      instanceData.transforms,
+      instanceData.nodes,
+      meshes.submeshes,
+      submeshes.indexOffsets,
+      submeshes.materials,
+      vertices.indices,
+      positions,
+      materials.colors
     )
   }
-
-  private async filterSubmeshes(meshes: MeshData, submeshCount: number){
-
-    let submesh_i =0
-    let submeshOffset = 0
-    const _submeshIndexOffsets = new Int32Array(submeshCount)
-    const _submeshMaterials = new Int32Array(submeshCount)
- 
-    for(let mesh=0; mesh < meshes.count; mesh ++){
-      if(!meshes.set.has(mesh)) continue
-
-      const subStart = await this.getMeshSubmeshStart(mesh)
-      const subEnd = await this.getMeshSubmeshEnd(mesh)
-      
-      const promises : Promise<number>[] = []
-      for(let j = subStart; j < subEnd ; j++){
-        const current = submesh_i
-        promises.push(
-          this.submeshIndexOffsets.getNumber(subStart)
-          .then(start => this.submeshIndexOffsets.getNumber(j)
-            .then(v=>_submeshIndexOffsets[current] = v - start + submeshOffset)
-          )
-        )
-        promises.push(this.submeshMaterials.getNumber(j).then(v => _submeshMaterials[current] = v))
-
-        submesh_i++
-      }
-      await Promise.all(promises)
-      submeshOffset += await this.getMeshIndexCount(mesh)
-    }
-    return [_submeshIndexOffsets,_submeshMaterials]
-  }
-
+  
   private async filterInstances(instances: number[]){
     const instanceSet = new Set(instances)
-    const attributes = new G3dInstanceAttributes(instanceSet.size)
+    const attributes = new InstanceData(instanceSet.size)
     let instance_i = 0
     const instanceCount = await this.instanceMeshes.getCount()
     const promises : Promise<number | void>[] = []
     for(let i=0; i <  instanceCount; i ++){
       if(!instanceSet.has(i)) continue
       const current = instance_i
-      promises.push(this.instanceFlags.getNumber(i).then(v => attributes.instanceFlags[current] = v))
-      promises.push(this.instanceMeshes.getNumber(i).then(v => attributes.instanceMeshes[current] = v))
-      promises.push(this.instanceTransforms.getValue(i).then(v => attributes.instanceTransforms.set(v, current *16)))
-      attributes.instanceNodes[current] = i
+      promises.push(this.instanceFlags.getNumber(i).then(v => attributes.flags[current] = v))
+      promises.push(this.instanceMeshes.getNumber(i).then(v => attributes.meshes[current] = v))
+      promises.push(this.instanceTransforms.getValue(i).then(v => attributes.transforms.set(v, current *16)))
+      attributes.nodes[current] = i
       instance_i++
     }
     await Promise.all(promises)
@@ -482,9 +379,9 @@ export class RemoteG3d {
       for(let i=0; i < meshes.count; i++){
         if(!meshes.set.has(i)) continue
     
-        const offset = mesh_i > 0 ? meshes.meshSubmeshes[mesh_i -1] : 0
+        const offset = mesh_i > 0 ? meshes.submeshes[mesh_i -1] : 0
         const lastCount = last < 0 ? 0 : await this.getMeshSubmeshCount(last)
-        meshes.meshSubmeshes[mesh_i] = lastCount + offset
+        meshes.submeshes[mesh_i] = lastCount + offset
         meshes.map.set(i, mesh_i)
         last = i
         mesh_i++
@@ -493,13 +390,151 @@ export class RemoteG3d {
   
     return meshes
   }
+
+  private async filterSubmeshes(meshes: MeshData, submeshCount: number){
+
+    let submesh_i =0
+    let submeshOffset = 0
+    const submeshes = new SubmeshData(submeshCount)
+ 
+    for(let mesh=0; mesh < meshes.count; mesh ++){
+      if(!meshes.set.has(mesh)) continue
+
+      const subStart = await this.getMeshSubmeshStart(mesh)
+      const subEnd = await this.getMeshSubmeshEnd(mesh)
+      
+      const promises : Promise<number>[] = []
+      for(let j = subStart; j < subEnd ; j++){
+        const current = submesh_i
+        promises.push(
+          this.submeshIndexOffsets.getNumber(subStart)
+          .then(start => this.submeshIndexOffsets.getNumber(j)
+            .then(v=> submeshes.indexOffsets[current] = v - start + submeshOffset)
+          )
+        )
+        promises.push(this.submeshMaterials.getNumber(j).then(v => submeshes.materials[current] = v))
+
+        submesh_i++
+      }
+      await Promise.all(promises)
+      submeshOffset += await this.getMeshIndexCount(mesh)
+    }
+    return submeshes
+  }
+
+  private async filterIndices(meshes: MeshData, indicesCount: number){
+    
+    let indices_i = 0
+    const result = new VertexData(meshes.count, indicesCount)
+
+    for(let mesh=0; mesh < meshes.count; mesh ++){
+      if(!meshes.set.has(mesh)) continue
+
+      let indexStart: number
+      let indexEnd : number
+      await Promise.all([
+        this.getMeshIndexStart(mesh).then(v => indexStart = v),
+        this.getMeshIndexEnd(mesh).then(v => indexEnd= v)
+      ])
+
+      const indices = await this.indices.getValues(indexStart, indexEnd - indexStart)
+      result.indices.set(indices, indices_i)
+
+      let min = Number.MAX_SAFE_INTEGER
+      let max = Number.MIN_SAFE_INTEGER
+      for(let i = 0; i < indices.length ; i++){
+        min = Math.min(indices[i], min)
+        max = Math.max(indices[i] + 1, max)
+      }
+
+      for(let i = 0; i < indices.length ; i++){
+        result.indices[indices_i + i] = result.indices[indices_i + i] - min + result.positionCount
+      }
+
+      result.meshVertexStart[mesh] = min
+      result.meshVertexStart[mesh+1] = max
+      indices_i += indices.length
+      result.positionCount += max-min 
+    }
+    return result
+  }
+
+  private async filterPositions(indices: VertexData, meshData : MeshData){
+    let positions_i = 0
+    const _positions = new Float32Array(indices.positionCount*3)
+    for(let mesh=0; mesh < meshData.count; mesh ++){
+      if(!meshData.set.has(mesh)) continue
+      // vertices
+      const vertexStart = indices.meshVertexStart[mesh]
+      const vertexEnd = indices.meshVertexStart[mesh +1]
+      const vertices = await this.positions.getValues(vertexStart, vertexEnd - vertexStart)
+      _positions.set(vertices, positions_i)
+      positions_i += vertices.length
+    }
+    return _positions
+  }
+
+  private async filterMaterials(submeshMaterials : Int32Array){
+    // Material Colors
+    const materialCount = await this.materialColors.getCount()
+
+    let color_i =0
+    const materials = new MaterialData(submeshMaterials)
+    const promises : Promise<void>[] = []
+    for(let i =0; i < materialCount; i ++){
+      if(materials.set.has(i)){
+        materials.map.set(i, color_i)
+        const current = color_i
+        promises.push(
+          this.materialColors.getValue(i)
+          .then(c => materials.colors.set(c, current*4))
+        )
+        color_i ++
+      }
+    }
+    await Promise.all(promises)
+    return materials
+  }
 }
 
+class InstanceData{
+  meshes : Int32Array 
+  flags: Uint16Array
+  transforms : Float32Array
+  nodes : Int32Array
 
+  constructor(count: number){
+    this.meshes = new Int32Array(count)
+    this.flags = new Uint16Array(count)
+    this.transforms = new Float32Array(count * 16)
+    this.nodes = new Int32Array(count)
+  }
+
+  remapMeshes(map: Map<number, number>){
+    for(let i = 0; i < this.meshes.length; i++){
+      this.meshes[i] = map.get(this.meshes[i]) ?? -1
+    }
+  }
+
+  toG3d(){
+    return new G3d(
+      this.meshes,
+      this.flags,
+      this.transforms,
+      this.nodes,
+      new Int32Array(),
+      new Int32Array(),
+      new Int32Array(),
+      new Uint32Array(),
+      new Float32Array(),
+      new Float32Array()
+    )
+  }
+}
 
 class MeshData{
   hasMeshes: boolean
-  meshSubmeshes : Int32Array
+  submeshes : Int32Array
   count : number
   map : Map<number, number>
   set : Set<number>
@@ -508,7 +543,7 @@ class MeshData{
     this.set = new Set(instanceMeshes)
     this.set.delete(-1)
     this.hasMeshes = this.set.size > 0
-    this.meshSubmeshes = this.hasMeshes ? new Int32Array(this.set.size) : undefined
+    this.submeshes = this.hasMeshes ? new Int32Array(this.set.size) : undefined
     this.map = this.hasMeshes ? new Map<number, number>() : undefined
   }
 
@@ -526,38 +561,42 @@ class MeshData{
   }
 }
 
-
-class G3dInstanceAttributes{
-  instanceMeshes : Int32Array 
-  instanceFlags: Uint16Array
-  instanceTransforms : Float32Array
-  instanceNodes : Int32Array
+class SubmeshData{
+  indexOffsets: Int32Array
+  materials : Int32Array
 
   constructor(count: number){
-    this.instanceMeshes = new Int32Array(count)
-    this.instanceFlags = new Uint16Array(count)
-    this.instanceTransforms = new Float32Array(count * 16)
-    this.instanceNodes = new Int32Array(count)
+    this.indexOffsets = new Int32Array(count)
+    this.materials = new Int32Array(count)  
   }
 
-  remapMeshes(map: Map<number, number>){
-    for(let i = 0; i < this.instanceMeshes.length; i++){
-      this.instanceMeshes[i] = map.get(this.instanceMeshes[i]) ?? -1
+  remapMaterials(map: Map<number, number>){
+    for(let i=0; i < this.materials.length; i++){
+      this.materials[i] = this.materials[i] < 0 ? -1 : map.get(this.materials[i])
     }
   }
+}
 
-  toG3d(){
-    return new G3d(
-      this.instanceMeshes,
-      this.instanceFlags,
-      this.instanceTransforms,
-      this.instanceNodes,
-      new Int32Array(),
-      new Int32Array(),
-      new Int32Array(),
-      new Uint32Array(),
-      new Float32Array(),
-      new Float32Array()
-    )
+class VertexData{
+  positionCount : number 
+  indices:  Uint32Array
+  meshVertexStart : Int32Array
+  
+  constructor(meshCount : number, indicesCount : number){
+    this.positionCount = 0
+    this.indices = new Uint32Array(indicesCount)
+    this.meshVertexStart = new Int32Array(meshCount +1)
+  }
+}
+
+class MaterialData{
+  set : Set<number>
+  map : Map<number, number>
+  colors : Float32Array
+
+  constructor(submeshMaterials: Int32Array){
+    this.set = new Set(submeshMaterials)
+    this.map = new Map<number, number>()
+    this.colors = new Float32Array(this.set.size * 4)
   }
 }
