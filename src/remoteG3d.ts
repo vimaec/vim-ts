@@ -91,6 +91,8 @@ export class RemoteG3d {
   submeshMaterials: G3dRemoteAttribute
   materialColors: G3dRemoteAttribute
 
+  
+
   // consts
   MATRIX_SIZE = 16
   COLOR_SIZE = 4
@@ -209,6 +211,7 @@ export class RemoteG3d {
       _instanceMeshes,
       _instanceFlags,
       _instanceTransforms,
+      undefined,
       _meshSubmeshes,
       _submeshIndexOffsets,
       _submeshMaterials,
@@ -277,6 +280,7 @@ export class RemoteG3d {
         _instanceMeshes,
         _instanceFlags,
         _instanceTransforms,
+        new Int32Array([instance]),
         _meshSubmeshes,
         _submeshIndexOffsets,
         _submeshMaterials,
@@ -290,6 +294,7 @@ export class RemoteG3d {
         _instanceMeshes,
         _instanceFlags,
         _instanceTransforms,
+        new Int32Array([instance]),
         new Int32Array(),
         new Int32Array(),
         new Int32Array(),
@@ -300,41 +305,18 @@ export class RemoteG3d {
     }
   }
 
+
   async filter(instances: number[]){
-    const instanceSet = new Set(instances)
     
     // Instances
-    const _instanceMeshes = new Int32Array(instances.length)
-    const _instanceFlags = new Uint16Array(instances.length)
-    const _instanceTransforms = new Float32Array(instances.length * 16)
-    let instance_i = 0
-    const instanceCount = await this.instanceMeshes.getCount()
-    for(let i=0; i <  instanceCount; i ++){
-      if(!instanceSet.has(i)) continue
-      _instanceFlags[instance_i] = await this.instanceFlags.getNumber(i)
-      _instanceMeshes[instance_i] = await this.instanceMeshes.getNumber(i)
-      for(let j = 0; j < 16; j++){
-        _instanceTransforms.set(await this.instanceTransforms.getValue(i), instance_i *16) 
-      }
-      instance_i++
-    }
+    const instanceAttributes = await this.filterInstances(instances)
 
     // Meshes
     const meshMap = new Map<number, number>()
-    const meshSet = new Set(_instanceMeshes)
+    const meshSet = new Set(instanceAttributes.instanceMeshes)
     meshSet.delete(-1)
     if(meshSet.size === 0){
-      return new G3d(
-        _instanceMeshes,
-        _instanceFlags,
-        _instanceTransforms, 
-        new Int32Array(),
-        new Int32Array(),
-        new Int32Array(),
-        new Uint32Array(),
-        new Float32Array(),
-        new Float32Array()
-      )
+      return instanceAttributes.toG3d()
     }
 
     const _meshSubmeshes = new Int32Array(meshSet.size)
@@ -354,9 +336,7 @@ export class RemoteG3d {
     }
 
     // Remamp Instance Meshes
-    for(let i = 0; i < _instanceMeshes.length; i++){
-      _instanceMeshes[i] = meshMap.get(_instanceMeshes[i]) ?? -1
-    }
+    instanceAttributes.remapMeshes(meshMap)
 
     // Mesh Attributes Count 
     let submeshCount = 0
@@ -449,9 +429,10 @@ export class RemoteG3d {
     }
 
     return new G3d(
-      _instanceMeshes,
-      _instanceFlags,
-      _instanceTransforms,
+      instanceAttributes.instanceMeshes,
+      instanceAttributes.instanceFlags,
+      instanceAttributes.instanceTransforms,
+      instanceAttributes.instanceNodes,
       _meshSubmeshes,
       _submeshIndexOffsets,
       _submeshMaterials,
@@ -461,4 +442,54 @@ export class RemoteG3d {
     )
   }
 
+  private async filterInstances(instances: number[]){
+    const instanceSet = new Set(instances)
+    const attributes = new G3dInstanceAttributes(instanceSet.size)
+    let instance_i = 0
+    const instanceCount = await this.instanceMeshes.getCount()
+    for(let i=0; i <  instanceCount; i ++){
+      if(!instanceSet.has(i)) continue
+      attributes.instanceFlags[instance_i] = await this.instanceFlags.getNumber(i)
+      attributes.instanceMeshes[instance_i] = await this.instanceMeshes.getNumber(i)
+      attributes.instanceTransforms.set(await this.instanceTransforms.getValue(i), instance_i *16) 
+      attributes.instanceNodes[instance_i] = i
+      instance_i++
+    }
+    return attributes
+  }
+}
+
+class G3dInstanceAttributes{
+  instanceMeshes : Int32Array 
+  instanceFlags: Uint16Array
+  instanceTransforms : Float32Array
+  instanceNodes : Int32Array
+
+  constructor(count: number){
+    this.instanceMeshes = new Int32Array(count)
+    this.instanceFlags = new Uint16Array(count)
+    this.instanceTransforms = new Float32Array(count * 16)
+    this.instanceNodes = new Int32Array(count)
+  }
+
+  remapMeshes(map: Map<number, number>){
+    for(let i = 0; i < this.instanceMeshes.length; i++){
+      this.instanceMeshes[i] = map.get(this.instanceMeshes[i]) ?? -1
+    }
+  }
+
+  toG3d(){
+    return new G3d(
+      this.instanceMeshes,
+      this.instanceFlags,
+      this.instanceTransforms,
+      this.instanceNodes,
+      new Int32Array(),
+      new Int32Array(),
+      new Int32Array(),
+      new Uint32Array(),
+      new Float32Array(),
+      new Float32Array()
+    )
+  }
 }

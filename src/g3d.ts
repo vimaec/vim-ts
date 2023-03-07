@@ -192,6 +192,7 @@ export class VimAttributes {
   static indices = 'g3d:corner:index:0:int32:1'
   static instanceMeshes = 'g3d:instance:mesh:0:int32:1'
   static instanceTransforms = 'g3d:instance:transform:0:float32:16'
+  static instanceElements = 'g3d:instance:element:0:int32:1'
   static instanceFlags = 'g3d:instance:flags:0:uint16:1'
   static meshSubmeshes = 'g3d:mesh:submeshoffset:0:int32:1'
   static submeshIndexOffsets = 'g3d:submesh:indexoffset:0:int32:1'
@@ -231,6 +232,7 @@ export class G3d {
   materialColors: Float32Array
 
   // computed fields
+  instanceNodes : Int32Array
   meshVertexOffsets: Int32Array
   meshInstances: Array<Array<number>>
   meshOpaqueCount: Array<number>
@@ -247,8 +249,9 @@ export class G3d {
 
   constructor(
     instanceMeshes: Int32Array, 
-    instanceFlags: Uint16Array, 
+    instanceFlags: Uint16Array | undefined, 
     instanceTransforms: Float32Array,
+    instanceNodes: Int32Array | undefined,
     meshSubmeshes : Int32Array,
     submeshIndexOffsets : Int32Array,
     submeshMaterials : Int32Array,
@@ -256,9 +259,17 @@ export class G3d {
     positions: Float32Array,
     materialColors: Float32Array){
 
+    if(!instanceNodes){
+      this.instanceNodes =  new Int32Array(instanceMeshes.length)
+      for(let i =0; i < this.instanceNodes.length; i++){
+        this.instanceNodes[i] = i
+      }
+    }
+
     this.instanceMeshes = instanceMeshes
     this.instanceFlags = instanceFlags
     this.instanceTransforms = instanceTransforms
+    this.instanceNodes = instanceNodes
     this.meshSubmeshes = meshSubmeshes
     this.submeshIndexOffset = submeshIndexOffsets
     this.submeshMaterial = submeshMaterials
@@ -286,6 +297,10 @@ export class G3d {
       (g3d.findAttribute(VimAttributes.instanceFlags)?.data as Uint16Array) ??
       new Uint16Array(instanceMeshes.length)
 
+    const instanceElements = g3d.findAttribute(
+        VimAttributes.instanceElements
+      )?.data as Int32Array
+
     const meshSubmeshes = g3d.findAttribute(VimAttributes.meshSubmeshes)
       ?.data as Int32Array
 
@@ -308,6 +323,7 @@ export class G3d {
       instanceMeshes,
       instanceFlags,
       instanceTransforms,
+      instanceElements,
       meshSubmeshes,
       submeshIndexOffset,
       submeshMaterial,
@@ -324,35 +340,6 @@ export class G3d {
     return AbstractG3d.createFromBfast(bfast).then((g3d) => G3d.createFromAbstract(g3d))
   }
 
-  static createFromArrays(
-    instanceFlags: Uint16Array, 
-    instanceMeshes: Int32Array, 
-    instanceTransforms: Float32Array,
-    meshSubmeshes : Int32Array,
-    submeshIndexOffsets : Int32Array,
-    submeshMaterials : Int32Array,
-    positions: Float32Array,
-    indices: Uint32Array,
-    materialColors: Float32Array
-    ){
-
-    const attributes = []
-    attributes.push(G3dAttribute.fromString(VimAttributes.instanceTransforms, new Uint8Array(instanceTransforms.buffer)))
-    attributes.push(G3dAttribute.fromString(VimAttributes.instanceFlags, new Uint8Array(instanceFlags.buffer)))
-    attributes.push(G3dAttribute.fromString(VimAttributes.instanceMeshes, new Uint8Array(instanceMeshes.buffer)))
-    attributes.push(G3dAttribute.fromString(VimAttributes.meshSubmeshes, new Uint8Array(meshSubmeshes.buffer)))
-    attributes.push(G3dAttribute.fromString(VimAttributes.submeshIndexOffsets, new Uint8Array(submeshIndexOffsets.buffer)))
-    attributes.push(G3dAttribute.fromString(VimAttributes.indices, new Uint8Array(indices.buffer)))
-    attributes.push(G3dAttribute.fromString(VimAttributes.positions, new Uint8Array(positions.buffer)))
-    attributes.push(G3dAttribute.fromString(VimAttributes.submeshMaterials, new Uint8Array(submeshMaterials.buffer)))
-    attributes.push(G3dAttribute.fromString(VimAttributes.materialColors, new Uint8Array(materialColors.buffer)))
-
-    const abstract = new AbstractG3d('g3d', attributes)
-    const g3d = G3d.createFromAbstract(abstract)
-    return g3d
-  }
-
-  
   /**
    * Computes the index of the first vertex of each mesh
    */
@@ -797,6 +784,7 @@ export class G3d {
         _instanceMeshes,
         _instanceFlags, 
         _instanceTransforms,
+        new Int32Array([instance]),
         new Int32Array(),
         new Int32Array(),
         new Int32Array(),
@@ -837,6 +825,7 @@ export class G3d {
       _instanceMeshes,
       _instanceFlags,
       _instanceTransforms,
+      new Int32Array([instance]),
       _meshSubmeshes, 
       _submeshIndexOffsets,
       _submeshMaterials, 
@@ -965,6 +954,7 @@ export class G3d {
       _instanceMeshes,
       _instanceFlags,
       _instanceTransforms,
+      new Int32Array(instances),
       _meshSubmeshes,
       _submeshIndexOffsets,
       _submeshMaterials,
