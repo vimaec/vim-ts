@@ -452,7 +452,7 @@ export class RemoteG3d {
       attributes.instanceFlags[instance_i] = await this.instanceFlags.getNumber(i)
       attributes.instanceMeshes[instance_i] = await this.instanceMeshes.getNumber(i)
       attributes.instanceTransforms.set(await this.instanceTransforms.getValue(i), instance_i *16) 
-      attributes.instanceNodes[instance_i] = i
+      attributes.instanceNodes[instance_i] = instances[i]
       instance_i++
     }
     return attributes
