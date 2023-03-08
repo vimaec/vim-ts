@@ -459,18 +459,46 @@ export class RemoteG3d {
     return result
   }
 
-  private async filterPositions(indices: VertexData, meshData : MeshData){
-    let positions_i = 0
+  private async filterPositions(indices: VertexData, meshes : MeshData){
+    
     const _positions = new Float32Array(indices.positionCount*3)
-    for(let mesh=0; mesh < meshData.count; mesh ++){
-      if(!meshData.set.has(mesh)) continue
+    const promises : Promise<void>[] = []
+    const offsets  = new Int32Array(meshes.set.size)
+
+    let offset_i =0;
+    for(let mesh=0; mesh < meshes.count; mesh ++){
+      if(!meshes.set.has(mesh)) continue
+      if(offset_i >0){
+        const vertexStart = indices.meshVertexStart[mesh -1]
+        const vertexEnd = indices.meshVertexStart[mesh]
+        const current = offsets[offset_i-1]
+        const length = vertexEnd - vertexStart
+        offsets[offset_i] = current + length
+      }
+      offset_i++
+    }
+
+    let positions_i = 0
+    for(let mesh=0; mesh < meshes.count; mesh ++){
+      if(!meshes.set.has(mesh)) continue
       // vertices
       const vertexStart = indices.meshVertexStart[mesh]
       const vertexEnd = indices.meshVertexStart[mesh +1]
-      const vertices = await this.positions.getValues(vertexStart, vertexEnd - vertexStart)
-      _positions.set(vertices, positions_i)
-      positions_i += vertices.length
+
+      const current = positions_i
+      promises.push(
+        this.positions.getValues(vertexStart, vertexEnd - vertexStart)
+          .then(v => {
+            console.log(offsets[current] * 3)
+            console.log(_positions)
+            console.log(v)
+            _positions.set(v, offsets[current] * 3)
+          })
+      )
+
+      positions_i ++
     }
+    await Promise.all(promises)
     return _positions
   }
 
