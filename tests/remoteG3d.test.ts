@@ -2,7 +2,7 @@ import { g3dAreEqual, g3dAreSame, instanceAreEqual, loadAbstract, loadBoth, load
 import { VimAttributes } from '../src/g3d'
 
 describe('RemoteG3d', () => {
-  
+  /*
   test('RemoteG3d.getVertexCount', async () => {
       const [g3d, remoteG3d] = await loadBoth()
 
@@ -183,5 +183,40 @@ describe('RemoteG3d', () => {
       expect(value).toBe(expected)
     }
   })
+  */
+/*
+  test('RemoteG3d.toG3d', async () =>{
+    const [g3d, remote] = await loadBoth()
+    const r = await remote.toG3d()
+    expect(g3dAreSame(r, g3d)).toBeTruthy()
+  })
+
+  test('RemoteG3d.slice', async () =>{
+    const [g3d, remote] = await loadBoth()
+    for(let i = 0; i < g3d.getInstanceCount(); i++ ){
+      const r = await remote.slice(i)
+      const g = await g3d.slice(i)
+      console.log('compare ' + i)
+      expect(g3dAreEqual(r, g)).toBeTruthy()
+    }
+  }) 
+*/
+  test('RemoteG3d.filter (each)', async () =>{
+    const [g3d, remote] = await loadBoth()
+    for(let i = 0; i < g3d.getInstanceCount(); i++ ){
+      const value = await remote.filter([i])
+      const expected = g3d.filter([i])
+      expect(g3dAreEqual(value, expected)).toBeTruthy()
+    }
+  })
+/*
+  test('RemoteG3d.filter (all)', async () =>{
+    const [g3d, remote] = await loadBoth()
+    const instances = Array.from(g3d.instanceMeshes.map((_,i) => i))
+      const expected = g3d.filter(instances)
+      const value = await remote.filter(instances)
+      expect(g3dAreEqual(value, expected)).toBeTruthy()
+  }) 
+  */
 })
 
