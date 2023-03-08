@@ -372,11 +372,11 @@ export class RemoteG3d {
 
     const meshes = new MeshData(instanceMeshes)
     if(meshes.hasMeshes){
-      meshes.count = await this.meshSubmeshes.getCount()
+      meshes.originalCount = await this.meshSubmeshes.getCount()
   
       let last = -1
       let mesh_i = 0
-      for(let i=0; i < meshes.count; i++){
+      for(let i=0; i < meshes.originalCount; i++){
         if(!meshes.set.has(i)) continue
     
         const offset = mesh_i > 0 ? meshes.submeshes[mesh_i -1] : 0
@@ -397,7 +397,7 @@ export class RemoteG3d {
     let submeshOffset = 0
     const submeshes = new SubmeshData(submeshCount)
  
-    for(let mesh=0; mesh < meshes.count; mesh ++){
+    for(let mesh=0; mesh < meshes.originalCount; mesh ++){
       if(!meshes.set.has(mesh)) continue
 
       const subStart = await this.getMeshSubmeshStart(mesh)
@@ -425,9 +425,10 @@ export class RemoteG3d {
   private async filterIndices(meshes: MeshData, indicesCount: number){
     
     let indices_i = 0
-    const result = new VertexData(meshes.count, indicesCount)
+    let mesh_i=0
+    const result = new VertexData(meshes, indicesCount)
 
-    for(let mesh=0; mesh < meshes.count; mesh ++){
+    for(let mesh=0; mesh < meshes.originalCount; mesh ++){
       if(!meshes.set.has(mesh)) continue
 
       let indexStart: number
@@ -451,10 +452,17 @@ export class RemoteG3d {
         result.indices[indices_i + i] = result.indices[indices_i + i] - min + result.positionCount
       }
 
-      result.meshVertexStart[mesh] = min
-      result.meshVertexStart[mesh+1] = max
-      indices_i += indices.length
+      result.meshVertexStart[mesh_i] = min
+      result.meshVertexEnd[mesh_i] = max
       result.positionCount += max-min 
+      if(mesh_i > 0){
+        const previous = result.vertexOffsets[mesh_i -1]
+        const previousLength = result.meshVertexEnd[mesh_i-1] - result.meshVertexStart[mesh_i-1]
+        result.vertexOffsets[mesh_i] = previous + previousLength
+      }
+
+      mesh_i++
+      indices_i += indices.length
     }
     return result
   }
@@ -463,40 +471,21 @@ export class RemoteG3d {
     
     const _positions = new Float32Array(indices.positionCount*3)
     const promises : Promise<void>[] = []
-    const offsets  = new Int32Array(meshes.set.size)
 
-    let offset_i =0;
-    for(let mesh=0; mesh < meshes.count; mesh ++){
+    let mesh_i = 0
+    for(let mesh=0; mesh < meshes.originalCount; mesh ++){
       if(!meshes.set.has(mesh)) continue
-      if(offset_i >0){
-        const vertexStart = indices.meshVertexStart[mesh -1]
-        const vertexEnd = indices.meshVertexStart[mesh]
-        const current = offsets[offset_i-1]
-        const length = vertexEnd - vertexStart
-        offsets[offset_i] = current + length
-      }
-      offset_i++
-    }
+      
+      const vertexStart = indices.meshVertexStart[mesh_i]
+      const vertexEnd = indices.meshVertexEnd[mesh_i]
+      const current = mesh_i
 
-    let positions_i = 0
-    for(let mesh=0; mesh < meshes.count; mesh ++){
-      if(!meshes.set.has(mesh)) continue
-      // vertices
-      const vertexStart = indices.meshVertexStart[mesh]
-      const vertexEnd = indices.meshVertexStart[mesh +1]
-
-      const current = positions_i
       promises.push(
         this.positions.getValues(vertexStart, vertexEnd - vertexStart)
-          .then(v => {
-            console.log(offsets[current] * 3)
-            console.log(_positions)
-            console.log(v)
-            _positions.set(v, offsets[current] * 3)
-          })
+          .then(v => _positions.set(v, indices.vertexOffsets[current] * 3))
       )
 
-      positions_i ++
+      mesh_i ++
     }
     await Promise.all(promises)
     return _positions
@@ -563,7 +552,7 @@ class InstanceData{
 class MeshData{
   hasMeshes: boolean
   submeshes : Int32Array
-  count : number
+  originalCount : number
   map : Map<number, number>
   set : Set<number>
 
@@ -579,10 +568,10 @@ class MeshData{
     let submeshCount = 0
     let indiceCount = 0
     const promises : Promise<number>[] = []
-    for(let m=0; m < this.count; m ++){
-      if(!this.set.has(m)) continue
-      promises.push(g3d.getMeshIndexCount(m).then(v => indiceCount += v ))
-      promises.push(g3d.getMeshSubmeshCount(m).then(v =>submeshCount += v))
+    for(let mesh=0; mesh < this.originalCount; mesh ++){
+      if(!this.set.has(mesh)) continue
+      promises.push(g3d.getMeshIndexCount(mesh).then(v => indiceCount += v ))
+      promises.push(g3d.getMeshSubmeshCount(mesh).then(v =>submeshCount += v))
     }
     await Promise.all(promises)
     return [indiceCount, submeshCount]
@@ -606,14 +595,18 @@ class SubmeshData{
 }
 
 class VertexData{
-  positionCount : number 
   indices:  Uint32Array
+  positionCount : number 
   meshVertexStart : Int32Array
+  meshVertexEnd : Int32Array
+  vertexOffsets: Int32Array
   
-  constructor(meshCount : number, indicesCount : number){
+  constructor(meshes : MeshData, indicesCount : number){
     this.positionCount = 0
     this.indices = new Uint32Array(indicesCount)
-    this.meshVertexStart = new Int32Array(meshCount +1)
+    this.meshVertexStart = new Int32Array(meshes.set.size)
+    this.meshVertexEnd = new Int32Array(meshes.set.size)
+    this.vertexOffsets = new Int32Array(meshes.set.size)
   }
 }
 

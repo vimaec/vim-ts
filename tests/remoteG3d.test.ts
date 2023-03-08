@@ -201,6 +201,7 @@ describe('RemoteG3d', () => {
     }
   }) 
 */
+/*
   test('RemoteG3d.filter (each)', async () =>{
     const [g3d, remote] = await loadBoth()
     for(let i = 0; i < g3d.getInstanceCount(); i++ ){
@@ -209,7 +210,8 @@ describe('RemoteG3d', () => {
       expect(g3dAreEqual(value, expected)).toBeTruthy()
     }
   })
-/*
+  */
+
   test('RemoteG3d.filter (all)', async () =>{
     const [g3d, remote] = await loadBoth()
     const instances = Array.from(g3d.instanceMeshes.map((_,i) => i))
@@ -217,6 +219,6 @@ describe('RemoteG3d', () => {
       const value = await remote.filter(instances)
       expect(g3dAreEqual(value, expected)).toBeTruthy()
   }) 
-  */
+  
 })
 
