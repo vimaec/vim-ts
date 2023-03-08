@@ -55,11 +55,11 @@ export async function loadG3d(){
   return await G3d.createFromBfast(g3dBfast!)
 }
 
-export function g3dAreSame(self: G3d, other: G3d){
+export function expectG3dAreSame(self: G3d, other: G3d){
   expect(self.instanceFlags).toEqual(other.instanceFlags)
-
   expect(self.instanceMeshes).toEqual(other.instanceMeshes)
   expect(self.instanceTransforms).toEqual(other.instanceTransforms)
+  expect(self.instanceNodes).toEqual(other.instanceNodes)
 
   expect(self.meshSubmeshes).toEqual(other.meshSubmeshes)
   expect(self.submeshIndexOffset).toEqual(other.submeshIndexOffset)
@@ -69,8 +69,6 @@ export function g3dAreSame(self: G3d, other: G3d){
   expect(self.positions).toEqual(other.positions)
   expect(self.indices).toEqual(other.indices)
 }
-
-
 
 export function g3dAreEqual(self: G3d, other: G3d){
   if (self.instanceMeshes.length !== other.instanceMeshes.length){

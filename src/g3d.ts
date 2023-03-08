@@ -192,7 +192,7 @@ export class VimAttributes {
   static indices = 'g3d:corner:index:0:int32:1'
   static instanceMeshes = 'g3d:instance:mesh:0:int32:1'
   static instanceTransforms = 'g3d:instance:transform:0:float32:16'
-  static instanceElements = 'g3d:instance:element:0:int32:1'
+  static instanceNodes = 'g3d:instance:element:0:int32:1'
   static instanceFlags = 'g3d:instance:flags:0:uint16:1'
   static meshSubmeshes = 'g3d:mesh:submeshoffset:0:int32:1'
   static submeshIndexOffsets = 'g3d:submesh:indexoffset:0:int32:1'
@@ -259,10 +259,10 @@ export class G3d {
     positions: Float32Array,
     materialColors: Float32Array){
 
-    if(!instanceNodes){
-      this.instanceNodes =  new Int32Array(instanceMeshes.length)
-      for(let i =0; i < this.instanceNodes.length; i++){
-        this.instanceNodes[i] = i
+    if(instanceNodes === undefined){
+      instanceNodes =  new Int32Array(instanceMeshes.length)
+      for(let i =0; i < instanceNodes.length; i++){
+        instanceNodes[i] = i
       }
     }
 
@@ -297,8 +297,8 @@ export class G3d {
       (g3d.findAttribute(VimAttributes.instanceFlags)?.data as Uint16Array) ??
       new Uint16Array(instanceMeshes.length)
 
-    const instanceElements = g3d.findAttribute(
-        VimAttributes.instanceElements
+    const instanceNodes = g3d.findAttribute(
+        VimAttributes.instanceNodes
       )?.data as Int32Array
 
     const meshSubmeshes = g3d.findAttribute(VimAttributes.meshSubmeshes)
@@ -323,7 +323,7 @@ export class G3d {
       instanceMeshes,
       instanceFlags,
       instanceTransforms,
-      instanceElements,
+      instanceNodes,
       meshSubmeshes,
       submeshIndexOffset,
       submeshMaterial,
