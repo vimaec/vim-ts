@@ -113,12 +113,12 @@ describe('RemoteG3d', () => {
       const end = g3d.getMeshIndexEnd(mesh)
 
       // Compare with original values before reordering.
-      const indices = await remote.getMeshIndices(mesh)
+      const value = await remote.getMeshIndices(mesh)
       const attribute = abstract.findAttribute(VimAttributes.indices)
       const original = new Uint32Array(attribute?.data?.buffer!)
       const expected = original.slice(start, end)
       
-      expect(indices).toEqual(expected)
+      expect(value).toEqual(expected)
     }
 
     for(let m=0; m < meshCount; m++ ){
