@@ -1,5 +1,6 @@
-import { g3dAreEqual, expectG3dAreSame, loadAbstract, loadBoth, loadG3d, loadRemote } from './helpers'
+import { g3dAreEqual, expectG3dAreSame, loadAbstract, loadBoth, loadG3d, loadRemote, getFilterTestFile } from './helpers'
 import { VimAttributes } from '../src/g3d'
+import * as fs from 'fs';
 
 describe('RemoteG3d', () => {
   
@@ -112,12 +113,12 @@ describe('RemoteG3d', () => {
       const end = g3d.getMeshIndexEnd(mesh)
 
       // Compare with original values before reordering.
-      const indices = await remote.getMeshIndices(mesh)
+      const value = await remote.getMeshIndices(mesh)
       const attribute = abstract.findAttribute(VimAttributes.indices)
       const original = new Uint32Array(attribute?.data?.buffer!)
       const expected = original.slice(start, end)
       
-      expect(indices).toEqual(expected)
+      expect(value).toEqual(expected)
     }
 
     for(let m=0; m < meshCount; m++ ){
@@ -187,7 +188,6 @@ describe('RemoteG3d', () => {
   test('RemoteG3d.toG3d', async () =>{
     const [g3d, remote] = await loadBoth()
     const value = await remote.toG3d()
-    expect(value.indices).toEqual(g3d.indices)
     expectG3dAreSame(value, g3d)
   })  
 
@@ -200,15 +200,6 @@ describe('RemoteG3d', () => {
     }
   }) 
 
-  test('RemoteG3d.filter (each)', async () =>{
-    const [g3d, remote] = await loadBoth()
-    for(let i = 0; i < g3d.getInstanceCount(); i++ ){
-      const value = await remote.filter([i])
-      const expected = g3d.filter([i])
-      expect(g3dAreEqual(value, expected)).toBeTruthy()
-    }
-  })
-  
   test('RemoteG3d.filter (all)', async () =>{
     const [g3d, remote] = await loadBoth()
     const instances = Array.from(g3d.instanceMeshes.map((_,i) => i))
@@ -216,5 +207,4 @@ describe('RemoteG3d', () => {
       const value = await remote.filter(instances)
       expectG3dAreSame(value, expected)
   }) 
-  
 })

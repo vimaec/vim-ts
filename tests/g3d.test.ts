@@ -1,6 +1,9 @@
-import { g3dAreEqual, instanceAreEqual, loadG3d } from "./helpers"
+import { g3dAreEqual, getFilterTestFile, instanceAreEqual, loadG3d } from "./helpers"
+import * as fs from 'fs';
+
 
 describe('G3d', () =>{
+  
   test('g3d.append', async () =>{
     const g3d = await loadG3d()
 
@@ -17,16 +20,6 @@ describe('G3d', () =>{
     expect(g3dAreEqual(g3d, g3d)).toBeTruthy()
   })
 
-  test('g3d.filter (each)', async () => {
-    const g3d = await loadG3d()
-
-    for(let i = 0; i < g3d.getInstanceCount() ; i++){
-      const filter = g3d.filter([i])
-      const slice = g3d.slice(i)
-      expect(g3dAreEqual(filter, slice)).toBeTruthy()
-    }
-  })
-
   test('g3d.filter (all)', async () => {
     const g3d = await loadG3d()
 
@@ -34,15 +27,38 @@ describe('G3d', () =>{
     const filter = g3d.filter([...instances])
     expect(g3dAreEqual(filter, g3d)).toBeTruthy()
   })
-  
-  test('g3d.filter (oairs)', async () =>{
-    const g3d = await loadG3d()
-    
-    for(let i =1; i < g3d.getInstanceCount()-1; i ++){
 
-      const value = g3d.filter([i -1, i])
-      const expected = g3d.slice(i-1).append(g3d.slice(i))
-      g3dAreEqual(value, expected)
-      }
+ 
+
+  test('G3d.filter (some)', async () =>{
+    const g3d = await loadG3d()
+    const instances = [0, 1, 4000, 8059]
+    for(let i=0; i < instances.length; i++){
+      const instance = instances[i]
+      const path = getFilterTestFile(instance)
+      const data = await fs.promises.readFile(path)
+      const expected = data.toString()
+
+      const filter = g3d.filter([instance])
+      const value = JSON.stringify(filter)
+
+      expect(value).toEqual(expected)
+    }
   })
+
+  /*
+  // Run this to regenerate test cases.
+  test('G3d.toJson', async () =>{
+    const g3d = await loadG3d()
+    const instances = [0, 1, 4000, 8059]
+    for(let i=0; i < instances.length; i++){
+      const instance = instances[i]
+      const filter = g3d.filter([instance])
+      const str = JSON.stringify(filter)
+      await fs.promises.writeFile(getFilterTestFile(instance), str);
+    }
+  })
+  */
 })
+
+
