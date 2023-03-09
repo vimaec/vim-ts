@@ -1,5 +1,5 @@
 import { BFast, typeSize } from "./bfast"
-import { AbstractG3d, G3d, G3dAttribute, G3dAttributeDescriptor, MeshSection, TypedArray, VimAttributes } from "./g3d"
+import { G3d, G3dAttribute, G3dAttributeDescriptor, MeshSection, TypedArray, VimAttributes } from "./g3d"
 
 class G3dRemoteAttribute {
   descriptor: G3dAttributeDescriptor
@@ -10,10 +10,10 @@ class G3dRemoteAttribute {
     this.bfast = bfast
   }
 
-  async getAll(){
+  async getAll<T extends TypedArray>() {
     const bytes = await this.bfast.getBytes(this.descriptor.description)
     const data = G3dAttribute.castData(bytes, this.descriptor.dataType)
-    return data
+    return data as T
   }
 
   async getByte(index: number){
@@ -91,8 +91,6 @@ export class RemoteG3d {
   submeshMaterials: G3dRemoteAttribute
   materialColors: G3dRemoteAttribute
 
-  
-
   // consts
   MATRIX_SIZE = 16
   COLOR_SIZE = 4
@@ -132,19 +130,19 @@ export class RemoteG3d {
 
   getSubmeshCount = () => this.submeshIndexOffsets.getCount()
 
-  async getMeshIndexStart (mesh: number, section: MeshSection = 'all') {
-    const sub = await this.getMeshSubmeshStart(mesh, section)
+  async getMeshIndexStart (mesh: number) {
+    const sub = await this.getMeshSubmeshStart(mesh)
     return this.getSubmeshIndexStart(sub)
   }
 
-  async getMeshIndexEnd (mesh: number, section: MeshSection = 'all') {
-    const sub = await this.getMeshSubmeshEnd(mesh, section)
+  async getMeshIndexEnd (mesh: number) {
+    const sub = await this.getMeshSubmeshEnd(mesh)
     return this.getSubmeshIndexEnd(sub - 1)
   }
 
-  async getMeshIndexCount (mesh: number, section: MeshSection = 'all') {
-    const start = await this.getMeshIndexStart(mesh, section)
-    const end  = await this.getMeshIndexEnd(mesh, section)
+  async getMeshIndexCount (mesh: number) {
+    const start = await this.getMeshIndexStart(mesh)
+    const end  = await this.getMeshIndexEnd(mesh)
     return end - start
   }
 
@@ -155,7 +153,7 @@ export class RemoteG3d {
     return new Uint32Array(indices.buffer) 
   }
 
-  async getMeshSubmeshEnd (mesh: number, section: MeshSection = 'all') {
+  async getMeshSubmeshEnd (mesh: number) {
     const meshCount = await this.getMeshCount()
     const submeshCount = await this.getSubmeshCount()
     return mesh + 1 < meshCount
@@ -163,13 +161,13 @@ export class RemoteG3d {
       : submeshCount
   }
 
-  async getMeshSubmeshStart (mesh: number, section: MeshSection = 'all') {
+  async getMeshSubmeshStart (mesh: number) {
     return this.meshSubmeshes.getNumber(mesh)
   }
 
-  async getMeshSubmeshCount (mesh: number, section: MeshSection = 'all') {
-    const end = await this.getMeshSubmeshEnd(mesh, section)
-    const start = await this.getMeshSubmeshStart(mesh, section)
+  async getMeshSubmeshCount (mesh: number) {
+    const end = await this.getMeshSubmeshEnd(mesh)
+    const start = await this.getMeshSubmeshStart(mesh)
     return end - start
   }
 
@@ -196,112 +194,25 @@ export class RemoteG3d {
   }
   
   async toG3d(){
-    const _instanceMeshes = await this.instanceMeshes.getAll() as Int32Array
-    const _instanceFlags = await this.instanceFlags.getAll() as Uint16Array
-    const _instanceTransforms = await this.instanceTransforms.getAll() as Float32Array
-    const _meshSubmeshes = await this.meshSubmeshes.getAll() as Int32Array
-    const _submeshIndexOffsets = await this. submeshIndexOffsets.getAll() as Int32Array
-    const _submeshMaterials = await this.submeshMaterials.getAll() as Int32Array
-    const _indices = await this.indices.getAll() as Uint32Array
-    const _positions = await this.positions.getAll() as Float32Array
-    const _materialColors = await this.materialColors.getAll() as Float32Array
+    
+    const attributes = await Promise.all([
+      this.instanceMeshes.getAll<Int32Array>(),
+      this.instanceFlags.getAll<Uint16Array>(),
+      this.instanceTransforms.getAll<Float32Array>(),
+      Promise.resolve(undefined),
+      this.meshSubmeshes.getAll<Int32Array>(),
+      this.submeshIndexOffsets.getAll<Int32Array>(),
+      this.submeshMaterials.getAll<Int32Array>(),
+      this.indices.getAll<Int32Array>().then(v => new Uint32Array(v.buffer)),
+      this.positions.getAll<Float32Array>(),
+      this.materialColors.getAll<Float32Array>(),
+    ])
 
-    const g3d = new G3d(
-      _instanceMeshes,
-      _instanceFlags,
-      _instanceTransforms,
-      undefined,
-      _meshSubmeshes,
-      _submeshIndexOffsets,
-      _submeshMaterials,
-      _indices,
-      _positions,
-      _materialColors
-    )
-    return g3d
+    return new G3d(... attributes)
   }
 
   async slice(instance: number){
-
-    const mesh = await this.instanceMeshes.getNumber(instance)
-    const flags = await this.instanceFlags.getNumber(instance) ?? 0
-    const _instanceTransforms = await this.instanceTransforms.getValue(instance) as Float32Array
-    const _instanceMeshes = new Int32Array([mesh >= 0 ? 0 : -1])
-    const _instanceFlags = new Uint16Array([flags])
-
-    if(mesh >= 0){
-      const _meshSubmeshes = new Int32Array([0])
-
-      const submeshStart = await this.getMeshSubmeshStart(mesh)
-      const submeshEnd = await this.getMeshSubmeshEnd(mesh)
-      const originalOffsets = await this.submeshIndexOffsets.getValues(submeshStart, submeshEnd - submeshStart)
-      const firstOffset =  originalOffsets[0]
-      const _submeshIndexOffsets = originalOffsets.map(i => i-firstOffset) as Int32Array
-      
-      const originalSubmeshMaterials = await this.submeshMaterials.getValues(submeshStart, submeshEnd - submeshStart)
-      const map = new Map<number, number[]>()
-      originalSubmeshMaterials.forEach((m,i) => {
-          const set = map.get(m) ?? []
-          set.push(i)
-          map.set(m, set)
-      })
-
-      const _submeshMaterials = new Int32Array(map.size)
-      map.get(-1)?.forEach(s => _submeshMaterials[s] = -1)
-      const mapAsArray = Array.from(map).filter(pair => pair[0] >=0)
-      const materialColors = [] 
-      await Promise.all(mapAsArray.map(async ([mat, set], index) => {
-        if(mat >= 0){
-          const color = await this.materialColors.getValue(mat)
-          color.forEach(v => materialColors.push(v))
-        }
-        set.forEach((s) => _submeshMaterials[s] = index)
-      })
-      )
-      const _materialColors = new Float32Array(materialColors)
-
-      const indices = await this.getMeshIndices(mesh)
-      //get min and max vertex
-      let minVertex = Number.MAX_SAFE_INTEGER
-      let maxVertex = Number.MIN_SAFE_INTEGER
-      for(let i=0;i < indices.length; i++){
-        minVertex = Math.min(minVertex, indices[i])
-        maxVertex = Math.max(maxVertex, indices[i])
-      } 
-  
-      //rebase indices i-min
-      const _localIndices = new Uint32Array(indices.map(i => (i - minVertex)).buffer)
-  
-      //slice vertices from min to max.
-      const _vertices = await this.positions.getValues(minVertex, maxVertex - minVertex +1) as Float32Array
-
-      return new G3d( 
-        _instanceMeshes,
-        _instanceFlags,
-        _instanceTransforms,
-        new Int32Array([instance]),
-        _meshSubmeshes,
-        _submeshIndexOffsets,
-        _submeshMaterials,
-        _localIndices,
-        _vertices,
-        _materialColors
-      )
-    } else{
-
-      return new G3d(
-        _instanceMeshes,
-        _instanceFlags,
-        _instanceTransforms,
-        new Int32Array([instance]),
-        new Int32Array(),
-        new Int32Array(),
-        new Int32Array(),
-        new Uint32Array(),
-        new Float32Array(),
-        new Float32Array()
-      )
-    }
+    return this.filter([instance])
   }
 
   async filter(instances: number[]){

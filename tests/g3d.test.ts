@@ -35,7 +35,7 @@ describe('G3d', () =>{
     expect(g3dAreEqual(filter, g3d)).toBeTruthy()
   })
   
-  test('g3d.filter (2)', async () =>{
+  test('g3d.filter (oairs)', async () =>{
     const g3d = await loadG3d()
     
     for(let i =1; i < g3d.getInstanceCount()-1; i ++){
