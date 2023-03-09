@@ -3,6 +3,7 @@ import * as fs from 'fs';
 
 
 describe('G3d', () =>{
+  
   test('g3d.append', async () =>{
     const g3d = await loadG3d()
 
@@ -47,7 +48,7 @@ describe('G3d', () =>{
 
   /*
   // Run this to regenerate test cases.
-  test('RemoteG3d.toJson', async () =>{
+  test('G3d.toJson', async () =>{
     const g3d = await loadG3d()
     const instances = [0, 1, 4000, 8059]
     for(let i=0; i < instances.length; i++){

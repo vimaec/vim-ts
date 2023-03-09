@@ -92,12 +92,6 @@ export class RemoteG3d {
   submeshMaterials: G3dRemoteAttribute
   materialColors: G3dRemoteAttribute
 
-  // consts
-  MATRIX_SIZE = 16
-  COLOR_SIZE = 4
-  POSITION_SIZE = 3
-  DEFAULT_COLOR = new Float32Array([1, 1, 1, 1])
-
   constructor (g3d: RemoteAbstractG3d) {
     this.rawG3d = g3d
 
@@ -343,11 +337,9 @@ export class RemoteG3d {
     for(let mesh=0; mesh < meshes.originalCount; mesh ++){
       if(!meshes.set.has(mesh)) continue
 
-      let indexStart: number
-      let indexEnd : number
-      await Promise.all([
-        this.getMeshIndexStart(mesh).then(v => indexStart = v),
-        this.getMeshIndexEnd(mesh).then(v => indexEnd= v)
+      const [indexStart, indexEnd] = await Promise.all([
+        this.getMeshIndexStart(mesh),
+        this.getMeshIndexEnd(mesh)
       ])
 
       const indices = await this.indices.getValues<Int32Array>(indexStart, indexEnd - indexStart)
@@ -381,7 +373,7 @@ export class RemoteG3d {
 
   private async filterPositions(indices: VertexData, meshes : MeshData){
     
-    const _positions = new Float32Array(indices.positionCount*3)
+    const _positions = new Float32Array(indices.positionCount * G3d.POSITION_SIZE)
     const promises : Promise<void>[] = []
 
     let mesh_i = 0
@@ -394,7 +386,7 @@ export class RemoteG3d {
 
       promises.push(
         this.positions.getValues<Float32Array>(vertexStart, vertexEnd - vertexStart)
-          .then(v => _positions.set(v, indices.vertexOffsets[current] * 3))
+          .then(v => _positions.set(v, indices.vertexOffsets[current] * G3d.POSITION_SIZE))
       )
 
       mesh_i ++
@@ -416,7 +408,7 @@ export class RemoteG3d {
         const current = color_i
         promises.push(
           this.materialColors.getValue<Float32Array>(i)
-          .then(c => materials.colors.set(c, current*4))
+          .then(c => materials.colors.set(c, current * G3d.COLOR_SIZE))
         )
         color_i ++
       }
@@ -530,6 +522,6 @@ class MaterialData{
   constructor(submeshMaterials: Int32Array){
     this.set = new Set(submeshMaterials)
     this.map = new Map<number, number>()
-    this.colors = new Float32Array(this.set.size * 4)
+    this.colors = new Float32Array(this.set.size * G3d.COLOR_SIZE)
   }
 }

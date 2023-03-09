@@ -165,25 +165,21 @@ export class AbstractG3d {
   /**
    * Create g3d from bfast by requesting all necessary buffers individually.
    */
-  static createFromBfast (bfast: BFast) {
-    const promises = VimAttributes.all.map((a) =>
-      bfast
-        .getBytes(a)
-        .then((bytes) =>
-          bytes
-            ? new G3dAttribute(G3dAttributeDescriptor.fromString(a), bytes)
-            : undefined
-        )
-    )
-    return Promise.all(promises).then(
-      (attributes) =>
-        new AbstractG3d(
-          'meta',
-          attributes.filter((a): a is G3dAttribute => a !== undefined)
-        )
-    )
+  static async createFromBfast (bfast: BFast) {
+    
+    const attributes = await Promise.all(VimAttributes.all.map(async (a) => {
+      const bytes = await bfast.getBytes(a)
+      if(!bytes) return
+      const decriptor = G3dAttributeDescriptor.fromString(a)
+      return new G3dAttribute(decriptor, bytes)
+    }))
+
+    const validAttributes = attributes.filter((a): a is G3dAttribute => a !== undefined)
+    const g3d = new AbstractG3d('meta', validAttributes)
+    return g3d
   }
 }
+
 /**
  * See https://github.com/vimaec/vim#vim-geometry-attributes
  */
@@ -239,9 +235,9 @@ export class G3d {
 
   rawG3d: AbstractG3d
 
-  MATRIX_SIZE = 16
-  COLOR_SIZE = 4
-  POSITION_SIZE = 3
+  static MATRIX_SIZE = 16
+  static COLOR_SIZE = 4
+  static POSITION_SIZE = 3
   /**
    * Opaque white
    */
@@ -337,7 +333,8 @@ export class G3d {
   }
 
   static async createFromBfast (bfast: BFast) {
-    return AbstractG3d.createFromBfast(bfast).then((g3d) => G3d.createFromAbstract(g3d))
+    const g3d = await AbstractG3d.createFromBfast(bfast)
+    return G3d.createFromAbstract(g3d)
   }
 
   /**
@@ -559,7 +556,7 @@ export class G3d {
 
 
   // ------------- All -----------------
-  getVertexCount = () => this.positions.length / this.POSITION_SIZE
+  getVertexCount = () => this.positions.length / G3d.POSITION_SIZE
 
   // ------------- Meshes -----------------
   getMeshCount = () => this.meshSubmeshes.length
@@ -689,14 +686,14 @@ export class G3d {
    */
   getInstanceMatrix (instance: number): Float32Array {
     return this.instanceTransforms.subarray(
-      instance * this.MATRIX_SIZE,
-      (instance + 1) * this.MATRIX_SIZE
+      instance * G3d.MATRIX_SIZE,
+      (instance + 1) * G3d.MATRIX_SIZE
     )
   }
 
   // ------------- Material -----------------
 
-  getMaterialCount = () => this.materialColors.length / this.COLOR_SIZE
+  getMaterialCount = () => this.materialColors.length / G3d.COLOR_SIZE
 
   /**
    * Returns color of given material as a 4-number array (RGBA)
@@ -705,14 +702,14 @@ export class G3d {
   getMaterialColor (material: number): Float32Array {
     if (material < 0) return this.DEFAULT_COLOR
     return this.materialColors.subarray(
-      material * this.COLOR_SIZE,
-      (material + 1) * this.COLOR_SIZE
+      material * G3d.COLOR_SIZE,
+      (material + 1) * G3d.COLOR_SIZE
     )
   }
 
   getMaterialAlpha (material: number): number {
     if (material < 0) return 1
-    const index = material * this.COLOR_SIZE + this.COLOR_SIZE - 1
+    const index = material * G3d.COLOR_SIZE + G3d.COLOR_SIZE - 1
     const result = this.materialColors[index]
     return result
   }
@@ -774,7 +771,7 @@ export class G3d {
   slice(instance: number){
     return this.filter([instance])
   }
-  
+
   filter(instances: number[]){
     const instanceSet = new Set(instances)
     
@@ -922,9 +919,9 @@ export class G3d {
     isPresent(this.materialColors, 'materialColors')
 
     // Basic
-    if (this.positions.length % this.POSITION_SIZE !== 0) {
+    if (this.positions.length % G3d.POSITION_SIZE !== 0) {
       throw new Error(
-        'Invalid position buffer, must be divisible by ' + this.POSITION_SIZE
+        'Invalid position buffer, must be divisible by ' + G3d.POSITION_SIZE
       )
     }
 
@@ -941,15 +938,15 @@ export class G3d {
     // Instances
     if (
       this.instanceMeshes.length !==
-      this.instanceTransforms.length / this.MATRIX_SIZE
+      this.instanceTransforms.length / G3d.MATRIX_SIZE
     ) {
       throw new Error('Instance buffers mismatched')
     }
 
-    if (this.instanceTransforms.length % this.MATRIX_SIZE !== 0) {
+    if (this.instanceTransforms.length % G3d.MATRIX_SIZE !== 0) {
       throw new Error(
         'Invalid InstanceTransform buffer, must respect arity ' +
-          this.MATRIX_SIZE
+        G3d.MATRIX_SIZE
       )
     }
 
@@ -1008,9 +1005,9 @@ export class G3d {
     }
 
     // Materials
-    if (this.materialColors.length % this.COLOR_SIZE !== 0) {
+    if (this.materialColors.length % G3d.COLOR_SIZE !== 0) {
       throw new Error(
-        'Invalid material color buffer, must be divisible by ' + this.COLOR_SIZE
+        'Invalid material color buffer, must be divisible by ' + G3d.COLOR_SIZE
       )
     }
     console.assert(this.meshInstances.length === this.getMeshCount())
