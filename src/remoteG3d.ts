@@ -25,12 +25,14 @@ class G3dRemoteAttribute {
     return count
   }
 
-  async getValue(index: number){
-    return await this.bfast.getValues(this.descriptor.description, index * this.descriptor.dataArity, this.descriptor.dataArity)
+  async getValue<T extends TypedArray>(index: number){
+    const value = await this.bfast.getValues(this.descriptor.description, index * this.descriptor.dataArity, this.descriptor.dataArity)
+    return value as T
   }
 
-  async getValues(index: number, count: number){
-    return await this.bfast.getValues(this.descriptor.description, index*this.descriptor.dataArity , count*this.descriptor.dataArity)
+  async getValues<T extends TypedArray>(index: number, count: number){
+    const value = await this.bfast.getValues(this.descriptor.description, index*this.descriptor.dataArity , count*this.descriptor.dataArity)
+    return value as T
   }
 
   async getCount(){
@@ -38,7 +40,6 @@ class G3dRemoteAttribute {
     const count = range.length / (this.descriptor.dataArity * typeSize(this.descriptor.dataType))
     return count
   }
-
 
   static fromString(description: string, bfast: BFast){
     return new G3dRemoteAttribute(G3dAttributeDescriptor.fromString(description), bfast)
@@ -149,7 +150,7 @@ export class RemoteG3d {
   async getMeshIndices(mesh:number){
     const start = await this.getMeshIndexStart(mesh)
     const end  = await this.getMeshIndexEnd(mesh)
-    const indices = await this.indices.getValues(start, end-start)
+    const indices = await this.indices.getValues<Int32Array>(start, end-start)
     return new Uint32Array(indices.buffer) 
   }
 
@@ -203,7 +204,7 @@ export class RemoteG3d {
       this.meshSubmeshes.getAll<Int32Array>(),
       this.submeshIndexOffsets.getAll<Int32Array>(),
       this.submeshMaterials.getAll<Int32Array>(),
-      this.indices.getAll<Int32Array>().then(v => new Uint32Array(v.buffer)),
+      this.indices.getAll<Int32Array>(),
       this.positions.getAll<Float32Array>(),
       this.materialColors.getAll<Float32Array>(),
     ])
@@ -271,7 +272,7 @@ export class RemoteG3d {
       const current = instance_i
       promises.push(this.instanceFlags.getNumber(i).then(v => attributes.flags[current] = v))
       promises.push(this.instanceMeshes.getNumber(i).then(v => attributes.meshes[current] = v))
-      promises.push(this.instanceTransforms.getValue(i).then(v => attributes.transforms.set(v, current *16)))
+      promises.push(this.instanceTransforms.getValue<Float32Array>(i).then(v => attributes.transforms.set(v, current *16)))
       attributes.nodes[current] = i
       instance_i++
     }
@@ -349,7 +350,7 @@ export class RemoteG3d {
         this.getMeshIndexEnd(mesh).then(v => indexEnd= v)
       ])
 
-      const indices = await this.indices.getValues(indexStart, indexEnd - indexStart)
+      const indices = await this.indices.getValues<Int32Array>(indexStart, indexEnd - indexStart)
       result.indices.set(indices, indices_i)
 
       let min = Number.MAX_SAFE_INTEGER
@@ -392,7 +393,7 @@ export class RemoteG3d {
       const current = mesh_i
 
       promises.push(
-        this.positions.getValues(vertexStart, vertexEnd - vertexStart)
+        this.positions.getValues<Float32Array>(vertexStart, vertexEnd - vertexStart)
           .then(v => _positions.set(v, indices.vertexOffsets[current] * 3))
       )
 
@@ -414,7 +415,7 @@ export class RemoteG3d {
         materials.map.set(i, color_i)
         const current = color_i
         promises.push(
-          this.materialColors.getValue(i)
+          this.materialColors.getValue<Float32Array>(i)
           .then(c => materials.colors.set(c, current*4))
         )
         color_i ++

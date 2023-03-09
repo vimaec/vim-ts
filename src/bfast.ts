@@ -268,7 +268,6 @@ export function parseName(name: string): [number, ArrayConstructor]{
     const range = await this.getRange(name)
     if (!range) return
 
-    //Could be done in-place.
     const [size, ctor] = parseName(name)
     const start = Math.min(range.start + index * size, range.end)
     const end = Math.min(start + size * count, range.end)

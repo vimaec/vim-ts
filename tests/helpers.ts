@@ -5,6 +5,11 @@ import { RemoteG3d } from '../src/remoteG3d'
 
 const vimFilePath = `${__dirname}/../data/Wolford_Residence.r2023.vim`
 
+export function getFilterTestFile(instance : number){
+  return 'tests/filter_'+instance+'.txt'
+}
+
+
 export function loadFile(path: string) {
     return new Promise<ArrayBuffer | undefined>((resolve, reject) => {
         fs.readFile(path, (err, data) => {
