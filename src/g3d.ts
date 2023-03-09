@@ -773,66 +773,7 @@ export class G3d {
  
   
   slice(instance: number){
-    const matrix = this.instanceTransforms.slice(instance*16, (instance+1) *16)
-    const mesh =  this.instanceMeshes[instance]
-    const flags =  this.instanceFlags[instance] ?? 0
-    const _instanceTransforms = new Float32Array([...matrix])
-    const _instanceMeshes = new Int32Array([mesh >= 0 ? 0: -1])
-    const _instanceFlags = new Uint16Array([flags])
-    if(mesh <0){
-      return new G3d(
-        _instanceMeshes,
-        _instanceFlags, 
-        _instanceTransforms,
-        new Int32Array([instance]),
-        new Int32Array(),
-        new Int32Array(),
-        new Int32Array(),
-        new Uint32Array(), 
-        new Float32Array(),
-        new Float32Array()
-      )
-    }
-
-    const _meshSubmeshes = new Int32Array([0])
-
-    // Submeshes
-    const submeshStart = this.getMeshSubmeshStart(mesh)
-    const submeshEnd =  this.getMeshSubmeshEnd(mesh)
-    const originalOffsets = this.submeshIndexOffset.slice(submeshStart, submeshEnd)
-    const firstOffset =  originalOffsets[0]
-    const _submeshIndexOffsets = originalOffsets.map(i => i-firstOffset)
-    // Vertices
-    const _indices = this.indices.slice(this.getMeshIndexStart(mesh), this.getMeshIndexEnd(mesh))
-    const _vertices = this.positions.slice(this.getMeshVertexStart(mesh)*3, this.getMeshVertexEnd(mesh)*3)
-
-    const _submeshMaterials = this.submeshMaterial.slice(submeshStart, submeshEnd)
-    const materialSet = new Set(_submeshMaterials)
-    const materialMap = new Map<number, number>()
-    const _materialColors = new Float32Array(materialSet.size * 4)
-    let mat_i = 0
-    for(let i = 0 ; i < this.getMaterialCount(); i ++){
-      if(materialSet.has(i)){
-        materialMap.set(i, mat_i)
-        _materialColors.set(this.materialColors.slice(i*4, (i+1)*4), mat_i *4)
-        mat_i++
-      }
-    }
-    for(let i = 0; i < _submeshMaterials.length; i++ ){
-      _submeshMaterials[i] = _submeshMaterials[i] < 0 ? -1 : materialMap.get(_submeshMaterials[i])
-    }
-    return new G3d(
-      _instanceMeshes,
-      _instanceFlags,
-      _instanceTransforms,
-      new Int32Array([instance]),
-      _meshSubmeshes, 
-      _submeshIndexOffsets,
-      _submeshMaterials, 
-      _indices,
-      _vertices,
-      _materialColors
-    )
+    return this.filter([instance])
   }
   
   filter(instances: number[]){
