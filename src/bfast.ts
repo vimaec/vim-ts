@@ -34,12 +34,12 @@
 
 export function parseName(name: string): [number, ArrayConstructor]{
   if(name.startsWith('g3d')){
-    const result = name.includes('int8') ? [1, Int8Array] // inlcludes uint8
-     :name.includes('uint16') ? [2, Uint16Array]
-     :name.includes('int16') ? [2, Int16Array]
-     :name.includes('int32') ? [4, Int32Array]
-     :name.includes('float32') ? [4, Float32Array]
-     :name.includes('uint32') ? [4, Uint32Array]
+    const result = name.includes(':int8:') ? [1, Int8Array] // inlcludes uint8
+     :name.includes(':uint16:') ? [2, Uint16Array]
+     :name.includes(':int16:') ? [2, Int16Array]
+     :name.includes(':int32:') ? [4, Int32Array]
+     :name.includes(':float32:') ? [4, Float32Array]
+     :name.includes(':uint32:') ? [4, Uint32Array]
      : undefined 
      
     if(result === undefined){
@@ -48,12 +48,12 @@ export function parseName(name: string): [number, ArrayConstructor]{
     return result as [number, ArrayConstructor]
   }
   else{
-    const result = name.startsWith('byte') ? [1, Int8Array]
-     :name.startsWith('short') ? [2, Int16Array]
-     :name.startsWith('int') ? [4, Int32Array]
-     :name.startsWith('float') ? [4, Float32Array]
-     :name.startsWith('long') ? [8, Float64Array]
-     :name.startsWith('double') ? [8,Float64Array]
+    const result = name.startsWith('byte:') ? [1, Int8Array]
+     :name.startsWith('short:') ? [2, Int16Array]
+     :name.startsWith('int:') ? [4, Int32Array]
+     :name.startsWith('float:') ? [4, Float32Array]
+     :name.startsWith('long:') ? [8, Float64Array]
+     :name.startsWith('double:') ? [8,Float64Array]
      : [4, Int32Array] 
      return result as [number, ArrayConstructor]
   }
