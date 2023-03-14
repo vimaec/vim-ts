@@ -32,19 +32,20 @@
    }
  }
 
+ /**
+  * Returns -1 size for undefined attributes.
+  */
 export function parseName(name: string): [number, ArrayConstructor]{
   if(name.startsWith('g3d')){
-    const result = name.includes(':int8:') ? [1, Int8Array] // inlcludes uint8
-     :name.includes(':uint16:') ? [2, Uint16Array]
-     :name.includes(':int16:') ? [2, Int16Array]
-     :name.includes(':int32:') ? [4, Int32Array]
-     :name.includes(':float32:') ? [4, Float32Array]
-     :name.includes(':uint32:') ? [4, Uint32Array]
-     : undefined 
-     
-    if(result === undefined){
-      throw new Error('Unsupported g3d range name ' + name)
-    }
+    const result = name.includes(':int8:') ? [1, Int8Array]
+     : name.includes(':uint8:') ? [1, Uint8Array]
+     : name.includes(':uint16:') ? [2, Uint16Array]
+     : name.includes(':int16:') ? [2, Int16Array]
+     : name.includes(':int32:') ? [4, Int32Array]
+     : name.includes(':float32:') ? [4, Float32Array]
+     : name.includes(':uint32:') ? [4, Uint32Array]
+     : [-1, undefined] 
+
     return result as [number, ArrayConstructor]
   }
   else{
@@ -259,9 +260,10 @@ export function parseName(name: string): [number, ArrayConstructor]{
    }
 
    /**
-    * Returns a single value from given buffer name
+    * Returns count subsequent values from given buffer name.
     * @param name buffer name
     * @param index row index
+    * @param count count of values to return
     */
    async getValues (name: string, index: number, count: number) {
     if(index < 0 || count < 1) return
@@ -269,6 +271,8 @@ export function parseName(name: string): [number, ArrayConstructor]{
     if (!range) return
 
     const [size, ctor] = parseName(name)
+    if(size < 0) return
+
     const start = Math.min(range.start + index * size, range.end)
     const end = Math.min(start + size * count, range.end)
     

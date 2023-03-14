@@ -809,7 +809,7 @@ export class G3d {
       mesh_i++
     }
 
-    // Remamp Instance Meshes
+    // Remap Instance Meshes
     for(let i = 0; i < _instanceMeshes.length; i++){
       _instanceMeshes[i] = meshMap.get(_instanceMeshes[i]) ?? -1
     }
