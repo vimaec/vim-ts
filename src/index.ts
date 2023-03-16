@@ -4,6 +4,7 @@ export * from './g3d'
 export * from './remoteG3d'
 export * from './remoteBuffer'
 
+export * from './vimHeader'
 export * from './objectModel'
 export * from './structures'
 export * from './vimHelpers'
