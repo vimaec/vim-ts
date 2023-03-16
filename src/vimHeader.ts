@@ -13,7 +13,7 @@ export type VimHeader = {
   schema: string | undefined
 }
 
-async function requestHeader (bfast: BFast): Promise<VimHeader> {
+export async function requestHeader (bfast: BFast): Promise<VimHeader> {
   const header = await bfast.getBuffer('header')
   const pairs = new TextDecoder('utf-8').decode(header).split('\n')
   const map = new Map(pairs.map((p) => p.split('=')).map((p) => [p[0], p[1]]))
