@@ -266,6 +266,10 @@ export class G3d {
     this.positions = positions
     this.materialColors = materialColors
 
+    if(this.instanceFlags === undefined){
+      this.instanceFlags = new Uint16Array(this.instanceMeshes.length)
+    }
+
     if(this.instanceNodes === undefined){
       this.instanceNodes =  new Int32Array(instanceMeshes.length)
       for(let i =0; i < this.instanceNodes.length; i++){

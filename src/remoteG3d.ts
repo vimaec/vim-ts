@@ -12,6 +12,8 @@ class G3dRemoteAttribute {
 
   async getAll<T extends TypedArray>() {
     const bytes = await this.bfast.getBytes(this.descriptor.description)
+    if(!bytes) return
+    
     const data = G3dAttribute.castData(bytes, this.descriptor.dataType)
     return data as T
   }
