@@ -2,7 +2,7 @@ name: Publish dev version to NPM on push to develop
 on:
   push:
     branches:
-      - develop
+      - dev
 
 jobs:
   build:
