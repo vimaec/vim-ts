@@ -676,6 +676,10 @@ export class G3d {
   // ------------- Instances -----------------
   getInstanceCount = () => this.instanceMeshes.length
 
+  getInstanceHasFlag(instance: number, flag: number){
+    return (this.instanceFlags[instance] & flag) > 0
+  }
+
   /**
    * Returns mesh index of given instance
    * @param instance g3d instance index
