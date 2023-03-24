@@ -4,9 +4,9 @@
 
 import { BFast } from "./bfast"
 
-export class VimDocumentOptions
-{
-  static ignoreStrings : boolean
+let _ignoreStrings : boolean = false
+export function ignoreStrings(value: boolean){
+  _ignoreStrings = value
 }
 
 export class VimLoader {
@@ -27,7 +27,7 @@ export class VimLoader {
     }
 
     private static async requestStrings (bfast: BFast) {
-      if(VimDocumentOptions.ignoreStrings) return
+      if(_ignoreStrings) return
 
       const buffer = await bfast.getBuffer('strings')
         if (!buffer) {
