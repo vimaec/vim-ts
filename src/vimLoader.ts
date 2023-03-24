@@ -4,7 +4,7 @@
 
 import { BFast } from "./bfast"
 
-class VimDocumentOptions
+export class VimDocumentOptions
 {
   static ignoreStrings : boolean
 }
