@@ -193,6 +193,6 @@ describe('testing objectModel.ts get-all getter', () => {
         const levels = await doc?.level?.getAll()
 
         expect(levels).not.toBe(undefined)
-        expect(levels!.length).toBe(13)
+        expect(levels!.length).toBe(12)
     })
 })

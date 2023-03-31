@@ -73,7 +73,7 @@ export class AssetTable implements IAssetTable {
         
         let asset: IAsset[] = []
         
-        for (let i = 0; i <= bufferName!.length; i++) {
+        for (let i = 0; i < bufferName!.length; i++) {
             asset.push({
                 index: i,
                 bufferName: bufferName ? bufferName[i] : undefined
@@ -172,7 +172,7 @@ export class DisplayUnitTable implements IDisplayUnitTable {
         
         let displayUnit: IDisplayUnit[] = []
         
-        for (let i = 0; i <= spec!.length; i++) {
+        for (let i = 0; i < spec!.length; i++) {
             displayUnit.push({
                 index: i,
                 spec: spec ? spec[i] : undefined,
@@ -345,7 +345,7 @@ export class ParameterDescriptorTable implements IParameterDescriptorTable {
         
         let parameterDescriptor: IParameterDescriptor[] = []
         
-        for (let i = 0; i <= name!.length; i++) {
+        for (let i = 0; i < name!.length; i++) {
             parameterDescriptor.push({
                 index: i,
                 name: name ? name[i] : undefined,
@@ -544,7 +544,7 @@ export class ParameterTable implements IParameterTable {
         
         let parameter: IParameter[] = []
         
-        for (let i = 0; i <= value!.length; i++) {
+        for (let i = 0; i < value!.length; i++) {
             parameter.push({
                 index: i,
                 value: value ? value[i] : undefined,
@@ -842,7 +842,7 @@ export class ElementTable implements IElementTable {
         
         let element: IElement[] = []
         
-        for (let i = 0; i <= id!.length; i++) {
+        for (let i = 0; i < id!.length; i++) {
             element.push({
                 index: i,
                 id: id ? id[i] : undefined,
@@ -1261,7 +1261,7 @@ export class WorksetTable implements IWorksetTable {
         
         let workset: IWorkset[] = []
         
-        for (let i = 0; i <= id!.length; i++) {
+        for (let i = 0; i < id!.length; i++) {
             workset.push({
                 index: i,
                 id: id ? id[i] : undefined,
@@ -1449,7 +1449,7 @@ export class AssemblyInstanceTable implements IAssemblyInstanceTable {
         
         let assemblyInstance: IAssemblyInstance[] = []
         
-        for (let i = 0; i <= assemblyTypeName!.length; i++) {
+        for (let i = 0; i < assemblyTypeName!.length; i++) {
             assemblyInstance.push({
                 index: i,
                 assemblyTypeName: assemblyTypeName ? assemblyTypeName[i] : undefined,
@@ -1600,7 +1600,7 @@ export class GroupTable implements IGroupTable {
         
         let group: IGroup[] = []
         
-        for (let i = 0; i <= groupType!.length; i++) {
+        for (let i = 0; i < groupType!.length; i++) {
             group.push({
                 index: i,
                 groupType: groupType ? groupType[i] : undefined,
@@ -1742,7 +1742,7 @@ export class DesignOptionTable implements IDesignOptionTable {
         
         let designOption: IDesignOption[] = []
         
-        for (let i = 0; i <= isPrimary!.length; i++) {
+        for (let i = 0; i < isPrimary!.length; i++) {
             designOption.push({
                 index: i,
                 isPrimary: isPrimary ? isPrimary[i] : undefined,
@@ -1867,7 +1867,7 @@ export class LevelTable implements ILevelTable {
         
         let level: ILevel[] = []
         
-        for (let i = 0; i <= elevation!.length; i++) {
+        for (let i = 0; i < elevation!.length; i++) {
             level.push({
                 index: i,
                 elevation: elevation ? elevation[i] : undefined,
@@ -1984,7 +1984,7 @@ export class PhaseTable implements IPhaseTable {
         
         let phase: IPhase[] = []
         
-        for (let i = 0; i <= elementIndex!.length; i++) {
+        for (let i = 0; i < elementIndex!.length; i++) {
             phase.push({
                 index: i,
                 elementIndex: elementIndex ? elementIndex[i] : undefined
@@ -2153,7 +2153,7 @@ export class RoomTable implements IRoomTable {
         
         let room: IRoom[] = []
         
-        for (let i = 0; i <= baseOffset!.length; i++) {
+        for (let i = 0; i < baseOffset!.length; i++) {
             room.push({
                 index: i,
                 baseOffset: baseOffset ? baseOffset[i] : undefined,
@@ -2573,7 +2573,7 @@ export class BimDocumentTable implements IBimDocumentTable {
         
         let bimDocument: IBimDocument[] = []
         
-        for (let i = 0; i <= title!.length; i++) {
+        for (let i = 0; i < title!.length; i++) {
             bimDocument.push({
                 index: i,
                 title: title ? title[i] : undefined,
@@ -3001,7 +3001,7 @@ export class DisplayUnitInBimDocumentTable implements IDisplayUnitInBimDocumentT
         
         let displayUnitInBimDocument: IDisplayUnitInBimDocument[] = []
         
-        for (let i = 0; i <= displayUnitIndex!.length; i++) {
+        for (let i = 0; i < displayUnitIndex!.length; i++) {
             displayUnitInBimDocument.push({
                 index: i,
                 displayUnitIndex: displayUnitIndex ? displayUnitIndex[i] : undefined,
@@ -3147,7 +3147,7 @@ export class PhaseOrderInBimDocumentTable implements IPhaseOrderInBimDocumentTab
         
         let phaseOrderInBimDocument: IPhaseOrderInBimDocument[] = []
         
-        for (let i = 0; i <= orderIndex!.length; i++) {
+        for (let i = 0; i < orderIndex!.length; i++) {
             phaseOrderInBimDocument.push({
                 index: i,
                 orderIndex: orderIndex ? orderIndex[i] : undefined,
@@ -3332,7 +3332,7 @@ export class CategoryTable implements ICategoryTable {
         
         let category: ICategory[] = []
         
-        for (let i = 0; i <= name!.length; i++) {
+        for (let i = 0; i < name!.length; i++) {
             category.push({
                 index: i,
                 name: name ? name[i] : undefined,
@@ -3552,7 +3552,7 @@ export class FamilyTable implements IFamilyTable {
         
         let family: IFamily[] = []
         
-        for (let i = 0; i <= structuralMaterialType!.length; i++) {
+        for (let i = 0; i < structuralMaterialType!.length; i++) {
             family.push({
                 index: i,
                 structuralMaterialType: structuralMaterialType ? structuralMaterialType[i] : undefined,
@@ -3745,7 +3745,7 @@ export class FamilyTypeTable implements IFamilyTypeTable {
         
         let familyType: IFamilyType[] = []
         
-        for (let i = 0; i <= isSystemFamilyType!.length; i++) {
+        for (let i = 0; i < isSystemFamilyType!.length; i++) {
             familyType.push({
                 index: i,
                 isSystemFamilyType: isSystemFamilyType ? isSystemFamilyType[i] : undefined,
@@ -4034,7 +4034,7 @@ export class FamilyInstanceTable implements IFamilyInstanceTable {
         
         let familyInstance: IFamilyInstance[] = []
         
-        for (let i = 0; i <= facingFlipped!.length; i++) {
+        for (let i = 0; i < facingFlipped!.length; i++) {
             familyInstance.push({
                 index: i,
                 facingFlipped: facingFlipped ? facingFlipped[i] : undefined,
@@ -4459,7 +4459,7 @@ export class ViewTable implements IViewTable {
         
         let view: IView[] = []
         
-        for (let i = 0; i <= title!.length; i++) {
+        for (let i = 0; i < title!.length; i++) {
             view.push({
                 index: i,
                 title: title ? title[i] : undefined,
@@ -4735,7 +4735,7 @@ export class ElementInViewTable implements IElementInViewTable {
         
         let elementInView: IElementInView[] = []
         
-        for (let i = 0; i <= viewIndex!.length; i++) {
+        for (let i = 0; i < viewIndex!.length; i++) {
             elementInView.push({
                 index: i,
                 viewIndex: viewIndex ? viewIndex[i] : undefined,
@@ -4873,7 +4873,7 @@ export class ShapeInViewTable implements IShapeInViewTable {
         
         let shapeInView: IShapeInView[] = []
         
-        for (let i = 0; i <= shapeIndex!.length; i++) {
+        for (let i = 0; i < shapeIndex!.length; i++) {
             shapeInView.push({
                 index: i,
                 shapeIndex: shapeIndex ? shapeIndex[i] : undefined,
@@ -5011,7 +5011,7 @@ export class AssetInViewTable implements IAssetInViewTable {
         
         let assetInView: IAssetInView[] = []
         
-        for (let i = 0; i <= assetIndex!.length; i++) {
+        for (let i = 0; i < assetIndex!.length; i++) {
             assetInView.push({
                 index: i,
                 assetIndex: assetIndex ? assetIndex[i] : undefined,
@@ -5159,7 +5159,7 @@ export class LevelInViewTable implements ILevelInViewTable {
         
         let levelInView: ILevelInView[] = []
         
-        for (let i = 0; i <= extents!.length; i++) {
+        for (let i = 0; i < extents!.length; i++) {
             levelInView.push({
                 index: i,
                 extents: extents ? extents[i] : undefined,
@@ -5346,7 +5346,7 @@ export class CameraTable implements ICameraTable {
         
         let camera: ICamera[] = []
         
-        for (let i = 0; i <= id!.length; i++) {
+        for (let i = 0; i < id!.length; i++) {
             camera.push({
                 index: i,
                 id: id ? id[i] : undefined,
@@ -5626,7 +5626,7 @@ export class MaterialTable implements IMaterialTable {
         
         let material: IMaterial[] = []
         
-        for (let i = 0; i <= name!.length; i++) {
+        for (let i = 0; i < name!.length; i++) {
             material.push({
                 index: i,
                 name: name ? name[i] : undefined,
@@ -5944,7 +5944,7 @@ export class MaterialInElementTable implements IMaterialInElementTable {
         
         let materialInElement: IMaterialInElement[] = []
         
-        for (let i = 0; i <= area!.length; i++) {
+        for (let i = 0; i < area!.length; i++) {
             materialInElement.push({
                 index: i,
                 area: area ? area[i] : undefined,
@@ -6131,7 +6131,7 @@ export class CompoundStructureLayerTable implements ICompoundStructureLayerTable
         
         let compoundStructureLayer: ICompoundStructureLayer[] = []
         
-        for (let i = 0; i <= orderIndex!.length; i++) {
+        for (let i = 0; i < orderIndex!.length; i++) {
             compoundStructureLayer.push({
                 index: i,
                 orderIndex: orderIndex ? orderIndex[i] : undefined,
@@ -6293,7 +6293,7 @@ export class CompoundStructureTable implements ICompoundStructureTable {
         
         let compoundStructure: ICompoundStructure[] = []
         
-        for (let i = 0; i <= width!.length; i++) {
+        for (let i = 0; i < width!.length; i++) {
             compoundStructure.push({
                 index: i,
                 width: width ? width[i] : undefined,
@@ -6410,7 +6410,7 @@ export class NodeTable implements INodeTable {
         
         let node: INode[] = []
         
-        for (let i = 0; i <= elementIndex!.length; i++) {
+        for (let i = 0; i < elementIndex!.length; i++) {
             node.push({
                 index: i,
                 elementIndex: elementIndex ? elementIndex[i] : undefined
@@ -6521,7 +6521,7 @@ export class GeometryTable implements IGeometryTable {
         
         let geometry: IGeometry[] = []
         
-        for (let i = 0; i <= box!.length; i++) {
+        for (let i = 0; i < box!.length; i++) {
             geometry.push({
                 index: i,
                 box: box ? box[i] : undefined,
@@ -6645,7 +6645,7 @@ export class ShapeTable implements IShapeTable {
         
         let shape: IShape[] = []
         
-        for (let i = 0; i <= elementIndex!.length; i++) {
+        for (let i = 0; i < elementIndex!.length; i++) {
             shape.push({
                 index: i,
                 elementIndex: elementIndex ? elementIndex[i] : undefined
@@ -6753,7 +6753,7 @@ export class ShapeCollectionTable implements IShapeCollectionTable {
         
         let shapeCollection: IShapeCollection[] = []
         
-        for (let i = 0; i <= elementIndex!.length; i++) {
+        for (let i = 0; i < elementIndex!.length; i++) {
             shapeCollection.push({
                 index: i,
                 elementIndex: elementIndex ? elementIndex[i] : undefined
@@ -6872,7 +6872,7 @@ export class ShapeInShapeCollectionTable implements IShapeInShapeCollectionTable
         
         let shapeInShapeCollection: IShapeInShapeCollection[] = []
         
-        for (let i = 0; i <= shapeIndex!.length; i++) {
+        for (let i = 0; i < shapeIndex!.length; i++) {
             shapeInShapeCollection.push({
                 index: i,
                 shapeIndex: shapeIndex ? shapeIndex[i] : undefined,
@@ -7007,7 +7007,7 @@ export class SystemTable implements ISystemTable {
         
         let system: ISystem[] = []
         
-        for (let i = 0; i <= systemType!.length; i++) {
+        for (let i = 0; i < systemType!.length; i++) {
             system.push({
                 index: i,
                 systemType: systemType ? systemType[i] : undefined,
@@ -7143,7 +7143,7 @@ export class ElementInSystemTable implements IElementInSystemTable {
         
         let elementInSystem: IElementInSystem[] = []
         
-        for (let i = 0; i <= roles!.length; i++) {
+        for (let i = 0; i < roles!.length; i++) {
             elementInSystem.push({
                 index: i,
                 roles: roles ? roles[i] : undefined,
@@ -7301,7 +7301,7 @@ export class WarningTable implements IWarningTable {
         
         let warning: IWarning[] = []
         
-        for (let i = 0; i <= guid!.length; i++) {
+        for (let i = 0; i < guid!.length; i++) {
             warning.push({
                 index: i,
                 guid: guid ? guid[i] : undefined,
@@ -7447,7 +7447,7 @@ export class ElementInWarningTable implements IElementInWarningTable {
         
         let elementInWarning: IElementInWarning[] = []
         
-        for (let i = 0; i <= warningIndex!.length; i++) {
+        for (let i = 0; i < warningIndex!.length; i++) {
             elementInWarning.push({
                 index: i,
                 warningIndex: warningIndex ? warningIndex[i] : undefined,
@@ -7600,7 +7600,7 @@ export class BasePointTable implements IBasePointTable {
         
         let basePoint: IBasePoint[] = []
         
-        for (let i = 0; i <= isSurveyPoint!.length; i++) {
+        for (let i = 0; i < isSurveyPoint!.length; i++) {
             basePoint.push({
                 index: i,
                 isSurveyPoint: isSurveyPoint ? isSurveyPoint[i] : undefined,
@@ -7780,7 +7780,7 @@ export class PhaseFilterTable implements IPhaseFilterTable {
         
         let phaseFilter: IPhaseFilter[] = []
         
-        for (let i = 0; i <= _new!.length; i++) {
+        for (let i = 0; i < _new!.length; i++) {
             phaseFilter.push({
                 index: i,
                 _new: _new ? _new[i] : undefined,
@@ -7959,7 +7959,7 @@ export class GridTable implements IGridTable {
         
         let grid: IGrid[] = []
         
-        for (let i = 0; i <= startPoint!.length; i++) {
+        for (let i = 0; i < startPoint!.length; i++) {
             grid.push({
                 index: i,
                 startPoint: startPoint ? startPoint[i] : undefined,
@@ -8167,7 +8167,7 @@ export class AreaTable implements IAreaTable {
         
         let area: IArea[] = []
         
-        for (let i = 0; i <= value!.length; i++) {
+        for (let i = 0; i < value!.length; i++) {
             area.push({
                 index: i,
                 value: value ? value[i] : undefined,
@@ -8338,7 +8338,7 @@ export class AreaSchemeTable implements IAreaSchemeTable {
         
         let areaScheme: IAreaScheme[] = []
         
-        for (let i = 0; i <= isGrossBuildingArea!.length; i++) {
+        for (let i = 0; i < isGrossBuildingArea!.length; i++) {
             areaScheme.push({
                 index: i,
                 isGrossBuildingArea: isGrossBuildingArea ? isGrossBuildingArea[i] : undefined,
