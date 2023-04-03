@@ -62,3 +62,26 @@ describe('testing objectModel.ts get-all getter', () => {
         expect(levels!.length).toBe(12)
     })
 })
+
+describe('testing objectModel.ts ignoreStrings flag', () => {
+    test('getting an element from a document without strings', async () => {
+        const arrayBuffer = await loadFile(vimFilePath)
+
+        const bfast = new BFast((arrayBuffer as ArrayBuffer)!)
+        const docWithStrings = await VimDocument.createFromBfast(bfast)
+        const docWithoutStrings = await VimDocument.createFromBfast(bfast, true)
+
+        const elementWithStrings = await docWithStrings?.element?.get(30)
+        const elementWithoutStrings = await docWithoutStrings?.element?.get(30)
+
+        expect(docWithStrings).not.toBeUndefined()
+        expect(docWithoutStrings).not.toBeUndefined()
+        expect(elementWithStrings).not.toBeUndefined()
+        expect(elementWithoutStrings).not.toBeUndefined()
+        expect(elementWithStrings!.name).toBe("GWB on Mtl. Stud")
+        expect(elementWithoutStrings!.name).toBeUndefined()
+        expect(elementWithStrings!.familyName).toBe("Compound Ceiling")
+        expect(elementWithoutStrings!.familyName).toBeUndefined()
+        expect(elementWithStrings!.id).toBe(elementWithoutStrings!.id)
+    })
+})

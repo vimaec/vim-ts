@@ -8151,20 +8151,20 @@ export class VimDocument {
     areaScheme: IAreaSchemeTable | undefined
     
     entities: BFast
-    strings: string[]
+    strings: string[] | undefined
     
-    private constructor(entities: BFast, strings: string[]) {
+    private constructor(entities: BFast, strings: string[] | undefined) {
         this.entities = entities
         this.strings = strings
     }
     
-    static async createFromBfast(bfast: BFast): Promise<VimDocument | undefined> {
-        const loaded = await VimLoader.loadFromBfast(bfast)
-        
-        if (loaded === undefined)
+    static async createFromBfast(bfast: BFast, ignoreStrings: boolean = false): Promise<VimDocument | undefined> {
+        const loaded = await VimLoader.loadFromBfast(bfast, ignoreStrings)
+
+        if (loaded[0] === undefined)
             return undefined
         
-        let doc = new VimDocument(loaded[0], loaded[1])
+        let doc = new VimDocument(loaded[0]!, loaded[1])
         
         doc.asset = await AssetTable.createFromDocument(doc)
         doc.displayUnit = await DisplayUnitTable.createFromDocument(doc)
