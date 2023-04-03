@@ -149,6 +149,10 @@ class RetryRequest {
   onError: (() => void) | undefined
   onProgress: ((e: ProgressEvent<EventTarget>) => void) | undefined
 
+  abort(){
+    this.xhr.abort()
+  }
+
   send () {
     this.xhr?.abort()
     const xhr = new XMLHttpRequest()
@@ -221,6 +225,14 @@ export class RemoteBuffer {
       )
     }
     return encoded
+  }
+
+  abort(){
+    this.active.forEach(request => {
+      request.abort()
+    })
+    this.active.clear()
+    this.queue.length = 0
   }
 
   async http (range: Range | undefined, label: string) {
