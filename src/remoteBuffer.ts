@@ -4,7 +4,8 @@
 
 import { Range } from './bfast'
 import { RemoteValue } from './remoteValue'
-import {RequestTracker} from './requestTracker'
+import {IProgressLogs, RequestTracker} from './requestTracker'
+import {DefaultLog, Logger, NoLog} from './logging'
 
 let RemoteBufferMaxConcurency = 10
 export function setRemoteBufferMaxConcurency(value: number){
@@ -69,25 +70,27 @@ class RetryRequest {
  */
 export class RemoteBuffer {
   url: string
-  tracker: RequestTracker
-  logs : Logger
-  queue: RetryRequest[] = []
-  active: Set<RetryRequest> = new Set<RetryRequest>()
   maxConcurency: number = RemoteBufferMaxConcurency
-  encoded: RemoteValue<boolean>
+  onProgress: (progress : IProgressLogs) => void
+  private _tracker: RequestTracker
+  private _logs : Logger
+  private _queue: RetryRequest[] = []
+  private _active: Set<RetryRequest> = new Set<RetryRequest>()
+  private _encoded: RemoteValue<boolean>
 
   constructor (url: string, verbose: boolean = false) {
     this.url = url
-    this.logs = verbose ? new DefaultLog() : new NoLog()
-    this.tracker = new RequestTracker(url, this.logs)
-    this.encoded = new RemoteValue(() => this.requestEncoding())
+    this._logs = verbose ? new DefaultLog() : new NoLog()
+    this._tracker = new RequestTracker(url, this._logs)
+    this._tracker.onUpdate = (p) => this.onProgress?.(p)
+    this._encoded = new RemoteValue(() => this.requestEncoding())
   }
 
   private async requestEncoding () {
     const xhr = new XMLHttpRequest()
     xhr.open('HEAD', this.url)
     xhr.send()
-    this.logs.log(`Requesting header for ${this.url}`)
+    this._logs.log(`Requesting header for ${this.url}`)
 
     const promise = new Promise<string | undefined>((resolve, reject) => {
       xhr.onload = (_) => {
@@ -95,7 +98,7 @@ export class RemoteBuffer {
         try {
           encoding = xhr.getResponseHeader('content-encoding')
         } catch (e) {
-          this.logs.error(e)
+          this._logs.error(e)
         }
         resolve(encoding ?? undefined)
       }
@@ -105,9 +108,9 @@ export class RemoteBuffer {
     const encoding = await promise
     const encoded = !!encoding
 
-    this.logs.log(`Encoding for ${this.url} = ${encoding}`)
+    this._logs.log(`Encoding for ${this.url} = ${encoding}`)
     if (encoded) {
-      this.logs.log(
+      this._logs.log(
         `Defaulting to download strategy for encoded content at ${this.url}`
       )
     }
@@ -115,15 +118,15 @@ export class RemoteBuffer {
   }
 
   abort(){
-    this.active.forEach(request => {
+    this._active.forEach(request => {
       request.abort()
     })
-    this.active.clear()
-    this.queue.length = 0
+    this._active.clear()
+    this._queue.length = 0
   }
 
   async http (range: Range | undefined, label: string) {
-    const useRange = range && !(await this.encoded.get())
+    const useRange = range && !(await this._encoded.get())
     const rangeStr = useRange
       ? `bytes=${range.start}-${range.end - 1}`
       : undefined
@@ -134,52 +137,52 @@ export class RemoteBuffer {
 
     this.enqueue(request)
     return new Promise<ArrayBuffer | undefined>((resolve, reject) => {
-      this.tracker.start(label)
+      this._tracker.start(label)
 
       request.onProgress = (e) => {
-        this.tracker.update(label, e)
+        this._tracker.update(label, e)
       }
       request.onLoad = (result) => {
-        this.tracker.end(label)
+        this._tracker.end(label)
         resolve(result)
         this.end(request)
       }
       request.onError = () => {
-        this.tracker.fail(label)
+        this._tracker.fail(label)
         this.retry(request)
       }
     })
   }
 
   private enqueue (xhr: RetryRequest) {
-    this.queue.push(xhr)
+    this._queue.push(xhr)
     this.next()
   }
 
   private retry (xhr: RetryRequest) {
-    this.active.delete(xhr)
+    this._active.delete(xhr)
     this.maxConcurency = Math.max(1, this.maxConcurency - 1)
     setTimeout(() => this.enqueue(xhr), 2000)
   }
 
   private end (xhr: RetryRequest) {
-    this.active.delete(xhr)
+    this._active.delete(xhr)
     this.next()
   }
 
   private next () {
-    if (this.queue.length === 0) {
+    if (this._queue.length === 0) {
       return
     }
 
-    if (this.active.size >= this.maxConcurency) {
+    if (this._active.size >= this.maxConcurency) {
       return
     }
 
-    const next = this.queue[0]
-    this.queue.shift()
-    this.active.add(next)
+    const next = this._queue[0]
+    this._queue.shift()
+    this._active.add(next)
     next.send()
-    this.logs.log('Starting ' + next.msg)
+    this._logs.log('Starting ' + next.msg)
   }
 }
