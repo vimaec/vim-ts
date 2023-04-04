@@ -1,3 +1,4 @@
+import { Logger, NoLog } from "./logging"
 
 /**
  * Represents the state of a single web request
