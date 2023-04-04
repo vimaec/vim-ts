@@ -4,127 +4,13 @@
 
 import { Range } from './bfast'
 import { RemoteValue } from './remoteValue'
+import {RequestTracker} from './requestTracker'
 
 let RemoteBufferMaxConcurency = 10
 export function setRemoteBufferMaxConcurency(value: number){
   RemoteBufferMaxConcurency =value
 }
 
-/**
- * Represents the state of a single web request
- */
-class Request {
-  status: 'active' | 'completed' | 'failed' = 'active'
-  field: string
-  loaded: number = 0
-  total: number = 0
-  lengthComputable: boolean = true
-
-  constructor (field: string) {
-    this.field = field
-  }
-}
-
-/**
- * Represents a collection of webrequests
- * Will only send update signal at most every delay
- * Provides convenient aggregation of metrics.
- */
-export interface IProgressLogs {
-  get loaded(): number
-  get total(): number
-  get all(): Map<string, Request>
-}
-
-export class RequestLogger {
-  source: string
-  all: Map<string, Request> = new Map<string, Request>()
-  lastUpdate: number = 0
-  delay: number = 500
-  sleeping: boolean = false
-
-  /**
-   * callback on update, called at most every delay time.
-   */
-  onUpdate: ((self: RequestLogger) => void) | undefined = undefined
-
-  constructor (source: string) {
-    this.source = source
-  }
-
-  /**
-   * Returns the sum of .loaded across all requests
-   */
-  get loaded () {
-    let result = 0
-    this.all.forEach((request) => {
-      result += request.loaded
-    })
-    return result
-  }
-
-  /**
-   * Returns the sum of .total across all requests
-   */
-  get total () {
-    let result = 0
-    this.all.forEach((request) => {
-      result += request.total
-    })
-    return result
-  }
-
-  /**
-   * Starts tracking a new web request
-   */
-  start (field: string) {
-    this.all.set(field, new Request(field))
-    this.signal()
-  }
-
-  /**
-   * Update an existing web request
-   */
-  update (field: string, progress: ProgressEvent) {
-    const r = this.all.get(field)
-    if (!r) throw new Error('Updating missing download')
-    if (r.status !== 'active') return
-    r.loaded = progress.loaded
-    r.total = progress.total
-    r.lengthComputable = progress.lengthComputable
-    this.signal()
-  }
-
-  /**
-   * Notify a webrequest of failure
-   */
-  fail (field: string) {
-    console.error(`${field} failed`)
-    const download = this.all.get(field)
-    if (!download) throw new Error('Failing missing download')
-    download.status = 'failed'
-    this.signal()
-  }
-
-  /**
-   * Notify a webrequest of success
-   */
-  end (field: string) {
-    console.log(`${field} completed`)
-    const download = this.all.get(field)
-    if (!download) throw new Error('Failing missing download')
-    download.status = 'completed'
-    // We don't want to throttle end update.
-    this.onUpdate?.(this)
-  }
-
-  private signal () {
-    if (this.sleeping) return
-    this.sleeping = true
-    setTimeout(() => (this.sleeping = false), this.delay)
-    this.onUpdate?.(this)
-  }
-}
 
 class RetryRequest {
   url: string
@@ -183,16 +69,17 @@ class RetryRequest {
  */
 export class RemoteBuffer {
   url: string
-  logger: RequestLogger
+  tracker: RequestTracker
+  logs : Logger
   queue: RetryRequest[] = []
   active: Set<RetryRequest> = new Set<RetryRequest>()
   maxConcurency: number = RemoteBufferMaxConcurency
   encoded: RemoteValue<boolean>
 
-  constructor (url: string, logger: RequestLogger = new RequestLogger(url)) {
+  constructor (url: string, verbose: boolean = false) {
     this.url = url
-    this.logger = logger
-
+    this.logs = verbose ? new DefaultLog() : new NoLog()
+    this.tracker = new RequestTracker(url, this.logs)
     this.encoded = new RemoteValue(() => this.requestEncoding())
   }
 
@@ -200,7 +87,7 @@ export class RemoteBuffer {
     const xhr = new XMLHttpRequest()
     xhr.open('HEAD', this.url)
     xhr.send()
-    //console.log(`Requesting header for ${this.url}`)
+    this.logs.log(`Requesting header for ${this.url}`)
 
     const promise = new Promise<string | undefined>((resolve, reject) => {
       xhr.onload = (_) => {
@@ -208,7 +95,7 @@ export class RemoteBuffer {
         try {
           encoding = xhr.getResponseHeader('content-encoding')
         } catch (e) {
-          console.error(e)
+          this.logs.error(e)
         }
         resolve(encoding ?? undefined)
       }
@@ -218,9 +105,9 @@ export class RemoteBuffer {
     const encoding = await promise
     const encoded = !!encoding
 
-    //console.log(`Encoding for ${this.url} = ${encoding}`)
+    this.logs.log(`Encoding for ${this.url} = ${encoding}`)
     if (encoded) {
-      console.log(
+      this.logs.log(
         `Defaulting to download strategy for encoded content at ${this.url}`
       )
     }
@@ -247,18 +134,18 @@ export class RemoteBuffer {
 
     this.enqueue(request)
     return new Promise<ArrayBuffer | undefined>((resolve, reject) => {
-      this.logger.start(label)
+      this.tracker.start(label)
 
       request.onProgress = (e) => {
-        this.logger.update(label, e)
+        this.tracker.update(label, e)
       }
       request.onLoad = (result) => {
-        this.logger.end(label)
+        this.tracker.end(label)
         resolve(result)
         this.end(request)
       }
       request.onError = () => {
-        this.logger.fail(label)
+        this.tracker.fail(label)
         this.retry(request)
       }
     })
@@ -293,6 +180,6 @@ export class RemoteBuffer {
     this.queue.shift()
     this.active.add(next)
     next.send()
-    //console.log('Starting ' + next.msg)
+    this.logs.log('Starting ' + next.msg)
   }
 }
