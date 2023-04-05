@@ -1,6 +1,5 @@
-import { g3dAreEqual, expectG3dAreSame, loadAbstract, loadBoth, loadG3d, loadRemote, getFilterTestFile } from './helpers'
+import { g3dAreEqual, expectG3dAreSame, loadAbstract, loadBoth, loadG3d, loadRemote } from './helpers'
 import { VimAttributes } from '../src/g3d'
-import * as fs from 'fs';
 
 describe('RemoteG3d', () => {
   

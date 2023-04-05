@@ -3,6 +3,7 @@ export * from './bfast'
 export * from './g3d'
 export * from './remoteG3d'
 export * from './remoteBuffer'
+export * from './requestTracker'
 
 export * from './vimHeader'
 export * from './objectModel'

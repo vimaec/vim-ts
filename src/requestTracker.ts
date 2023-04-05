@@ -15,19 +15,19 @@ class Request {
   }
 }
 
-/**
- * Represents a collection of webrequests
- * Will only send update signal at most every delay
- * Provides convenient aggregation of metrics.
- */
+
 export interface IProgressLogs {
   get loaded(): number
   get total(): number
   get all(): Map<string, Request>
 }
 
+/**
+ * Represents a collection of webrequests
+ * Will only send update signal at most every delay
+ * Provides convenient aggregation of metrics.
+ */
 export class RequestTracker {
-  verbose: boolean
   source: string
   all: Map<string, Request> = new Map<string, Request>()
   lastUpdate: number = 0
