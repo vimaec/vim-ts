@@ -20,5 +20,6 @@ describe('testing vimHelpers.ts getElementParameters', () => {
     const rawData = fs.readFileSync(testFilePath);
     const data = JSON.parse(rawData.toString());
     expect(parameters).toEqual(data)
+    
   })
 })
