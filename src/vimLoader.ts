@@ -5,20 +5,19 @@
 import { BFast } from "./bfast"
 
 export class VimLoader {
-    static async loadFromBfast(bfast: BFast): Promise<[BFast, string[]] | undefined> {
+    static async loadFromBfast(bfast: BFast, ignoreStrings: boolean): Promise<[BFast | undefined, string[] | undefined]> {
         let entity: BFast | undefined
         let strings: string[] | undefined
 
-        await Promise.all([
-            VimLoader.requestStrings(bfast).then((strs) => (strings = strs)),
-            VimLoader.requestEntities(bfast).then((ets) => (entity = ets))
-        ])
+        if (!ignoreStrings)
+            [ strings, entity ] = await Promise.all([
+                VimLoader.requestStrings(bfast),
+                VimLoader.requestEntities(bfast)
+            ])
+        else
+            entity = await VimLoader.requestEntities(bfast)
 
-        if (!entity) {
-            return undefined
-        }
-
-        return [ entity!, strings ?? [] ]
+        return [ entity, strings ]
     }
 
     private static async requestStrings (bfast: BFast) {
