@@ -6,9 +6,9 @@ import { BFast } from './bfast'
 
 export class EntityTable {
     private readonly bfast: BFast
-    private readonly strings: string[]
+    private readonly strings: string[] | undefined
 
-    constructor(bfast: BFast, strings: string[]) {
+    constructor(bfast: BFast, strings: string[] | undefined) {
         this.bfast = bfast
         this.strings = strings
     }
@@ -54,6 +54,9 @@ export class EntityTable {
     }
 
     async getString(elementIndex: number, columnName: string): Promise<string | undefined> {
+        if (this.strings === undefined)
+            return undefined
+
         const array = await this.bfast.getArray(columnName)
 
         if ((array?.length ?? -1) <= elementIndex)
@@ -63,6 +66,9 @@ export class EntityTable {
     }
 
     async getStringArray(columnName: string): Promise<string[] | undefined> {
+        if (this.strings === undefined)
+            return undefined
+
         const array = await this.bfast.getArray(columnName)
 
         if (!array)

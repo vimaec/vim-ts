@@ -4,31 +4,19 @@
 
 import { BFast } from "./bfast"
 
-let _ignoreStrings : boolean = false
-export function ignoreStrings(value: boolean){
-  _ignoreStrings = value
-}
-
 export class VimLoader {
-    static async loadFromBfast(bfast: BFast): Promise<[BFast, string[]] | undefined> {
-        let entity: BFast | undefined
-        let strings: string[] | undefined
+    static async loadFromBfast(bfast: BFast, ignoreStrings: boolean): Promise<[BFast | undefined, string[] | undefined]> {
 
-        await Promise.all([
-          VimLoader.requestStrings(bfast).then((strs) => (strings = strs)),
-          VimLoader.requestEntities(bfast).then((ets) => (entity = ets))
-        ])
-
-        if (!entity) {
-            return undefined
-        }
-
-        return [ entity!, strings ?? [] ]
+      const [entity, strings] = await Promise.all([
+        
+          VimLoader.requestEntities(bfast),
+          ignoreStrings ? Promise.resolve(undefined) : VimLoader.requestStrings(bfast)
+      ])
+      
+      return [entity, strings] as [BFast, string[]]
     }
 
     private static async requestStrings (bfast: BFast) {
-      if(_ignoreStrings) return
-
       const buffer = await bfast.getBuffer('strings')
         if (!buffer) {
             console.error('Could not get String Data from VIM file. Bim features will be disabled.')

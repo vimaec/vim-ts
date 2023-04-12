@@ -5,7 +5,7 @@
 import { BFast } from "./bfast"
 import { EntityTable } from "./entityTable"
 import { VimLoader } from "./vimLoader"
-import { Vector2, Vector3, Vector4, AABox, AABox2D, AABox4D, Matrix4x4 } from "./structures"
+import { Vector2, Vector3, AABox, AABox2D} from "./structures"
 import * as Converters from "./converters"
 
 export interface IAsset {
@@ -15,7 +15,7 @@ export interface IAsset {
 
 export interface IAssetTable {
     getCount(): Promise<number>
-    get(assetIndex: number, recursive?: boolean): Promise<IAsset>
+    get(assetIndex: number): Promise<IAsset>
     getAll(): Promise<IAsset[]>
     
     getBufferName(assetIndex: number): Promise<string | undefined>
@@ -26,7 +26,7 @@ export class Asset implements IAsset {
     index: number
     bufferName?: string
     
-    static async createFromTable(table: IAssetTable, index: number, recursive: boolean = false): Promise<IAsset> {
+    static async createFromTable(table: IAssetTable, index: number): Promise<IAsset> {
         let result = new Asset()
         result.index = index
         
@@ -58,8 +58,8 @@ export class AssetTable implements IAssetTable {
         return (await this.entityTable.getArray("string:BufferName"))?.length ?? 0
     }
     
-    async get(assetIndex: number, recursive?: boolean): Promise<IAsset> {
-        return await Asset.createFromTable(this, assetIndex, recursive)
+    async get(assetIndex: number): Promise<IAsset> {
+        return await Asset.createFromTable(this, assetIndex)
     }
     
     async getAll(): Promise<IAsset[]> {
@@ -73,7 +73,7 @@ export class AssetTable implements IAssetTable {
         
         let asset: IAsset[] = []
         
-        for (let i = 0; i <= bufferName!.length; i++) {
+        for (let i = 0; i < bufferName!.length; i++) {
             asset.push({
                 index: i,
                 bufferName: bufferName ? bufferName[i] : undefined
@@ -102,7 +102,7 @@ export interface IDisplayUnit {
 
 export interface IDisplayUnitTable {
     getCount(): Promise<number>
-    get(displayUnitIndex: number, recursive?: boolean): Promise<IDisplayUnit>
+    get(displayUnitIndex: number): Promise<IDisplayUnit>
     getAll(): Promise<IDisplayUnit[]>
     
     getSpec(displayUnitIndex: number): Promise<string | undefined>
@@ -119,7 +119,7 @@ export class DisplayUnit implements IDisplayUnit {
     type?: string
     label?: string
     
-    static async createFromTable(table: IDisplayUnitTable, index: number, recursive: boolean = false): Promise<IDisplayUnit> {
+    static async createFromTable(table: IDisplayUnitTable, index: number): Promise<IDisplayUnit> {
         let result = new DisplayUnit()
         result.index = index
         
@@ -153,8 +153,8 @@ export class DisplayUnitTable implements IDisplayUnitTable {
         return (await this.entityTable.getArray("string:Spec"))?.length ?? 0
     }
     
-    async get(displayUnitIndex: number, recursive?: boolean): Promise<IDisplayUnit> {
-        return await DisplayUnit.createFromTable(this, displayUnitIndex, recursive)
+    async get(displayUnitIndex: number): Promise<IDisplayUnit> {
+        return await DisplayUnit.createFromTable(this, displayUnitIndex)
     }
     
     async getAll(): Promise<IDisplayUnit[]> {
@@ -172,7 +172,7 @@ export class DisplayUnitTable implements IDisplayUnitTable {
         
         let displayUnit: IDisplayUnit[] = []
         
-        for (let i = 0; i <= spec!.length; i++) {
+        for (let i = 0; i < spec!.length; i++) {
             displayUnit.push({
                 index: i,
                 spec: spec ? spec[i] : undefined,
@@ -227,7 +227,7 @@ export interface IParameterDescriptor {
 
 export interface IParameterDescriptorTable {
     getCount(): Promise<number>
-    get(parameterDescriptorIndex: number, recursive?: boolean): Promise<IParameterDescriptor>
+    get(parameterDescriptorIndex: number): Promise<IParameterDescriptor>
     getAll(): Promise<IParameterDescriptor[]>
     
     getName(parameterDescriptorIndex: number): Promise<string | undefined>
@@ -249,7 +249,7 @@ export interface IParameterDescriptorTable {
     
     getDisplayUnitIndex(parameterDescriptorIndex: number): Promise<number | undefined>
     getAllDisplayUnitIndex(): Promise<number[] | undefined>
-    getDisplayUnit(parameterDescriptorIndex: number, recursive?: boolean): Promise<IDisplayUnit | undefined>
+    getDisplayUnit(parameterDescriptorIndex: number): Promise<IDisplayUnit | undefined>
 }
 
 export class ParameterDescriptor implements IParameterDescriptor {
@@ -266,7 +266,7 @@ export class ParameterDescriptor implements IParameterDescriptor {
     displayUnitIndex?: number
     displayUnit?: IDisplayUnit
     
-    static async createFromTable(table: IParameterDescriptorTable, index: number, recursive: boolean = false): Promise<IParameterDescriptor> {
+    static async createFromTable(table: IParameterDescriptorTable, index: number): Promise<IParameterDescriptor> {
         let result = new ParameterDescriptor()
         result.index = index
         
@@ -281,12 +281,6 @@ export class ParameterDescriptor implements IParameterDescriptor {
             table.getGuid(index).then(v => result.guid = v),
             table.getDisplayUnitIndex(index).then(v => result.displayUnitIndex = v),
         ])
-        
-        if (recursive) {
-            await Promise.all([
-                table.getDisplayUnit(index).then(v => result.displayUnit = v),
-            ])
-        }
         
         return result
     }
@@ -314,8 +308,8 @@ export class ParameterDescriptorTable implements IParameterDescriptorTable {
         return (await this.entityTable.getArray("string:Name"))?.length ?? 0
     }
     
-    async get(parameterDescriptorIndex: number, recursive?: boolean): Promise<IParameterDescriptor> {
-        return await ParameterDescriptor.createFromTable(this, parameterDescriptorIndex, recursive)
+    async get(parameterDescriptorIndex: number): Promise<IParameterDescriptor> {
+        return await ParameterDescriptor.createFromTable(this, parameterDescriptorIndex)
     }
     
     async getAll(): Promise<IParameterDescriptor[]> {
@@ -345,7 +339,7 @@ export class ParameterDescriptorTable implements IParameterDescriptorTable {
         
         let parameterDescriptor: IParameterDescriptor[] = []
         
-        for (let i = 0; i <= name!.length; i++) {
+        for (let i = 0; i < name!.length; i++) {
             parameterDescriptor.push({
                 index: i,
                 name: name ? name[i] : undefined,
@@ -435,14 +429,14 @@ export class ParameterDescriptorTable implements IParameterDescriptorTable {
         return await this.entityTable.getArray("index:Vim.DisplayUnit:DisplayUnit")
     }
     
-    async getDisplayUnit(parameterDescriptorIndex: number, recursive?: boolean): Promise<IDisplayUnit | undefined> {
+    async getDisplayUnit(parameterDescriptorIndex: number): Promise<IDisplayUnit | undefined> {
         const index = await this.getDisplayUnitIndex(parameterDescriptorIndex)
         
         if (index === undefined) {
             return undefined
         }
         
-        return await this.document.displayUnit?.get(index, recursive)
+        return await this.document.displayUnit?.get(index)
     }
     
 }
@@ -459,7 +453,7 @@ export interface IParameter {
 
 export interface IParameterTable {
     getCount(): Promise<number>
-    get(parameterIndex: number, recursive?: boolean): Promise<IParameter>
+    get(parameterIndex: number): Promise<IParameter>
     getAll(): Promise<IParameter[]>
     
     getValue(parameterIndex: number): Promise<string | undefined>
@@ -467,10 +461,10 @@ export interface IParameterTable {
     
     getParameterDescriptorIndex(parameterIndex: number): Promise<number | undefined>
     getAllParameterDescriptorIndex(): Promise<number[] | undefined>
-    getParameterDescriptor(parameterIndex: number, recursive?: boolean): Promise<IParameterDescriptor | undefined>
+    getParameterDescriptor(parameterIndex: number): Promise<IParameterDescriptor | undefined>
     getElementIndex(parameterIndex: number): Promise<number | undefined>
     getAllElementIndex(): Promise<number[] | undefined>
-    getElement(parameterIndex: number, recursive?: boolean): Promise<IElement | undefined>
+    getElement(parameterIndex: number): Promise<IElement | undefined>
 }
 
 export class Parameter implements IParameter {
@@ -482,7 +476,7 @@ export class Parameter implements IParameter {
     elementIndex?: number
     element?: IElement
     
-    static async createFromTable(table: IParameterTable, index: number, recursive: boolean = false): Promise<IParameter> {
+    static async createFromTable(table: IParameterTable, index: number): Promise<IParameter> {
         let result = new Parameter()
         result.index = index
         
@@ -491,13 +485,6 @@ export class Parameter implements IParameter {
             table.getParameterDescriptorIndex(index).then(v => result.parameterDescriptorIndex = v),
             table.getElementIndex(index).then(v => result.elementIndex = v),
         ])
-        
-        if (recursive) {
-            await Promise.all([
-                table.getParameterDescriptor(index).then(v => result.parameterDescriptor = v),
-                table.getElement(index).then(v => result.element = v),
-            ])
-        }
         
         return result
     }
@@ -525,8 +512,8 @@ export class ParameterTable implements IParameterTable {
         return (await this.entityTable.getArray("string:Value"))?.length ?? 0
     }
     
-    async get(parameterIndex: number, recursive?: boolean): Promise<IParameter> {
-        return await Parameter.createFromTable(this, parameterIndex, recursive)
+    async get(parameterIndex: number): Promise<IParameter> {
+        return await Parameter.createFromTable(this, parameterIndex)
     }
     
     async getAll(): Promise<IParameter[]> {
@@ -544,7 +531,7 @@ export class ParameterTable implements IParameterTable {
         
         let parameter: IParameter[] = []
         
-        for (let i = 0; i <= value!.length; i++) {
+        for (let i = 0; i < value!.length; i++) {
             parameter.push({
                 index: i,
                 value: value ? value[i] : undefined,
@@ -572,14 +559,14 @@ export class ParameterTable implements IParameterTable {
         return await this.entityTable.getArray("index:Vim.ParameterDescriptor:ParameterDescriptor")
     }
     
-    async getParameterDescriptor(parameterIndex: number, recursive?: boolean): Promise<IParameterDescriptor | undefined> {
+    async getParameterDescriptor(parameterIndex: number): Promise<IParameterDescriptor | undefined> {
         const index = await this.getParameterDescriptorIndex(parameterIndex)
         
         if (index === undefined) {
             return undefined
         }
         
-        return await this.document.parameterDescriptor?.get(index, recursive)
+        return await this.document.parameterDescriptor?.get(index)
     }
     
     async getElementIndex(parameterIndex: number): Promise<number | undefined> {
@@ -590,14 +577,14 @@ export class ParameterTable implements IParameterTable {
         return await this.entityTable.getArray("index:Vim.Element:Element")
     }
     
-    async getElement(parameterIndex: number, recursive?: boolean): Promise<IElement | undefined> {
+    async getElement(parameterIndex: number): Promise<IElement | undefined> {
         const index = await this.getElementIndex(parameterIndex)
         
         if (index === undefined) {
             return undefined
         }
         
-        return await this.document.element?.get(index, recursive)
+        return await this.document.element?.get(index)
     }
     
 }
@@ -638,7 +625,7 @@ export interface IElement {
 
 export interface IElementTable {
     getCount(): Promise<number>
-    get(elementIndex: number, recursive?: boolean): Promise<IElement>
+    get(elementIndex: number): Promise<IElement>
     getAll(): Promise<IElement[]>
     
     getId(elementIndex: number): Promise<number | undefined>
@@ -658,37 +645,37 @@ export interface IElementTable {
     
     getLevelIndex(elementIndex: number): Promise<number | undefined>
     getAllLevelIndex(): Promise<number[] | undefined>
-    getLevel(elementIndex: number, recursive?: boolean): Promise<ILevel | undefined>
+    getLevel(elementIndex: number): Promise<ILevel | undefined>
     getPhaseCreatedIndex(elementIndex: number): Promise<number | undefined>
     getAllPhaseCreatedIndex(): Promise<number[] | undefined>
-    getPhaseCreated(elementIndex: number, recursive?: boolean): Promise<IPhase | undefined>
+    getPhaseCreated(elementIndex: number): Promise<IPhase | undefined>
     getPhaseDemolishedIndex(elementIndex: number): Promise<number | undefined>
     getAllPhaseDemolishedIndex(): Promise<number[] | undefined>
-    getPhaseDemolished(elementIndex: number, recursive?: boolean): Promise<IPhase | undefined>
+    getPhaseDemolished(elementIndex: number): Promise<IPhase | undefined>
     getCategoryIndex(elementIndex: number): Promise<number | undefined>
     getAllCategoryIndex(): Promise<number[] | undefined>
-    getCategory(elementIndex: number, recursive?: boolean): Promise<ICategory | undefined>
+    getCategory(elementIndex: number): Promise<ICategory | undefined>
     getWorksetIndex(elementIndex: number): Promise<number | undefined>
     getAllWorksetIndex(): Promise<number[] | undefined>
-    getWorkset(elementIndex: number, recursive?: boolean): Promise<IWorkset | undefined>
+    getWorkset(elementIndex: number): Promise<IWorkset | undefined>
     getDesignOptionIndex(elementIndex: number): Promise<number | undefined>
     getAllDesignOptionIndex(): Promise<number[] | undefined>
-    getDesignOption(elementIndex: number, recursive?: boolean): Promise<IDesignOption | undefined>
+    getDesignOption(elementIndex: number): Promise<IDesignOption | undefined>
     getOwnerViewIndex(elementIndex: number): Promise<number | undefined>
     getAllOwnerViewIndex(): Promise<number[] | undefined>
-    getOwnerView(elementIndex: number, recursive?: boolean): Promise<IView | undefined>
+    getOwnerView(elementIndex: number): Promise<IView | undefined>
     getGroupIndex(elementIndex: number): Promise<number | undefined>
     getAllGroupIndex(): Promise<number[] | undefined>
-    getGroup(elementIndex: number, recursive?: boolean): Promise<IGroup | undefined>
+    getGroup(elementIndex: number): Promise<IGroup | undefined>
     getAssemblyInstanceIndex(elementIndex: number): Promise<number | undefined>
     getAllAssemblyInstanceIndex(): Promise<number[] | undefined>
-    getAssemblyInstance(elementIndex: number, recursive?: boolean): Promise<IAssemblyInstance | undefined>
+    getAssemblyInstance(elementIndex: number): Promise<IAssemblyInstance | undefined>
     getBimDocumentIndex(elementIndex: number): Promise<number | undefined>
     getAllBimDocumentIndex(): Promise<number[] | undefined>
-    getBimDocument(elementIndex: number, recursive?: boolean): Promise<IBimDocument | undefined>
+    getBimDocument(elementIndex: number): Promise<IBimDocument | undefined>
     getRoomIndex(elementIndex: number): Promise<number | undefined>
     getAllRoomIndex(): Promise<number[] | undefined>
-    getRoom(elementIndex: number, recursive?: boolean): Promise<IRoom | undefined>
+    getRoom(elementIndex: number): Promise<IRoom | undefined>
 }
 
 export class Element implements IElement {
@@ -724,7 +711,7 @@ export class Element implements IElement {
     roomIndex?: number
     room?: IRoom
     
-    static async createFromTable(table: IElementTable, index: number, recursive: boolean = false): Promise<IElement> {
+    static async createFromTable(table: IElementTable, index: number): Promise<IElement> {
         let result = new Element()
         result.index = index
         
@@ -748,22 +735,6 @@ export class Element implements IElement {
             table.getBimDocumentIndex(index).then(v => result.bimDocumentIndex = v),
             table.getRoomIndex(index).then(v => result.roomIndex = v),
         ])
-        
-        if (recursive) {
-            await Promise.all([
-                table.getLevel(index).then(v => result.level = v),
-                table.getPhaseCreated(index).then(v => result.phaseCreated = v),
-                table.getPhaseDemolished(index).then(v => result.phaseDemolished = v),
-                table.getCategory(index).then(v => result.category = v),
-                table.getWorkset(index).then(v => result.workset = v),
-                table.getDesignOption(index).then(v => result.designOption = v),
-                table.getOwnerView(index).then(v => result.ownerView = v),
-                table.getGroup(index).then(v => result.group = v),
-                table.getAssemblyInstance(index).then(v => result.assemblyInstance = v),
-                table.getBimDocument(index).then(v => result.bimDocument = v),
-                table.getRoom(index).then(v => result.room = v),
-            ])
-        }
         
         return result
     }
@@ -791,8 +762,8 @@ export class ElementTable implements IElementTable {
         return (await this.entityTable.getArray("int:Id"))?.length ?? 0
     }
     
-    async get(elementIndex: number, recursive?: boolean): Promise<IElement> {
-        return await Element.createFromTable(this, elementIndex, recursive)
+    async get(elementIndex: number): Promise<IElement> {
+        return await Element.createFromTable(this, elementIndex)
     }
     
     async getAll(): Promise<IElement[]> {
@@ -842,7 +813,7 @@ export class ElementTable implements IElementTable {
         
         let element: IElement[] = []
         
-        for (let i = 0; i <= id!.length; i++) {
+        for (let i = 0; i < id!.length; i++) {
             element.push({
                 index: i,
                 id: id ? id[i] : undefined,
@@ -941,14 +912,14 @@ export class ElementTable implements IElementTable {
         return await this.entityTable.getArray("index:Vim.Level:Level")
     }
     
-    async getLevel(elementIndex: number, recursive?: boolean): Promise<ILevel | undefined> {
+    async getLevel(elementIndex: number): Promise<ILevel | undefined> {
         const index = await this.getLevelIndex(elementIndex)
         
         if (index === undefined) {
             return undefined
         }
         
-        return await this.document.level?.get(index, recursive)
+        return await this.document.level?.get(index)
     }
     
     async getPhaseCreatedIndex(elementIndex: number): Promise<number | undefined> {
@@ -959,14 +930,14 @@ export class ElementTable implements IElementTable {
         return await this.entityTable.getArray("index:Vim.Phase:PhaseCreated")
     }
     
-    async getPhaseCreated(elementIndex: number, recursive?: boolean): Promise<IPhase | undefined> {
+    async getPhaseCreated(elementIndex: number): Promise<IPhase | undefined> {
         const index = await this.getPhaseCreatedIndex(elementIndex)
         
         if (index === undefined) {
             return undefined
         }
         
-        return await this.document.phase?.get(index, recursive)
+        return await this.document.phase?.get(index)
     }
     
     async getPhaseDemolishedIndex(elementIndex: number): Promise<number | undefined> {
@@ -977,14 +948,14 @@ export class ElementTable implements IElementTable {
         return await this.entityTable.getArray("index:Vim.Phase:PhaseDemolished")
     }
     
-    async getPhaseDemolished(elementIndex: number, recursive?: boolean): Promise<IPhase | undefined> {
+    async getPhaseDemolished(elementIndex: number): Promise<IPhase | undefined> {
         const index = await this.getPhaseDemolishedIndex(elementIndex)
         
         if (index === undefined) {
             return undefined
         }
         
-        return await this.document.phase?.get(index, recursive)
+        return await this.document.phase?.get(index)
     }
     
     async getCategoryIndex(elementIndex: number): Promise<number | undefined> {
@@ -995,14 +966,14 @@ export class ElementTable implements IElementTable {
         return await this.entityTable.getArray("index:Vim.Category:Category")
     }
     
-    async getCategory(elementIndex: number, recursive?: boolean): Promise<ICategory | undefined> {
+    async getCategory(elementIndex: number): Promise<ICategory | undefined> {
         const index = await this.getCategoryIndex(elementIndex)
         
         if (index === undefined) {
             return undefined
         }
         
-        return await this.document.category?.get(index, recursive)
+        return await this.document.category?.get(index)
     }
     
     async getWorksetIndex(elementIndex: number): Promise<number | undefined> {
@@ -1013,14 +984,14 @@ export class ElementTable implements IElementTable {
         return await this.entityTable.getArray("index:Vim.Workset:Workset")
     }
     
-    async getWorkset(elementIndex: number, recursive?: boolean): Promise<IWorkset | undefined> {
+    async getWorkset(elementIndex: number): Promise<IWorkset | undefined> {
         const index = await this.getWorksetIndex(elementIndex)
         
         if (index === undefined) {
             return undefined
         }
         
-        return await this.document.workset?.get(index, recursive)
+        return await this.document.workset?.get(index)
     }
     
     async getDesignOptionIndex(elementIndex: number): Promise<number | undefined> {
@@ -1031,14 +1002,14 @@ export class ElementTable implements IElementTable {
         return await this.entityTable.getArray("index:Vim.DesignOption:DesignOption")
     }
     
-    async getDesignOption(elementIndex: number, recursive?: boolean): Promise<IDesignOption | undefined> {
+    async getDesignOption(elementIndex: number): Promise<IDesignOption | undefined> {
         const index = await this.getDesignOptionIndex(elementIndex)
         
         if (index === undefined) {
             return undefined
         }
         
-        return await this.document.designOption?.get(index, recursive)
+        return await this.document.designOption?.get(index)
     }
     
     async getOwnerViewIndex(elementIndex: number): Promise<number | undefined> {
@@ -1049,14 +1020,14 @@ export class ElementTable implements IElementTable {
         return await this.entityTable.getArray("index:Vim.View:OwnerView")
     }
     
-    async getOwnerView(elementIndex: number, recursive?: boolean): Promise<IView | undefined> {
+    async getOwnerView(elementIndex: number): Promise<IView | undefined> {
         const index = await this.getOwnerViewIndex(elementIndex)
         
         if (index === undefined) {
             return undefined
         }
         
-        return await this.document.view?.get(index, recursive)
+        return await this.document.view?.get(index)
     }
     
     async getGroupIndex(elementIndex: number): Promise<number | undefined> {
@@ -1067,14 +1038,14 @@ export class ElementTable implements IElementTable {
         return await this.entityTable.getArray("index:Vim.Group:Group")
     }
     
-    async getGroup(elementIndex: number, recursive?: boolean): Promise<IGroup | undefined> {
+    async getGroup(elementIndex: number): Promise<IGroup | undefined> {
         const index = await this.getGroupIndex(elementIndex)
         
         if (index === undefined) {
             return undefined
         }
         
-        return await this.document.group?.get(index, recursive)
+        return await this.document.group?.get(index)
     }
     
     async getAssemblyInstanceIndex(elementIndex: number): Promise<number | undefined> {
@@ -1085,14 +1056,14 @@ export class ElementTable implements IElementTable {
         return await this.entityTable.getArray("index:Vim.AssemblyInstance:AssemblyInstance")
     }
     
-    async getAssemblyInstance(elementIndex: number, recursive?: boolean): Promise<IAssemblyInstance | undefined> {
+    async getAssemblyInstance(elementIndex: number): Promise<IAssemblyInstance | undefined> {
         const index = await this.getAssemblyInstanceIndex(elementIndex)
         
         if (index === undefined) {
             return undefined
         }
         
-        return await this.document.assemblyInstance?.get(index, recursive)
+        return await this.document.assemblyInstance?.get(index)
     }
     
     async getBimDocumentIndex(elementIndex: number): Promise<number | undefined> {
@@ -1103,14 +1074,14 @@ export class ElementTable implements IElementTable {
         return await this.entityTable.getArray("index:Vim.BimDocument:BimDocument")
     }
     
-    async getBimDocument(elementIndex: number, recursive?: boolean): Promise<IBimDocument | undefined> {
+    async getBimDocument(elementIndex: number): Promise<IBimDocument | undefined> {
         const index = await this.getBimDocumentIndex(elementIndex)
         
         if (index === undefined) {
             return undefined
         }
         
-        return await this.document.bimDocument?.get(index, recursive)
+        return await this.document.bimDocument?.get(index)
     }
     
     async getRoomIndex(elementIndex: number): Promise<number | undefined> {
@@ -1121,14 +1092,14 @@ export class ElementTable implements IElementTable {
         return await this.entityTable.getArray("index:Vim.Room:Room")
     }
     
-    async getRoom(elementIndex: number, recursive?: boolean): Promise<IRoom | undefined> {
+    async getRoom(elementIndex: number): Promise<IRoom | undefined> {
         const index = await this.getRoomIndex(elementIndex)
         
         if (index === undefined) {
             return undefined
         }
         
-        return await this.document.room?.get(index, recursive)
+        return await this.document.room?.get(index)
     }
     
 }
@@ -1149,7 +1120,7 @@ export interface IWorkset {
 
 export interface IWorksetTable {
     getCount(): Promise<number>
-    get(worksetIndex: number, recursive?: boolean): Promise<IWorkset>
+    get(worksetIndex: number): Promise<IWorkset>
     getAll(): Promise<IWorkset[]>
     
     getId(worksetIndex: number): Promise<number | undefined>
@@ -1169,7 +1140,7 @@ export interface IWorksetTable {
     
     getBimDocumentIndex(worksetIndex: number): Promise<number | undefined>
     getAllBimDocumentIndex(): Promise<number[] | undefined>
-    getBimDocument(worksetIndex: number, recursive?: boolean): Promise<IBimDocument | undefined>
+    getBimDocument(worksetIndex: number): Promise<IBimDocument | undefined>
 }
 
 export class Workset implements IWorkset {
@@ -1185,7 +1156,7 @@ export class Workset implements IWorkset {
     bimDocumentIndex?: number
     bimDocument?: IBimDocument
     
-    static async createFromTable(table: IWorksetTable, index: number, recursive: boolean = false): Promise<IWorkset> {
+    static async createFromTable(table: IWorksetTable, index: number): Promise<IWorkset> {
         let result = new Workset()
         result.index = index
         
@@ -1199,12 +1170,6 @@ export class Workset implements IWorkset {
             table.getUniqueId(index).then(v => result.uniqueId = v),
             table.getBimDocumentIndex(index).then(v => result.bimDocumentIndex = v),
         ])
-        
-        if (recursive) {
-            await Promise.all([
-                table.getBimDocument(index).then(v => result.bimDocument = v),
-            ])
-        }
         
         return result
     }
@@ -1232,8 +1197,8 @@ export class WorksetTable implements IWorksetTable {
         return (await this.entityTable.getArray("int:Id"))?.length ?? 0
     }
     
-    async get(worksetIndex: number, recursive?: boolean): Promise<IWorkset> {
-        return await Workset.createFromTable(this, worksetIndex, recursive)
+    async get(worksetIndex: number): Promise<IWorkset> {
+        return await Workset.createFromTable(this, worksetIndex)
     }
     
     async getAll(): Promise<IWorkset[]> {
@@ -1261,7 +1226,7 @@ export class WorksetTable implements IWorksetTable {
         
         let workset: IWorkset[] = []
         
-        for (let i = 0; i <= id!.length; i++) {
+        for (let i = 0; i < id!.length; i++) {
             workset.push({
                 index: i,
                 id: id ? id[i] : undefined,
@@ -1342,14 +1307,14 @@ export class WorksetTable implements IWorksetTable {
         return await this.entityTable.getArray("index:Vim.BimDocument:BimDocument")
     }
     
-    async getBimDocument(worksetIndex: number, recursive?: boolean): Promise<IBimDocument | undefined> {
+    async getBimDocument(worksetIndex: number): Promise<IBimDocument | undefined> {
         const index = await this.getBimDocumentIndex(worksetIndex)
         
         if (index === undefined) {
             return undefined
         }
         
-        return await this.document.bimDocument?.get(index, recursive)
+        return await this.document.bimDocument?.get(index)
     }
     
 }
@@ -1365,7 +1330,7 @@ export interface IAssemblyInstance {
 
 export interface IAssemblyInstanceTable {
     getCount(): Promise<number>
-    get(assemblyInstanceIndex: number, recursive?: boolean): Promise<IAssemblyInstance>
+    get(assemblyInstanceIndex: number): Promise<IAssemblyInstance>
     getAll(): Promise<IAssemblyInstance[]>
     
     getAssemblyTypeName(assemblyInstanceIndex: number): Promise<string | undefined>
@@ -1375,7 +1340,7 @@ export interface IAssemblyInstanceTable {
     
     getElementIndex(assemblyInstanceIndex: number): Promise<number | undefined>
     getAllElementIndex(): Promise<number[] | undefined>
-    getElement(assemblyInstanceIndex: number, recursive?: boolean): Promise<IElement | undefined>
+    getElement(assemblyInstanceIndex: number): Promise<IElement | undefined>
 }
 
 export class AssemblyInstance implements IAssemblyInstance {
@@ -1386,7 +1351,7 @@ export class AssemblyInstance implements IAssemblyInstance {
     elementIndex?: number
     element?: IElement
     
-    static async createFromTable(table: IAssemblyInstanceTable, index: number, recursive: boolean = false): Promise<IAssemblyInstance> {
+    static async createFromTable(table: IAssemblyInstanceTable, index: number): Promise<IAssemblyInstance> {
         let result = new AssemblyInstance()
         result.index = index
         
@@ -1395,12 +1360,6 @@ export class AssemblyInstance implements IAssemblyInstance {
             table.getPosition(index).then(v => result.position = v),
             table.getElementIndex(index).then(v => result.elementIndex = v),
         ])
-        
-        if (recursive) {
-            await Promise.all([
-                table.getElement(index).then(v => result.element = v),
-            ])
-        }
         
         return result
     }
@@ -1428,8 +1387,8 @@ export class AssemblyInstanceTable implements IAssemblyInstanceTable {
         return (await this.entityTable.getArray("string:AssemblyTypeName"))?.length ?? 0
     }
     
-    async get(assemblyInstanceIndex: number, recursive?: boolean): Promise<IAssemblyInstance> {
-        return await AssemblyInstance.createFromTable(this, assemblyInstanceIndex, recursive)
+    async get(assemblyInstanceIndex: number): Promise<IAssemblyInstance> {
+        return await AssemblyInstance.createFromTable(this, assemblyInstanceIndex)
     }
     
     async getAll(): Promise<IAssemblyInstance[]> {
@@ -1449,7 +1408,7 @@ export class AssemblyInstanceTable implements IAssemblyInstanceTable {
         
         let assemblyInstance: IAssemblyInstance[] = []
         
-        for (let i = 0; i <= assemblyTypeName!.length; i++) {
+        for (let i = 0; i < assemblyTypeName!.length; i++) {
             assemblyInstance.push({
                 index: i,
                 assemblyTypeName: assemblyTypeName ? assemblyTypeName[i] : undefined,
@@ -1493,14 +1452,14 @@ export class AssemblyInstanceTable implements IAssemblyInstanceTable {
         return await this.entityTable.getArray("index:Vim.Element:Element")
     }
     
-    async getElement(assemblyInstanceIndex: number, recursive?: boolean): Promise<IElement | undefined> {
+    async getElement(assemblyInstanceIndex: number): Promise<IElement | undefined> {
         const index = await this.getElementIndex(assemblyInstanceIndex)
         
         if (index === undefined) {
             return undefined
         }
         
-        return await this.document.element?.get(index, recursive)
+        return await this.document.element?.get(index)
     }
     
 }
@@ -1516,7 +1475,7 @@ export interface IGroup {
 
 export interface IGroupTable {
     getCount(): Promise<number>
-    get(groupIndex: number, recursive?: boolean): Promise<IGroup>
+    get(groupIndex: number): Promise<IGroup>
     getAll(): Promise<IGroup[]>
     
     getGroupType(groupIndex: number): Promise<string | undefined>
@@ -1526,7 +1485,7 @@ export interface IGroupTable {
     
     getElementIndex(groupIndex: number): Promise<number | undefined>
     getAllElementIndex(): Promise<number[] | undefined>
-    getElement(groupIndex: number, recursive?: boolean): Promise<IElement | undefined>
+    getElement(groupIndex: number): Promise<IElement | undefined>
 }
 
 export class Group implements IGroup {
@@ -1537,7 +1496,7 @@ export class Group implements IGroup {
     elementIndex?: number
     element?: IElement
     
-    static async createFromTable(table: IGroupTable, index: number, recursive: boolean = false): Promise<IGroup> {
+    static async createFromTable(table: IGroupTable, index: number): Promise<IGroup> {
         let result = new Group()
         result.index = index
         
@@ -1546,12 +1505,6 @@ export class Group implements IGroup {
             table.getPosition(index).then(v => result.position = v),
             table.getElementIndex(index).then(v => result.elementIndex = v),
         ])
-        
-        if (recursive) {
-            await Promise.all([
-                table.getElement(index).then(v => result.element = v),
-            ])
-        }
         
         return result
     }
@@ -1579,8 +1532,8 @@ export class GroupTable implements IGroupTable {
         return (await this.entityTable.getArray("string:GroupType"))?.length ?? 0
     }
     
-    async get(groupIndex: number, recursive?: boolean): Promise<IGroup> {
-        return await Group.createFromTable(this, groupIndex, recursive)
+    async get(groupIndex: number): Promise<IGroup> {
+        return await Group.createFromTable(this, groupIndex)
     }
     
     async getAll(): Promise<IGroup[]> {
@@ -1600,7 +1553,7 @@ export class GroupTable implements IGroupTable {
         
         let group: IGroup[] = []
         
-        for (let i = 0; i <= groupType!.length; i++) {
+        for (let i = 0; i < groupType!.length; i++) {
             group.push({
                 index: i,
                 groupType: groupType ? groupType[i] : undefined,
@@ -1644,14 +1597,14 @@ export class GroupTable implements IGroupTable {
         return await this.entityTable.getArray("index:Vim.Element:Element")
     }
     
-    async getElement(groupIndex: number, recursive?: boolean): Promise<IElement | undefined> {
+    async getElement(groupIndex: number): Promise<IElement | undefined> {
         const index = await this.getElementIndex(groupIndex)
         
         if (index === undefined) {
             return undefined
         }
         
-        return await this.document.element?.get(index, recursive)
+        return await this.document.element?.get(index)
     }
     
 }
@@ -1666,7 +1619,7 @@ export interface IDesignOption {
 
 export interface IDesignOptionTable {
     getCount(): Promise<number>
-    get(designOptionIndex: number, recursive?: boolean): Promise<IDesignOption>
+    get(designOptionIndex: number): Promise<IDesignOption>
     getAll(): Promise<IDesignOption[]>
     
     getIsPrimary(designOptionIndex: number): Promise<boolean | undefined>
@@ -1674,7 +1627,7 @@ export interface IDesignOptionTable {
     
     getElementIndex(designOptionIndex: number): Promise<number | undefined>
     getAllElementIndex(): Promise<number[] | undefined>
-    getElement(designOptionIndex: number, recursive?: boolean): Promise<IElement | undefined>
+    getElement(designOptionIndex: number): Promise<IElement | undefined>
 }
 
 export class DesignOption implements IDesignOption {
@@ -1684,7 +1637,7 @@ export class DesignOption implements IDesignOption {
     elementIndex?: number
     element?: IElement
     
-    static async createFromTable(table: IDesignOptionTable, index: number, recursive: boolean = false): Promise<IDesignOption> {
+    static async createFromTable(table: IDesignOptionTable, index: number): Promise<IDesignOption> {
         let result = new DesignOption()
         result.index = index
         
@@ -1692,12 +1645,6 @@ export class DesignOption implements IDesignOption {
             table.getIsPrimary(index).then(v => result.isPrimary = v),
             table.getElementIndex(index).then(v => result.elementIndex = v),
         ])
-        
-        if (recursive) {
-            await Promise.all([
-                table.getElement(index).then(v => result.element = v),
-            ])
-        }
         
         return result
     }
@@ -1725,8 +1672,8 @@ export class DesignOptionTable implements IDesignOptionTable {
         return (await this.entityTable.getArray("byte:IsPrimary"))?.length ?? 0
     }
     
-    async get(designOptionIndex: number, recursive?: boolean): Promise<IDesignOption> {
-        return await DesignOption.createFromTable(this, designOptionIndex, recursive)
+    async get(designOptionIndex: number): Promise<IDesignOption> {
+        return await DesignOption.createFromTable(this, designOptionIndex)
     }
     
     async getAll(): Promise<IDesignOption[]> {
@@ -1742,7 +1689,7 @@ export class DesignOptionTable implements IDesignOptionTable {
         
         let designOption: IDesignOption[] = []
         
-        for (let i = 0; i <= isPrimary!.length; i++) {
+        for (let i = 0; i < isPrimary!.length; i++) {
             designOption.push({
                 index: i,
                 isPrimary: isPrimary ? isPrimary[i] : undefined,
@@ -1769,14 +1716,14 @@ export class DesignOptionTable implements IDesignOptionTable {
         return await this.entityTable.getArray("index:Vim.Element:Element")
     }
     
-    async getElement(designOptionIndex: number, recursive?: boolean): Promise<IElement | undefined> {
+    async getElement(designOptionIndex: number): Promise<IElement | undefined> {
         const index = await this.getElementIndex(designOptionIndex)
         
         if (index === undefined) {
             return undefined
         }
         
-        return await this.document.element?.get(index, recursive)
+        return await this.document.element?.get(index)
     }
     
 }
@@ -1791,7 +1738,7 @@ export interface ILevel {
 
 export interface ILevelTable {
     getCount(): Promise<number>
-    get(levelIndex: number, recursive?: boolean): Promise<ILevel>
+    get(levelIndex: number): Promise<ILevel>
     getAll(): Promise<ILevel[]>
     
     getElevation(levelIndex: number): Promise<number | undefined>
@@ -1799,7 +1746,7 @@ export interface ILevelTable {
     
     getElementIndex(levelIndex: number): Promise<number | undefined>
     getAllElementIndex(): Promise<number[] | undefined>
-    getElement(levelIndex: number, recursive?: boolean): Promise<IElement | undefined>
+    getElement(levelIndex: number): Promise<IElement | undefined>
 }
 
 export class Level implements ILevel {
@@ -1809,7 +1756,7 @@ export class Level implements ILevel {
     elementIndex?: number
     element?: IElement
     
-    static async createFromTable(table: ILevelTable, index: number, recursive: boolean = false): Promise<ILevel> {
+    static async createFromTable(table: ILevelTable, index: number): Promise<ILevel> {
         let result = new Level()
         result.index = index
         
@@ -1817,12 +1764,6 @@ export class Level implements ILevel {
             table.getElevation(index).then(v => result.elevation = v),
             table.getElementIndex(index).then(v => result.elementIndex = v),
         ])
-        
-        if (recursive) {
-            await Promise.all([
-                table.getElement(index).then(v => result.element = v),
-            ])
-        }
         
         return result
     }
@@ -1850,8 +1791,8 @@ export class LevelTable implements ILevelTable {
         return (await this.entityTable.getArray("double:Elevation"))?.length ?? 0
     }
     
-    async get(levelIndex: number, recursive?: boolean): Promise<ILevel> {
-        return await Level.createFromTable(this, levelIndex, recursive)
+    async get(levelIndex: number): Promise<ILevel> {
+        return await Level.createFromTable(this, levelIndex)
     }
     
     async getAll(): Promise<ILevel[]> {
@@ -1867,7 +1808,7 @@ export class LevelTable implements ILevelTable {
         
         let level: ILevel[] = []
         
-        for (let i = 0; i <= elevation!.length; i++) {
+        for (let i = 0; i < elevation!.length; i++) {
             level.push({
                 index: i,
                 elevation: elevation ? elevation[i] : undefined,
@@ -1894,14 +1835,14 @@ export class LevelTable implements ILevelTable {
         return await this.entityTable.getArray("index:Vim.Element:Element")
     }
     
-    async getElement(levelIndex: number, recursive?: boolean): Promise<IElement | undefined> {
+    async getElement(levelIndex: number): Promise<IElement | undefined> {
         const index = await this.getElementIndex(levelIndex)
         
         if (index === undefined) {
             return undefined
         }
         
-        return await this.document.element?.get(index, recursive)
+        return await this.document.element?.get(index)
     }
     
 }
@@ -1915,12 +1856,12 @@ export interface IPhase {
 
 export interface IPhaseTable {
     getCount(): Promise<number>
-    get(phaseIndex: number, recursive?: boolean): Promise<IPhase>
+    get(phaseIndex: number): Promise<IPhase>
     getAll(): Promise<IPhase[]>
     
     getElementIndex(phaseIndex: number): Promise<number | undefined>
     getAllElementIndex(): Promise<number[] | undefined>
-    getElement(phaseIndex: number, recursive?: boolean): Promise<IElement | undefined>
+    getElement(phaseIndex: number): Promise<IElement | undefined>
 }
 
 export class Phase implements IPhase {
@@ -1929,19 +1870,13 @@ export class Phase implements IPhase {
     elementIndex?: number
     element?: IElement
     
-    static async createFromTable(table: IPhaseTable, index: number, recursive: boolean = false): Promise<IPhase> {
+    static async createFromTable(table: IPhaseTable, index: number): Promise<IPhase> {
         let result = new Phase()
         result.index = index
         
         await Promise.all([
             table.getElementIndex(index).then(v => result.elementIndex = v),
         ])
-        
-        if (recursive) {
-            await Promise.all([
-                table.getElement(index).then(v => result.element = v),
-            ])
-        }
         
         return result
     }
@@ -1969,8 +1904,8 @@ export class PhaseTable implements IPhaseTable {
         return (await this.entityTable.getArray("index:Vim.Element:Element"))?.length ?? 0
     }
     
-    async get(phaseIndex: number, recursive?: boolean): Promise<IPhase> {
-        return await Phase.createFromTable(this, phaseIndex, recursive)
+    async get(phaseIndex: number): Promise<IPhase> {
+        return await Phase.createFromTable(this, phaseIndex)
     }
     
     async getAll(): Promise<IPhase[]> {
@@ -1984,7 +1919,7 @@ export class PhaseTable implements IPhaseTable {
         
         let phase: IPhase[] = []
         
-        for (let i = 0; i <= elementIndex!.length; i++) {
+        for (let i = 0; i < elementIndex!.length; i++) {
             phase.push({
                 index: i,
                 elementIndex: elementIndex ? elementIndex[i] : undefined
@@ -2002,14 +1937,14 @@ export class PhaseTable implements IPhaseTable {
         return await this.entityTable.getArray("index:Vim.Element:Element")
     }
     
-    async getElement(phaseIndex: number, recursive?: boolean): Promise<IElement | undefined> {
+    async getElement(phaseIndex: number): Promise<IElement | undefined> {
         const index = await this.getElementIndex(phaseIndex)
         
         if (index === undefined) {
             return undefined
         }
         
-        return await this.document.element?.get(index, recursive)
+        return await this.document.element?.get(index)
     }
     
 }
@@ -2032,7 +1967,7 @@ export interface IRoom {
 
 export interface IRoomTable {
     getCount(): Promise<number>
-    get(roomIndex: number, recursive?: boolean): Promise<IRoom>
+    get(roomIndex: number): Promise<IRoom>
     getAll(): Promise<IRoom[]>
     
     getBaseOffset(roomIndex: number): Promise<number | undefined>
@@ -2052,10 +1987,10 @@ export interface IRoomTable {
     
     getUpperLimitIndex(roomIndex: number): Promise<number | undefined>
     getAllUpperLimitIndex(): Promise<number[] | undefined>
-    getUpperLimit(roomIndex: number, recursive?: boolean): Promise<ILevel | undefined>
+    getUpperLimit(roomIndex: number): Promise<ILevel | undefined>
     getElementIndex(roomIndex: number): Promise<number | undefined>
     getAllElementIndex(): Promise<number[] | undefined>
-    getElement(roomIndex: number, recursive?: boolean): Promise<IElement | undefined>
+    getElement(roomIndex: number): Promise<IElement | undefined>
 }
 
 export class Room implements IRoom {
@@ -2073,7 +2008,7 @@ export class Room implements IRoom {
     elementIndex?: number
     element?: IElement
     
-    static async createFromTable(table: IRoomTable, index: number, recursive: boolean = false): Promise<IRoom> {
+    static async createFromTable(table: IRoomTable, index: number): Promise<IRoom> {
         let result = new Room()
         result.index = index
         
@@ -2088,13 +2023,6 @@ export class Room implements IRoom {
             table.getUpperLimitIndex(index).then(v => result.upperLimitIndex = v),
             table.getElementIndex(index).then(v => result.elementIndex = v),
         ])
-        
-        if (recursive) {
-            await Promise.all([
-                table.getUpperLimit(index).then(v => result.upperLimit = v),
-                table.getElement(index).then(v => result.element = v),
-            ])
-        }
         
         return result
     }
@@ -2122,8 +2050,8 @@ export class RoomTable implements IRoomTable {
         return (await this.entityTable.getArray("double:BaseOffset"))?.length ?? 0
     }
     
-    async get(roomIndex: number, recursive?: boolean): Promise<IRoom> {
-        return await Room.createFromTable(this, roomIndex, recursive)
+    async get(roomIndex: number): Promise<IRoom> {
+        return await Room.createFromTable(this, roomIndex)
     }
     
     async getAll(): Promise<IRoom[]> {
@@ -2153,7 +2081,7 @@ export class RoomTable implements IRoomTable {
         
         let room: IRoom[] = []
         
-        for (let i = 0; i <= baseOffset!.length; i++) {
+        for (let i = 0; i < baseOffset!.length; i++) {
             room.push({
                 index: i,
                 baseOffset: baseOffset ? baseOffset[i] : undefined,
@@ -2235,14 +2163,14 @@ export class RoomTable implements IRoomTable {
         return await this.entityTable.getArray("index:Vim.Level:UpperLimit")
     }
     
-    async getUpperLimit(roomIndex: number, recursive?: boolean): Promise<ILevel | undefined> {
+    async getUpperLimit(roomIndex: number): Promise<ILevel | undefined> {
         const index = await this.getUpperLimitIndex(roomIndex)
         
         if (index === undefined) {
             return undefined
         }
         
-        return await this.document.level?.get(index, recursive)
+        return await this.document.level?.get(index)
     }
     
     async getElementIndex(roomIndex: number): Promise<number | undefined> {
@@ -2253,14 +2181,14 @@ export class RoomTable implements IRoomTable {
         return await this.entityTable.getArray("index:Vim.Element:Element")
     }
     
-    async getElement(roomIndex: number, recursive?: boolean): Promise<IElement | undefined> {
+    async getElement(roomIndex: number): Promise<IElement | undefined> {
         const index = await this.getElementIndex(roomIndex)
         
         if (index === undefined) {
             return undefined
         }
         
-        return await this.document.element?.get(index, recursive)
+        return await this.document.element?.get(index)
     }
     
 }
@@ -2308,7 +2236,7 @@ export interface IBimDocument {
 
 export interface IBimDocumentTable {
     getCount(): Promise<number>
-    get(bimDocumentIndex: number, recursive?: boolean): Promise<IBimDocument>
+    get(bimDocumentIndex: number): Promise<IBimDocument>
     getAll(): Promise<IBimDocument[]>
     
     getTitle(bimDocumentIndex: number): Promise<string | undefined>
@@ -2370,16 +2298,16 @@ export interface IBimDocumentTable {
     
     getActiveViewIndex(bimDocumentIndex: number): Promise<number | undefined>
     getAllActiveViewIndex(): Promise<number[] | undefined>
-    getActiveView(bimDocumentIndex: number, recursive?: boolean): Promise<IView | undefined>
+    getActiveView(bimDocumentIndex: number): Promise<IView | undefined>
     getOwnerFamilyIndex(bimDocumentIndex: number): Promise<number | undefined>
     getAllOwnerFamilyIndex(): Promise<number[] | undefined>
-    getOwnerFamily(bimDocumentIndex: number, recursive?: boolean): Promise<IFamily | undefined>
+    getOwnerFamily(bimDocumentIndex: number): Promise<IFamily | undefined>
     getParentIndex(bimDocumentIndex: number): Promise<number | undefined>
     getAllParentIndex(): Promise<number[] | undefined>
-    getParent(bimDocumentIndex: number, recursive?: boolean): Promise<IBimDocument | undefined>
+    getParent(bimDocumentIndex: number): Promise<IBimDocument | undefined>
     getElementIndex(bimDocumentIndex: number): Promise<number | undefined>
     getAllElementIndex(): Promise<number[] | undefined>
-    getElement(bimDocumentIndex: number, recursive?: boolean): Promise<IElement | undefined>
+    getElement(bimDocumentIndex: number): Promise<IElement | undefined>
 }
 
 export class BimDocument implements IBimDocument {
@@ -2422,7 +2350,7 @@ export class BimDocument implements IBimDocument {
     elementIndex?: number
     element?: IElement
     
-    static async createFromTable(table: IBimDocumentTable, index: number, recursive: boolean = false): Promise<IBimDocument> {
+    static async createFromTable(table: IBimDocumentTable, index: number): Promise<IBimDocument> {
         let result = new BimDocument()
         result.index = index
         
@@ -2461,15 +2389,6 @@ export class BimDocument implements IBimDocument {
             table.getElementIndex(index).then(v => result.elementIndex = v),
         ])
         
-        if (recursive) {
-            await Promise.all([
-                table.getActiveView(index).then(v => result.activeView = v),
-                table.getOwnerFamily(index).then(v => result.ownerFamily = v),
-                table.getParent(index).then(v => result.parent = v),
-                table.getElement(index).then(v => result.element = v),
-            ])
-        }
-        
         return result
     }
 }
@@ -2496,8 +2415,8 @@ export class BimDocumentTable implements IBimDocumentTable {
         return (await this.entityTable.getArray("string:Title"))?.length ?? 0
     }
     
-    async get(bimDocumentIndex: number, recursive?: boolean): Promise<IBimDocument> {
-        return await BimDocument.createFromTable(this, bimDocumentIndex, recursive)
+    async get(bimDocumentIndex: number): Promise<IBimDocument> {
+        return await BimDocument.createFromTable(this, bimDocumentIndex)
     }
     
     async getAll(): Promise<IBimDocument[]> {
@@ -2573,7 +2492,7 @@ export class BimDocumentTable implements IBimDocumentTable {
         
         let bimDocument: IBimDocument[] = []
         
-        for (let i = 0; i <= title!.length; i++) {
+        for (let i = 0; i < title!.length; i++) {
             bimDocument.push({
                 index: i,
                 title: title ? title[i] : undefined,
@@ -2846,14 +2765,14 @@ export class BimDocumentTable implements IBimDocumentTable {
         return await this.entityTable.getArray("index:Vim.View:ActiveView")
     }
     
-    async getActiveView(bimDocumentIndex: number, recursive?: boolean): Promise<IView | undefined> {
+    async getActiveView(bimDocumentIndex: number): Promise<IView | undefined> {
         const index = await this.getActiveViewIndex(bimDocumentIndex)
         
         if (index === undefined) {
             return undefined
         }
         
-        return await this.document.view?.get(index, recursive)
+        return await this.document.view?.get(index)
     }
     
     async getOwnerFamilyIndex(bimDocumentIndex: number): Promise<number | undefined> {
@@ -2864,14 +2783,14 @@ export class BimDocumentTable implements IBimDocumentTable {
         return await this.entityTable.getArray("index:Vim.Family:OwnerFamily")
     }
     
-    async getOwnerFamily(bimDocumentIndex: number, recursive?: boolean): Promise<IFamily | undefined> {
+    async getOwnerFamily(bimDocumentIndex: number): Promise<IFamily | undefined> {
         const index = await this.getOwnerFamilyIndex(bimDocumentIndex)
         
         if (index === undefined) {
             return undefined
         }
         
-        return await this.document.family?.get(index, recursive)
+        return await this.document.family?.get(index)
     }
     
     async getParentIndex(bimDocumentIndex: number): Promise<number | undefined> {
@@ -2882,14 +2801,14 @@ export class BimDocumentTable implements IBimDocumentTable {
         return await this.entityTable.getArray("index:Vim.BimDocument:Parent")
     }
     
-    async getParent(bimDocumentIndex: number, recursive?: boolean): Promise<IBimDocument | undefined> {
+    async getParent(bimDocumentIndex: number): Promise<IBimDocument | undefined> {
         const index = await this.getParentIndex(bimDocumentIndex)
         
         if (index === undefined) {
             return undefined
         }
         
-        return await this.document.bimDocument?.get(index, recursive)
+        return await this.document.bimDocument?.get(index)
     }
     
     async getElementIndex(bimDocumentIndex: number): Promise<number | undefined> {
@@ -2900,14 +2819,14 @@ export class BimDocumentTable implements IBimDocumentTable {
         return await this.entityTable.getArray("index:Vim.Element:Element")
     }
     
-    async getElement(bimDocumentIndex: number, recursive?: boolean): Promise<IElement | undefined> {
+    async getElement(bimDocumentIndex: number): Promise<IElement | undefined> {
         const index = await this.getElementIndex(bimDocumentIndex)
         
         if (index === undefined) {
             return undefined
         }
         
-        return await this.document.element?.get(index, recursive)
+        return await this.document.element?.get(index)
     }
     
 }
@@ -2923,15 +2842,15 @@ export interface IDisplayUnitInBimDocument {
 
 export interface IDisplayUnitInBimDocumentTable {
     getCount(): Promise<number>
-    get(displayUnitInBimDocumentIndex: number, recursive?: boolean): Promise<IDisplayUnitInBimDocument>
+    get(displayUnitInBimDocumentIndex: number): Promise<IDisplayUnitInBimDocument>
     getAll(): Promise<IDisplayUnitInBimDocument[]>
     
     getDisplayUnitIndex(displayUnitInBimDocumentIndex: number): Promise<number | undefined>
     getAllDisplayUnitIndex(): Promise<number[] | undefined>
-    getDisplayUnit(displayUnitInBimDocumentIndex: number, recursive?: boolean): Promise<IDisplayUnit | undefined>
+    getDisplayUnit(displayUnitInBimDocumentIndex: number): Promise<IDisplayUnit | undefined>
     getBimDocumentIndex(displayUnitInBimDocumentIndex: number): Promise<number | undefined>
     getAllBimDocumentIndex(): Promise<number[] | undefined>
-    getBimDocument(displayUnitInBimDocumentIndex: number, recursive?: boolean): Promise<IBimDocument | undefined>
+    getBimDocument(displayUnitInBimDocumentIndex: number): Promise<IBimDocument | undefined>
 }
 
 export class DisplayUnitInBimDocument implements IDisplayUnitInBimDocument {
@@ -2942,7 +2861,7 @@ export class DisplayUnitInBimDocument implements IDisplayUnitInBimDocument {
     bimDocumentIndex?: number
     bimDocument?: IBimDocument
     
-    static async createFromTable(table: IDisplayUnitInBimDocumentTable, index: number, recursive: boolean = false): Promise<IDisplayUnitInBimDocument> {
+    static async createFromTable(table: IDisplayUnitInBimDocumentTable, index: number): Promise<IDisplayUnitInBimDocument> {
         let result = new DisplayUnitInBimDocument()
         result.index = index
         
@@ -2950,13 +2869,6 @@ export class DisplayUnitInBimDocument implements IDisplayUnitInBimDocument {
             table.getDisplayUnitIndex(index).then(v => result.displayUnitIndex = v),
             table.getBimDocumentIndex(index).then(v => result.bimDocumentIndex = v),
         ])
-        
-        if (recursive) {
-            await Promise.all([
-                table.getDisplayUnit(index).then(v => result.displayUnit = v),
-                table.getBimDocument(index).then(v => result.bimDocument = v),
-            ])
-        }
         
         return result
     }
@@ -2984,8 +2896,8 @@ export class DisplayUnitInBimDocumentTable implements IDisplayUnitInBimDocumentT
         return (await this.entityTable.getArray("index:Vim.DisplayUnit:DisplayUnit"))?.length ?? 0
     }
     
-    async get(displayUnitInBimDocumentIndex: number, recursive?: boolean): Promise<IDisplayUnitInBimDocument> {
-        return await DisplayUnitInBimDocument.createFromTable(this, displayUnitInBimDocumentIndex, recursive)
+    async get(displayUnitInBimDocumentIndex: number): Promise<IDisplayUnitInBimDocument> {
+        return await DisplayUnitInBimDocument.createFromTable(this, displayUnitInBimDocumentIndex)
     }
     
     async getAll(): Promise<IDisplayUnitInBimDocument[]> {
@@ -3001,7 +2913,7 @@ export class DisplayUnitInBimDocumentTable implements IDisplayUnitInBimDocumentT
         
         let displayUnitInBimDocument: IDisplayUnitInBimDocument[] = []
         
-        for (let i = 0; i <= displayUnitIndex!.length; i++) {
+        for (let i = 0; i < displayUnitIndex!.length; i++) {
             displayUnitInBimDocument.push({
                 index: i,
                 displayUnitIndex: displayUnitIndex ? displayUnitIndex[i] : undefined,
@@ -3020,14 +2932,14 @@ export class DisplayUnitInBimDocumentTable implements IDisplayUnitInBimDocumentT
         return await this.entityTable.getArray("index:Vim.DisplayUnit:DisplayUnit")
     }
     
-    async getDisplayUnit(displayUnitInBimDocumentIndex: number, recursive?: boolean): Promise<IDisplayUnit | undefined> {
+    async getDisplayUnit(displayUnitInBimDocumentIndex: number): Promise<IDisplayUnit | undefined> {
         const index = await this.getDisplayUnitIndex(displayUnitInBimDocumentIndex)
         
         if (index === undefined) {
             return undefined
         }
         
-        return await this.document.displayUnit?.get(index, recursive)
+        return await this.document.displayUnit?.get(index)
     }
     
     async getBimDocumentIndex(displayUnitInBimDocumentIndex: number): Promise<number | undefined> {
@@ -3038,14 +2950,14 @@ export class DisplayUnitInBimDocumentTable implements IDisplayUnitInBimDocumentT
         return await this.entityTable.getArray("index:Vim.BimDocument:BimDocument")
     }
     
-    async getBimDocument(displayUnitInBimDocumentIndex: number, recursive?: boolean): Promise<IBimDocument | undefined> {
+    async getBimDocument(displayUnitInBimDocumentIndex: number): Promise<IBimDocument | undefined> {
         const index = await this.getBimDocumentIndex(displayUnitInBimDocumentIndex)
         
         if (index === undefined) {
             return undefined
         }
         
-        return await this.document.bimDocument?.get(index, recursive)
+        return await this.document.bimDocument?.get(index)
     }
     
 }
@@ -3062,7 +2974,7 @@ export interface IPhaseOrderInBimDocument {
 
 export interface IPhaseOrderInBimDocumentTable {
     getCount(): Promise<number>
-    get(phaseOrderInBimDocumentIndex: number, recursive?: boolean): Promise<IPhaseOrderInBimDocument>
+    get(phaseOrderInBimDocumentIndex: number): Promise<IPhaseOrderInBimDocument>
     getAll(): Promise<IPhaseOrderInBimDocument[]>
     
     getOrderIndex(phaseOrderInBimDocumentIndex: number): Promise<number | undefined>
@@ -3070,10 +2982,10 @@ export interface IPhaseOrderInBimDocumentTable {
     
     getPhaseIndex(phaseOrderInBimDocumentIndex: number): Promise<number | undefined>
     getAllPhaseIndex(): Promise<number[] | undefined>
-    getPhase(phaseOrderInBimDocumentIndex: number, recursive?: boolean): Promise<IPhase | undefined>
+    getPhase(phaseOrderInBimDocumentIndex: number): Promise<IPhase | undefined>
     getBimDocumentIndex(phaseOrderInBimDocumentIndex: number): Promise<number | undefined>
     getAllBimDocumentIndex(): Promise<number[] | undefined>
-    getBimDocument(phaseOrderInBimDocumentIndex: number, recursive?: boolean): Promise<IBimDocument | undefined>
+    getBimDocument(phaseOrderInBimDocumentIndex: number): Promise<IBimDocument | undefined>
 }
 
 export class PhaseOrderInBimDocument implements IPhaseOrderInBimDocument {
@@ -3085,7 +2997,7 @@ export class PhaseOrderInBimDocument implements IPhaseOrderInBimDocument {
     bimDocumentIndex?: number
     bimDocument?: IBimDocument
     
-    static async createFromTable(table: IPhaseOrderInBimDocumentTable, index: number, recursive: boolean = false): Promise<IPhaseOrderInBimDocument> {
+    static async createFromTable(table: IPhaseOrderInBimDocumentTable, index: number): Promise<IPhaseOrderInBimDocument> {
         let result = new PhaseOrderInBimDocument()
         result.index = index
         
@@ -3094,13 +3006,6 @@ export class PhaseOrderInBimDocument implements IPhaseOrderInBimDocument {
             table.getPhaseIndex(index).then(v => result.phaseIndex = v),
             table.getBimDocumentIndex(index).then(v => result.bimDocumentIndex = v),
         ])
-        
-        if (recursive) {
-            await Promise.all([
-                table.getPhase(index).then(v => result.phase = v),
-                table.getBimDocument(index).then(v => result.bimDocument = v),
-            ])
-        }
         
         return result
     }
@@ -3128,8 +3033,8 @@ export class PhaseOrderInBimDocumentTable implements IPhaseOrderInBimDocumentTab
         return (await this.entityTable.getArray("int:OrderIndex"))?.length ?? 0
     }
     
-    async get(phaseOrderInBimDocumentIndex: number, recursive?: boolean): Promise<IPhaseOrderInBimDocument> {
-        return await PhaseOrderInBimDocument.createFromTable(this, phaseOrderInBimDocumentIndex, recursive)
+    async get(phaseOrderInBimDocumentIndex: number): Promise<IPhaseOrderInBimDocument> {
+        return await PhaseOrderInBimDocument.createFromTable(this, phaseOrderInBimDocumentIndex)
     }
     
     async getAll(): Promise<IPhaseOrderInBimDocument[]> {
@@ -3147,7 +3052,7 @@ export class PhaseOrderInBimDocumentTable implements IPhaseOrderInBimDocumentTab
         
         let phaseOrderInBimDocument: IPhaseOrderInBimDocument[] = []
         
-        for (let i = 0; i <= orderIndex!.length; i++) {
+        for (let i = 0; i < orderIndex!.length; i++) {
             phaseOrderInBimDocument.push({
                 index: i,
                 orderIndex: orderIndex ? orderIndex[i] : undefined,
@@ -3175,14 +3080,14 @@ export class PhaseOrderInBimDocumentTable implements IPhaseOrderInBimDocumentTab
         return await this.entityTable.getArray("index:Vim.Phase:Phase")
     }
     
-    async getPhase(phaseOrderInBimDocumentIndex: number, recursive?: boolean): Promise<IPhase | undefined> {
+    async getPhase(phaseOrderInBimDocumentIndex: number): Promise<IPhase | undefined> {
         const index = await this.getPhaseIndex(phaseOrderInBimDocumentIndex)
         
         if (index === undefined) {
             return undefined
         }
         
-        return await this.document.phase?.get(index, recursive)
+        return await this.document.phase?.get(index)
     }
     
     async getBimDocumentIndex(phaseOrderInBimDocumentIndex: number): Promise<number | undefined> {
@@ -3193,14 +3098,14 @@ export class PhaseOrderInBimDocumentTable implements IPhaseOrderInBimDocumentTab
         return await this.entityTable.getArray("index:Vim.BimDocument:BimDocument")
     }
     
-    async getBimDocument(phaseOrderInBimDocumentIndex: number, recursive?: boolean): Promise<IBimDocument | undefined> {
+    async getBimDocument(phaseOrderInBimDocumentIndex: number): Promise<IBimDocument | undefined> {
         const index = await this.getBimDocumentIndex(phaseOrderInBimDocumentIndex)
         
         if (index === undefined) {
             return undefined
         }
         
-        return await this.document.bimDocument?.get(index, recursive)
+        return await this.document.bimDocument?.get(index)
     }
     
 }
@@ -3221,7 +3126,7 @@ export interface ICategory {
 
 export interface ICategoryTable {
     getCount(): Promise<number>
-    get(categoryIndex: number, recursive?: boolean): Promise<ICategory>
+    get(categoryIndex: number): Promise<ICategory>
     getAll(): Promise<ICategory[]>
     
     getName(categoryIndex: number): Promise<string | undefined>
@@ -3237,10 +3142,10 @@ export interface ICategoryTable {
     
     getParentIndex(categoryIndex: number): Promise<number | undefined>
     getAllParentIndex(): Promise<number[] | undefined>
-    getParent(categoryIndex: number, recursive?: boolean): Promise<ICategory | undefined>
+    getParent(categoryIndex: number): Promise<ICategory | undefined>
     getMaterialIndex(categoryIndex: number): Promise<number | undefined>
     getAllMaterialIndex(): Promise<number[] | undefined>
-    getMaterial(categoryIndex: number, recursive?: boolean): Promise<IMaterial | undefined>
+    getMaterial(categoryIndex: number): Promise<IMaterial | undefined>
 }
 
 export class Category implements ICategory {
@@ -3256,7 +3161,7 @@ export class Category implements ICategory {
     materialIndex?: number
     material?: IMaterial
     
-    static async createFromTable(table: ICategoryTable, index: number, recursive: boolean = false): Promise<ICategory> {
+    static async createFromTable(table: ICategoryTable, index: number): Promise<ICategory> {
         let result = new Category()
         result.index = index
         
@@ -3269,13 +3174,6 @@ export class Category implements ICategory {
             table.getParentIndex(index).then(v => result.parentIndex = v),
             table.getMaterialIndex(index).then(v => result.materialIndex = v),
         ])
-        
-        if (recursive) {
-            await Promise.all([
-                table.getParent(index).then(v => result.parent = v),
-                table.getMaterial(index).then(v => result.material = v),
-            ])
-        }
         
         return result
     }
@@ -3303,8 +3201,8 @@ export class CategoryTable implements ICategoryTable {
         return (await this.entityTable.getArray("string:Name"))?.length ?? 0
     }
     
-    async get(categoryIndex: number, recursive?: boolean): Promise<ICategory> {
-        return await Category.createFromTable(this, categoryIndex, recursive)
+    async get(categoryIndex: number): Promise<ICategory> {
+        return await Category.createFromTable(this, categoryIndex)
     }
     
     async getAll(): Promise<ICategory[]> {
@@ -3332,7 +3230,7 @@ export class CategoryTable implements ICategoryTable {
         
         let category: ICategory[] = []
         
-        for (let i = 0; i <= name!.length; i++) {
+        for (let i = 0; i < name!.length; i++) {
             category.push({
                 index: i,
                 name: name ? name[i] : undefined,
@@ -3404,14 +3302,14 @@ export class CategoryTable implements ICategoryTable {
         return await this.entityTable.getArray("index:Vim.Category:Parent")
     }
     
-    async getParent(categoryIndex: number, recursive?: boolean): Promise<ICategory | undefined> {
+    async getParent(categoryIndex: number): Promise<ICategory | undefined> {
         const index = await this.getParentIndex(categoryIndex)
         
         if (index === undefined) {
             return undefined
         }
         
-        return await this.document.category?.get(index, recursive)
+        return await this.document.category?.get(index)
     }
     
     async getMaterialIndex(categoryIndex: number): Promise<number | undefined> {
@@ -3422,14 +3320,14 @@ export class CategoryTable implements ICategoryTable {
         return await this.entityTable.getArray("index:Vim.Material:Material")
     }
     
-    async getMaterial(categoryIndex: number, recursive?: boolean): Promise<IMaterial | undefined> {
+    async getMaterial(categoryIndex: number): Promise<IMaterial | undefined> {
         const index = await this.getMaterialIndex(categoryIndex)
         
         if (index === undefined) {
             return undefined
         }
         
-        return await this.document.material?.get(index, recursive)
+        return await this.document.material?.get(index)
     }
     
 }
@@ -3449,7 +3347,7 @@ export interface IFamily {
 
 export interface IFamilyTable {
     getCount(): Promise<number>
-    get(familyIndex: number, recursive?: boolean): Promise<IFamily>
+    get(familyIndex: number): Promise<IFamily>
     getAll(): Promise<IFamily[]>
     
     getStructuralMaterialType(familyIndex: number): Promise<string | undefined>
@@ -3463,10 +3361,10 @@ export interface IFamilyTable {
     
     getFamilyCategoryIndex(familyIndex: number): Promise<number | undefined>
     getAllFamilyCategoryIndex(): Promise<number[] | undefined>
-    getFamilyCategory(familyIndex: number, recursive?: boolean): Promise<ICategory | undefined>
+    getFamilyCategory(familyIndex: number): Promise<ICategory | undefined>
     getElementIndex(familyIndex: number): Promise<number | undefined>
     getAllElementIndex(): Promise<number[] | undefined>
-    getElement(familyIndex: number, recursive?: boolean): Promise<IElement | undefined>
+    getElement(familyIndex: number): Promise<IElement | undefined>
 }
 
 export class Family implements IFamily {
@@ -3481,7 +3379,7 @@ export class Family implements IFamily {
     elementIndex?: number
     element?: IElement
     
-    static async createFromTable(table: IFamilyTable, index: number, recursive: boolean = false): Promise<IFamily> {
+    static async createFromTable(table: IFamilyTable, index: number): Promise<IFamily> {
         let result = new Family()
         result.index = index
         
@@ -3493,13 +3391,6 @@ export class Family implements IFamily {
             table.getFamilyCategoryIndex(index).then(v => result.familyCategoryIndex = v),
             table.getElementIndex(index).then(v => result.elementIndex = v),
         ])
-        
-        if (recursive) {
-            await Promise.all([
-                table.getFamilyCategory(index).then(v => result.familyCategory = v),
-                table.getElement(index).then(v => result.element = v),
-            ])
-        }
         
         return result
     }
@@ -3527,8 +3418,8 @@ export class FamilyTable implements IFamilyTable {
         return (await this.entityTable.getArray("string:StructuralMaterialType"))?.length ?? 0
     }
     
-    async get(familyIndex: number, recursive?: boolean): Promise<IFamily> {
-        return await Family.createFromTable(this, familyIndex, recursive)
+    async get(familyIndex: number): Promise<IFamily> {
+        return await Family.createFromTable(this, familyIndex)
     }
     
     async getAll(): Promise<IFamily[]> {
@@ -3552,7 +3443,7 @@ export class FamilyTable implements IFamilyTable {
         
         let family: IFamily[] = []
         
-        for (let i = 0; i <= structuralMaterialType!.length; i++) {
+        for (let i = 0; i < structuralMaterialType!.length; i++) {
             family.push({
                 index: i,
                 structuralMaterialType: structuralMaterialType ? structuralMaterialType[i] : undefined,
@@ -3607,14 +3498,14 @@ export class FamilyTable implements IFamilyTable {
         return await this.entityTable.getArray("index:Vim.Category:FamilyCategory")
     }
     
-    async getFamilyCategory(familyIndex: number, recursive?: boolean): Promise<ICategory | undefined> {
+    async getFamilyCategory(familyIndex: number): Promise<ICategory | undefined> {
         const index = await this.getFamilyCategoryIndex(familyIndex)
         
         if (index === undefined) {
             return undefined
         }
         
-        return await this.document.category?.get(index, recursive)
+        return await this.document.category?.get(index)
     }
     
     async getElementIndex(familyIndex: number): Promise<number | undefined> {
@@ -3625,14 +3516,14 @@ export class FamilyTable implements IFamilyTable {
         return await this.entityTable.getArray("index:Vim.Element:Element")
     }
     
-    async getElement(familyIndex: number, recursive?: boolean): Promise<IElement | undefined> {
+    async getElement(familyIndex: number): Promise<IElement | undefined> {
         const index = await this.getElementIndex(familyIndex)
         
         if (index === undefined) {
             return undefined
         }
         
-        return await this.document.element?.get(index, recursive)
+        return await this.document.element?.get(index)
     }
     
 }
@@ -3651,7 +3542,7 @@ export interface IFamilyType {
 
 export interface IFamilyTypeTable {
     getCount(): Promise<number>
-    get(familyTypeIndex: number, recursive?: boolean): Promise<IFamilyType>
+    get(familyTypeIndex: number): Promise<IFamilyType>
     getAll(): Promise<IFamilyType[]>
     
     getIsSystemFamilyType(familyTypeIndex: number): Promise<boolean | undefined>
@@ -3659,13 +3550,13 @@ export interface IFamilyTypeTable {
     
     getFamilyIndex(familyTypeIndex: number): Promise<number | undefined>
     getAllFamilyIndex(): Promise<number[] | undefined>
-    getFamily(familyTypeIndex: number, recursive?: boolean): Promise<IFamily | undefined>
+    getFamily(familyTypeIndex: number): Promise<IFamily | undefined>
     getCompoundStructureIndex(familyTypeIndex: number): Promise<number | undefined>
     getAllCompoundStructureIndex(): Promise<number[] | undefined>
-    getCompoundStructure(familyTypeIndex: number, recursive?: boolean): Promise<ICompoundStructure | undefined>
+    getCompoundStructure(familyTypeIndex: number): Promise<ICompoundStructure | undefined>
     getElementIndex(familyTypeIndex: number): Promise<number | undefined>
     getAllElementIndex(): Promise<number[] | undefined>
-    getElement(familyTypeIndex: number, recursive?: boolean): Promise<IElement | undefined>
+    getElement(familyTypeIndex: number): Promise<IElement | undefined>
 }
 
 export class FamilyType implements IFamilyType {
@@ -3679,7 +3570,7 @@ export class FamilyType implements IFamilyType {
     elementIndex?: number
     element?: IElement
     
-    static async createFromTable(table: IFamilyTypeTable, index: number, recursive: boolean = false): Promise<IFamilyType> {
+    static async createFromTable(table: IFamilyTypeTable, index: number): Promise<IFamilyType> {
         let result = new FamilyType()
         result.index = index
         
@@ -3689,14 +3580,6 @@ export class FamilyType implements IFamilyType {
             table.getCompoundStructureIndex(index).then(v => result.compoundStructureIndex = v),
             table.getElementIndex(index).then(v => result.elementIndex = v),
         ])
-        
-        if (recursive) {
-            await Promise.all([
-                table.getFamily(index).then(v => result.family = v),
-                table.getCompoundStructure(index).then(v => result.compoundStructure = v),
-                table.getElement(index).then(v => result.element = v),
-            ])
-        }
         
         return result
     }
@@ -3724,8 +3607,8 @@ export class FamilyTypeTable implements IFamilyTypeTable {
         return (await this.entityTable.getArray("byte:IsSystemFamilyType"))?.length ?? 0
     }
     
-    async get(familyTypeIndex: number, recursive?: boolean): Promise<IFamilyType> {
-        return await FamilyType.createFromTable(this, familyTypeIndex, recursive)
+    async get(familyTypeIndex: number): Promise<IFamilyType> {
+        return await FamilyType.createFromTable(this, familyTypeIndex)
     }
     
     async getAll(): Promise<IFamilyType[]> {
@@ -3745,7 +3628,7 @@ export class FamilyTypeTable implements IFamilyTypeTable {
         
         let familyType: IFamilyType[] = []
         
-        for (let i = 0; i <= isSystemFamilyType!.length; i++) {
+        for (let i = 0; i < isSystemFamilyType!.length; i++) {
             familyType.push({
                 index: i,
                 isSystemFamilyType: isSystemFamilyType ? isSystemFamilyType[i] : undefined,
@@ -3774,14 +3657,14 @@ export class FamilyTypeTable implements IFamilyTypeTable {
         return await this.entityTable.getArray("index:Vim.Family:Family")
     }
     
-    async getFamily(familyTypeIndex: number, recursive?: boolean): Promise<IFamily | undefined> {
+    async getFamily(familyTypeIndex: number): Promise<IFamily | undefined> {
         const index = await this.getFamilyIndex(familyTypeIndex)
         
         if (index === undefined) {
             return undefined
         }
         
-        return await this.document.family?.get(index, recursive)
+        return await this.document.family?.get(index)
     }
     
     async getCompoundStructureIndex(familyTypeIndex: number): Promise<number | undefined> {
@@ -3792,14 +3675,14 @@ export class FamilyTypeTable implements IFamilyTypeTable {
         return await this.entityTable.getArray("index:Vim.CompoundStructure:CompoundStructure")
     }
     
-    async getCompoundStructure(familyTypeIndex: number, recursive?: boolean): Promise<ICompoundStructure | undefined> {
+    async getCompoundStructure(familyTypeIndex: number): Promise<ICompoundStructure | undefined> {
         const index = await this.getCompoundStructureIndex(familyTypeIndex)
         
         if (index === undefined) {
             return undefined
         }
         
-        return await this.document.compoundStructure?.get(index, recursive)
+        return await this.document.compoundStructure?.get(index)
     }
     
     async getElementIndex(familyTypeIndex: number): Promise<number | undefined> {
@@ -3810,14 +3693,14 @@ export class FamilyTypeTable implements IFamilyTypeTable {
         return await this.entityTable.getArray("index:Vim.Element:Element")
     }
     
-    async getElement(familyTypeIndex: number, recursive?: boolean): Promise<IElement | undefined> {
+    async getElement(familyTypeIndex: number): Promise<IElement | undefined> {
         const index = await this.getElementIndex(familyTypeIndex)
         
         if (index === undefined) {
             return undefined
         }
         
-        return await this.document.element?.get(index, recursive)
+        return await this.document.element?.get(index)
     }
     
 }
@@ -3850,7 +3733,7 @@ export interface IFamilyInstance {
 
 export interface IFamilyInstanceTable {
     getCount(): Promise<number>
-    get(familyInstanceIndex: number, recursive?: boolean): Promise<IFamilyInstance>
+    get(familyInstanceIndex: number): Promise<IFamilyInstance>
     getAll(): Promise<IFamilyInstance[]>
     
     getFacingFlipped(familyInstanceIndex: number): Promise<boolean | undefined>
@@ -3878,19 +3761,19 @@ export interface IFamilyInstanceTable {
     
     getFamilyTypeIndex(familyInstanceIndex: number): Promise<number | undefined>
     getAllFamilyTypeIndex(): Promise<number[] | undefined>
-    getFamilyType(familyInstanceIndex: number, recursive?: boolean): Promise<IFamilyType | undefined>
+    getFamilyType(familyInstanceIndex: number): Promise<IFamilyType | undefined>
     getHostIndex(familyInstanceIndex: number): Promise<number | undefined>
     getAllHostIndex(): Promise<number[] | undefined>
-    getHost(familyInstanceIndex: number, recursive?: boolean): Promise<IElement | undefined>
+    getHost(familyInstanceIndex: number): Promise<IElement | undefined>
     getFromRoomIndex(familyInstanceIndex: number): Promise<number | undefined>
     getAllFromRoomIndex(): Promise<number[] | undefined>
-    getFromRoom(familyInstanceIndex: number, recursive?: boolean): Promise<IRoom | undefined>
+    getFromRoom(familyInstanceIndex: number): Promise<IRoom | undefined>
     getToRoomIndex(familyInstanceIndex: number): Promise<number | undefined>
     getAllToRoomIndex(): Promise<number[] | undefined>
-    getToRoom(familyInstanceIndex: number, recursive?: boolean): Promise<IRoom | undefined>
+    getToRoom(familyInstanceIndex: number): Promise<IRoom | undefined>
     getElementIndex(familyInstanceIndex: number): Promise<number | undefined>
     getAllElementIndex(): Promise<number[] | undefined>
-    getElement(familyInstanceIndex: number, recursive?: boolean): Promise<IElement | undefined>
+    getElement(familyInstanceIndex: number): Promise<IElement | undefined>
 }
 
 export class FamilyInstance implements IFamilyInstance {
@@ -3918,7 +3801,7 @@ export class FamilyInstance implements IFamilyInstance {
     elementIndex?: number
     element?: IElement
     
-    static async createFromTable(table: IFamilyInstanceTable, index: number, recursive: boolean = false): Promise<IFamilyInstance> {
+    static async createFromTable(table: IFamilyInstanceTable, index: number): Promise<IFamilyInstance> {
         let result = new FamilyInstance()
         result.index = index
         
@@ -3940,16 +3823,6 @@ export class FamilyInstance implements IFamilyInstance {
             table.getToRoomIndex(index).then(v => result.toRoomIndex = v),
             table.getElementIndex(index).then(v => result.elementIndex = v),
         ])
-        
-        if (recursive) {
-            await Promise.all([
-                table.getFamilyType(index).then(v => result.familyType = v),
-                table.getHost(index).then(v => result.host = v),
-                table.getFromRoom(index).then(v => result.fromRoom = v),
-                table.getToRoom(index).then(v => result.toRoom = v),
-                table.getElement(index).then(v => result.element = v),
-            ])
-        }
         
         return result
     }
@@ -3977,8 +3850,8 @@ export class FamilyInstanceTable implements IFamilyInstanceTable {
         return (await this.entityTable.getArray("byte:FacingFlipped"))?.length ?? 0
     }
     
-    async get(familyInstanceIndex: number, recursive?: boolean): Promise<IFamilyInstance> {
-        return await FamilyInstance.createFromTable(this, familyInstanceIndex, recursive)
+    async get(familyInstanceIndex: number): Promise<IFamilyInstance> {
+        return await FamilyInstance.createFromTable(this, familyInstanceIndex)
     }
     
     async getAll(): Promise<IFamilyInstance[]> {
@@ -4034,7 +3907,7 @@ export class FamilyInstanceTable implements IFamilyInstanceTable {
         
         let familyInstance: IFamilyInstance[] = []
         
-        for (let i = 0; i <= facingFlipped!.length; i++) {
+        for (let i = 0; i < facingFlipped!.length; i++) {
             familyInstance.push({
                 index: i,
                 facingFlipped: facingFlipped ? facingFlipped[i] : undefined,
@@ -4203,14 +4076,14 @@ export class FamilyInstanceTable implements IFamilyInstanceTable {
         return await this.entityTable.getArray("index:Vim.FamilyType:FamilyType")
     }
     
-    async getFamilyType(familyInstanceIndex: number, recursive?: boolean): Promise<IFamilyType | undefined> {
+    async getFamilyType(familyInstanceIndex: number): Promise<IFamilyType | undefined> {
         const index = await this.getFamilyTypeIndex(familyInstanceIndex)
         
         if (index === undefined) {
             return undefined
         }
         
-        return await this.document.familyType?.get(index, recursive)
+        return await this.document.familyType?.get(index)
     }
     
     async getHostIndex(familyInstanceIndex: number): Promise<number | undefined> {
@@ -4221,14 +4094,14 @@ export class FamilyInstanceTable implements IFamilyInstanceTable {
         return await this.entityTable.getArray("index:Vim.Element:Host")
     }
     
-    async getHost(familyInstanceIndex: number, recursive?: boolean): Promise<IElement | undefined> {
+    async getHost(familyInstanceIndex: number): Promise<IElement | undefined> {
         const index = await this.getHostIndex(familyInstanceIndex)
         
         if (index === undefined) {
             return undefined
         }
         
-        return await this.document.element?.get(index, recursive)
+        return await this.document.element?.get(index)
     }
     
     async getFromRoomIndex(familyInstanceIndex: number): Promise<number | undefined> {
@@ -4239,14 +4112,14 @@ export class FamilyInstanceTable implements IFamilyInstanceTable {
         return await this.entityTable.getArray("index:Vim.Room:FromRoom")
     }
     
-    async getFromRoom(familyInstanceIndex: number, recursive?: boolean): Promise<IRoom | undefined> {
+    async getFromRoom(familyInstanceIndex: number): Promise<IRoom | undefined> {
         const index = await this.getFromRoomIndex(familyInstanceIndex)
         
         if (index === undefined) {
             return undefined
         }
         
-        return await this.document.room?.get(index, recursive)
+        return await this.document.room?.get(index)
     }
     
     async getToRoomIndex(familyInstanceIndex: number): Promise<number | undefined> {
@@ -4257,14 +4130,14 @@ export class FamilyInstanceTable implements IFamilyInstanceTable {
         return await this.entityTable.getArray("index:Vim.Room:ToRoom")
     }
     
-    async getToRoom(familyInstanceIndex: number, recursive?: boolean): Promise<IRoom | undefined> {
+    async getToRoom(familyInstanceIndex: number): Promise<IRoom | undefined> {
         const index = await this.getToRoomIndex(familyInstanceIndex)
         
         if (index === undefined) {
             return undefined
         }
         
-        return await this.document.room?.get(index, recursive)
+        return await this.document.room?.get(index)
     }
     
     async getElementIndex(familyInstanceIndex: number): Promise<number | undefined> {
@@ -4275,14 +4148,14 @@ export class FamilyInstanceTable implements IFamilyInstanceTable {
         return await this.entityTable.getArray("index:Vim.Element:Element")
     }
     
-    async getElement(familyInstanceIndex: number, recursive?: boolean): Promise<IElement | undefined> {
+    async getElement(familyInstanceIndex: number): Promise<IElement | undefined> {
         const index = await this.getElementIndex(familyInstanceIndex)
         
         if (index === undefined) {
             return undefined
         }
         
-        return await this.document.element?.get(index, recursive)
+        return await this.document.element?.get(index)
     }
     
 }
@@ -4308,7 +4181,7 @@ export interface IView {
 
 export interface IViewTable {
     getCount(): Promise<number>
-    get(viewIndex: number, recursive?: boolean): Promise<IView>
+    get(viewIndex: number): Promise<IView>
     getAll(): Promise<IView[]>
     
     getTitle(viewIndex: number): Promise<string | undefined>
@@ -4334,10 +4207,10 @@ export interface IViewTable {
     
     getCameraIndex(viewIndex: number): Promise<number | undefined>
     getAllCameraIndex(): Promise<number[] | undefined>
-    getCamera(viewIndex: number, recursive?: boolean): Promise<ICamera | undefined>
+    getCamera(viewIndex: number): Promise<ICamera | undefined>
     getElementIndex(viewIndex: number): Promise<number | undefined>
     getAllElementIndex(): Promise<number[] | undefined>
-    getElement(viewIndex: number, recursive?: boolean): Promise<IElement | undefined>
+    getElement(viewIndex: number): Promise<IElement | undefined>
 }
 
 export class View implements IView {
@@ -4358,7 +4231,7 @@ export class View implements IView {
     elementIndex?: number
     element?: IElement
     
-    static async createFromTable(table: IViewTable, index: number, recursive: boolean = false): Promise<IView> {
+    static async createFromTable(table: IViewTable, index: number): Promise<IView> {
         let result = new View()
         result.index = index
         
@@ -4376,13 +4249,6 @@ export class View implements IView {
             table.getCameraIndex(index).then(v => result.cameraIndex = v),
             table.getElementIndex(index).then(v => result.elementIndex = v),
         ])
-        
-        if (recursive) {
-            await Promise.all([
-                table.getCamera(index).then(v => result.camera = v),
-                table.getElement(index).then(v => result.element = v),
-            ])
-        }
         
         return result
     }
@@ -4410,8 +4276,8 @@ export class ViewTable implements IViewTable {
         return (await this.entityTable.getArray("string:Title"))?.length ?? 0
     }
     
-    async get(viewIndex: number, recursive?: boolean): Promise<IView> {
-        return await View.createFromTable(this, viewIndex, recursive)
+    async get(viewIndex: number): Promise<IView> {
+        return await View.createFromTable(this, viewIndex)
     }
     
     async getAll(): Promise<IView[]> {
@@ -4459,7 +4325,7 @@ export class ViewTable implements IViewTable {
         
         let view: IView[] = []
         
-        for (let i = 0; i <= title!.length; i++) {
+        for (let i = 0; i < title!.length; i++) {
             view.push({
                 index: i,
                 title: title ? title[i] : undefined,
@@ -4616,14 +4482,14 @@ export class ViewTable implements IViewTable {
         return await this.entityTable.getArray("index:Vim.Camera:Camera")
     }
     
-    async getCamera(viewIndex: number, recursive?: boolean): Promise<ICamera | undefined> {
+    async getCamera(viewIndex: number): Promise<ICamera | undefined> {
         const index = await this.getCameraIndex(viewIndex)
         
         if (index === undefined) {
             return undefined
         }
         
-        return await this.document.camera?.get(index, recursive)
+        return await this.document.camera?.get(index)
     }
     
     async getElementIndex(viewIndex: number): Promise<number | undefined> {
@@ -4634,14 +4500,14 @@ export class ViewTable implements IViewTable {
         return await this.entityTable.getArray("index:Vim.Element:Element")
     }
     
-    async getElement(viewIndex: number, recursive?: boolean): Promise<IElement | undefined> {
+    async getElement(viewIndex: number): Promise<IElement | undefined> {
         const index = await this.getElementIndex(viewIndex)
         
         if (index === undefined) {
             return undefined
         }
         
-        return await this.document.element?.get(index, recursive)
+        return await this.document.element?.get(index)
     }
     
 }
@@ -4657,15 +4523,15 @@ export interface IElementInView {
 
 export interface IElementInViewTable {
     getCount(): Promise<number>
-    get(elementInViewIndex: number, recursive?: boolean): Promise<IElementInView>
+    get(elementInViewIndex: number): Promise<IElementInView>
     getAll(): Promise<IElementInView[]>
     
     getViewIndex(elementInViewIndex: number): Promise<number | undefined>
     getAllViewIndex(): Promise<number[] | undefined>
-    getView(elementInViewIndex: number, recursive?: boolean): Promise<IView | undefined>
+    getView(elementInViewIndex: number): Promise<IView | undefined>
     getElementIndex(elementInViewIndex: number): Promise<number | undefined>
     getAllElementIndex(): Promise<number[] | undefined>
-    getElement(elementInViewIndex: number, recursive?: boolean): Promise<IElement | undefined>
+    getElement(elementInViewIndex: number): Promise<IElement | undefined>
 }
 
 export class ElementInView implements IElementInView {
@@ -4676,7 +4542,7 @@ export class ElementInView implements IElementInView {
     elementIndex?: number
     element?: IElement
     
-    static async createFromTable(table: IElementInViewTable, index: number, recursive: boolean = false): Promise<IElementInView> {
+    static async createFromTable(table: IElementInViewTable, index: number): Promise<IElementInView> {
         let result = new ElementInView()
         result.index = index
         
@@ -4684,13 +4550,6 @@ export class ElementInView implements IElementInView {
             table.getViewIndex(index).then(v => result.viewIndex = v),
             table.getElementIndex(index).then(v => result.elementIndex = v),
         ])
-        
-        if (recursive) {
-            await Promise.all([
-                table.getView(index).then(v => result.view = v),
-                table.getElement(index).then(v => result.element = v),
-            ])
-        }
         
         return result
     }
@@ -4718,8 +4577,8 @@ export class ElementInViewTable implements IElementInViewTable {
         return (await this.entityTable.getArray("index:Vim.View:View"))?.length ?? 0
     }
     
-    async get(elementInViewIndex: number, recursive?: boolean): Promise<IElementInView> {
-        return await ElementInView.createFromTable(this, elementInViewIndex, recursive)
+    async get(elementInViewIndex: number): Promise<IElementInView> {
+        return await ElementInView.createFromTable(this, elementInViewIndex)
     }
     
     async getAll(): Promise<IElementInView[]> {
@@ -4735,7 +4594,7 @@ export class ElementInViewTable implements IElementInViewTable {
         
         let elementInView: IElementInView[] = []
         
-        for (let i = 0; i <= viewIndex!.length; i++) {
+        for (let i = 0; i < viewIndex!.length; i++) {
             elementInView.push({
                 index: i,
                 viewIndex: viewIndex ? viewIndex[i] : undefined,
@@ -4754,14 +4613,14 @@ export class ElementInViewTable implements IElementInViewTable {
         return await this.entityTable.getArray("index:Vim.View:View")
     }
     
-    async getView(elementInViewIndex: number, recursive?: boolean): Promise<IView | undefined> {
+    async getView(elementInViewIndex: number): Promise<IView | undefined> {
         const index = await this.getViewIndex(elementInViewIndex)
         
         if (index === undefined) {
             return undefined
         }
         
-        return await this.document.view?.get(index, recursive)
+        return await this.document.view?.get(index)
     }
     
     async getElementIndex(elementInViewIndex: number): Promise<number | undefined> {
@@ -4772,14 +4631,14 @@ export class ElementInViewTable implements IElementInViewTable {
         return await this.entityTable.getArray("index:Vim.Element:Element")
     }
     
-    async getElement(elementInViewIndex: number, recursive?: boolean): Promise<IElement | undefined> {
+    async getElement(elementInViewIndex: number): Promise<IElement | undefined> {
         const index = await this.getElementIndex(elementInViewIndex)
         
         if (index === undefined) {
             return undefined
         }
         
-        return await this.document.element?.get(index, recursive)
+        return await this.document.element?.get(index)
     }
     
 }
@@ -4795,15 +4654,15 @@ export interface IShapeInView {
 
 export interface IShapeInViewTable {
     getCount(): Promise<number>
-    get(shapeInViewIndex: number, recursive?: boolean): Promise<IShapeInView>
+    get(shapeInViewIndex: number): Promise<IShapeInView>
     getAll(): Promise<IShapeInView[]>
     
     getShapeIndex(shapeInViewIndex: number): Promise<number | undefined>
     getAllShapeIndex(): Promise<number[] | undefined>
-    getShape(shapeInViewIndex: number, recursive?: boolean): Promise<IShape | undefined>
+    getShape(shapeInViewIndex: number): Promise<IShape | undefined>
     getViewIndex(shapeInViewIndex: number): Promise<number | undefined>
     getAllViewIndex(): Promise<number[] | undefined>
-    getView(shapeInViewIndex: number, recursive?: boolean): Promise<IView | undefined>
+    getView(shapeInViewIndex: number): Promise<IView | undefined>
 }
 
 export class ShapeInView implements IShapeInView {
@@ -4814,7 +4673,7 @@ export class ShapeInView implements IShapeInView {
     viewIndex?: number
     view?: IView
     
-    static async createFromTable(table: IShapeInViewTable, index: number, recursive: boolean = false): Promise<IShapeInView> {
+    static async createFromTable(table: IShapeInViewTable, index: number): Promise<IShapeInView> {
         let result = new ShapeInView()
         result.index = index
         
@@ -4822,13 +4681,6 @@ export class ShapeInView implements IShapeInView {
             table.getShapeIndex(index).then(v => result.shapeIndex = v),
             table.getViewIndex(index).then(v => result.viewIndex = v),
         ])
-        
-        if (recursive) {
-            await Promise.all([
-                table.getShape(index).then(v => result.shape = v),
-                table.getView(index).then(v => result.view = v),
-            ])
-        }
         
         return result
     }
@@ -4856,8 +4708,8 @@ export class ShapeInViewTable implements IShapeInViewTable {
         return (await this.entityTable.getArray("index:Vim.Shape:Shape"))?.length ?? 0
     }
     
-    async get(shapeInViewIndex: number, recursive?: boolean): Promise<IShapeInView> {
-        return await ShapeInView.createFromTable(this, shapeInViewIndex, recursive)
+    async get(shapeInViewIndex: number): Promise<IShapeInView> {
+        return await ShapeInView.createFromTable(this, shapeInViewIndex)
     }
     
     async getAll(): Promise<IShapeInView[]> {
@@ -4873,7 +4725,7 @@ export class ShapeInViewTable implements IShapeInViewTable {
         
         let shapeInView: IShapeInView[] = []
         
-        for (let i = 0; i <= shapeIndex!.length; i++) {
+        for (let i = 0; i < shapeIndex!.length; i++) {
             shapeInView.push({
                 index: i,
                 shapeIndex: shapeIndex ? shapeIndex[i] : undefined,
@@ -4892,14 +4744,14 @@ export class ShapeInViewTable implements IShapeInViewTable {
         return await this.entityTable.getArray("index:Vim.Shape:Shape")
     }
     
-    async getShape(shapeInViewIndex: number, recursive?: boolean): Promise<IShape | undefined> {
+    async getShape(shapeInViewIndex: number): Promise<IShape | undefined> {
         const index = await this.getShapeIndex(shapeInViewIndex)
         
         if (index === undefined) {
             return undefined
         }
         
-        return await this.document.shape?.get(index, recursive)
+        return await this.document.shape?.get(index)
     }
     
     async getViewIndex(shapeInViewIndex: number): Promise<number | undefined> {
@@ -4910,14 +4762,14 @@ export class ShapeInViewTable implements IShapeInViewTable {
         return await this.entityTable.getArray("index:Vim.View:View")
     }
     
-    async getView(shapeInViewIndex: number, recursive?: boolean): Promise<IView | undefined> {
+    async getView(shapeInViewIndex: number): Promise<IView | undefined> {
         const index = await this.getViewIndex(shapeInViewIndex)
         
         if (index === undefined) {
             return undefined
         }
         
-        return await this.document.view?.get(index, recursive)
+        return await this.document.view?.get(index)
     }
     
 }
@@ -4933,15 +4785,15 @@ export interface IAssetInView {
 
 export interface IAssetInViewTable {
     getCount(): Promise<number>
-    get(assetInViewIndex: number, recursive?: boolean): Promise<IAssetInView>
+    get(assetInViewIndex: number): Promise<IAssetInView>
     getAll(): Promise<IAssetInView[]>
     
     getAssetIndex(assetInViewIndex: number): Promise<number | undefined>
     getAllAssetIndex(): Promise<number[] | undefined>
-    getAsset(assetInViewIndex: number, recursive?: boolean): Promise<IAsset | undefined>
+    getAsset(assetInViewIndex: number): Promise<IAsset | undefined>
     getViewIndex(assetInViewIndex: number): Promise<number | undefined>
     getAllViewIndex(): Promise<number[] | undefined>
-    getView(assetInViewIndex: number, recursive?: boolean): Promise<IView | undefined>
+    getView(assetInViewIndex: number): Promise<IView | undefined>
 }
 
 export class AssetInView implements IAssetInView {
@@ -4952,7 +4804,7 @@ export class AssetInView implements IAssetInView {
     viewIndex?: number
     view?: IView
     
-    static async createFromTable(table: IAssetInViewTable, index: number, recursive: boolean = false): Promise<IAssetInView> {
+    static async createFromTable(table: IAssetInViewTable, index: number): Promise<IAssetInView> {
         let result = new AssetInView()
         result.index = index
         
@@ -4960,13 +4812,6 @@ export class AssetInView implements IAssetInView {
             table.getAssetIndex(index).then(v => result.assetIndex = v),
             table.getViewIndex(index).then(v => result.viewIndex = v),
         ])
-        
-        if (recursive) {
-            await Promise.all([
-                table.getAsset(index).then(v => result.asset = v),
-                table.getView(index).then(v => result.view = v),
-            ])
-        }
         
         return result
     }
@@ -4994,8 +4839,8 @@ export class AssetInViewTable implements IAssetInViewTable {
         return (await this.entityTable.getArray("index:Vim.Asset:Asset"))?.length ?? 0
     }
     
-    async get(assetInViewIndex: number, recursive?: boolean): Promise<IAssetInView> {
-        return await AssetInView.createFromTable(this, assetInViewIndex, recursive)
+    async get(assetInViewIndex: number): Promise<IAssetInView> {
+        return await AssetInView.createFromTable(this, assetInViewIndex)
     }
     
     async getAll(): Promise<IAssetInView[]> {
@@ -5011,7 +4856,7 @@ export class AssetInViewTable implements IAssetInViewTable {
         
         let assetInView: IAssetInView[] = []
         
-        for (let i = 0; i <= assetIndex!.length; i++) {
+        for (let i = 0; i < assetIndex!.length; i++) {
             assetInView.push({
                 index: i,
                 assetIndex: assetIndex ? assetIndex[i] : undefined,
@@ -5030,14 +4875,14 @@ export class AssetInViewTable implements IAssetInViewTable {
         return await this.entityTable.getArray("index:Vim.Asset:Asset")
     }
     
-    async getAsset(assetInViewIndex: number, recursive?: boolean): Promise<IAsset | undefined> {
+    async getAsset(assetInViewIndex: number): Promise<IAsset | undefined> {
         const index = await this.getAssetIndex(assetInViewIndex)
         
         if (index === undefined) {
             return undefined
         }
         
-        return await this.document.asset?.get(index, recursive)
+        return await this.document.asset?.get(index)
     }
     
     async getViewIndex(assetInViewIndex: number): Promise<number | undefined> {
@@ -5048,14 +4893,14 @@ export class AssetInViewTable implements IAssetInViewTable {
         return await this.entityTable.getArray("index:Vim.View:View")
     }
     
-    async getView(assetInViewIndex: number, recursive?: boolean): Promise<IView | undefined> {
+    async getView(assetInViewIndex: number): Promise<IView | undefined> {
         const index = await this.getViewIndex(assetInViewIndex)
         
         if (index === undefined) {
             return undefined
         }
         
-        return await this.document.view?.get(index, recursive)
+        return await this.document.view?.get(index)
     }
     
 }
@@ -5072,7 +4917,7 @@ export interface ILevelInView {
 
 export interface ILevelInViewTable {
     getCount(): Promise<number>
-    get(levelInViewIndex: number, recursive?: boolean): Promise<ILevelInView>
+    get(levelInViewIndex: number): Promise<ILevelInView>
     getAll(): Promise<ILevelInView[]>
     
     getExtents(levelInViewIndex: number): Promise<AABox | undefined>
@@ -5080,10 +4925,10 @@ export interface ILevelInViewTable {
     
     getLevelIndex(levelInViewIndex: number): Promise<number | undefined>
     getAllLevelIndex(): Promise<number[] | undefined>
-    getLevel(levelInViewIndex: number, recursive?: boolean): Promise<ILevel | undefined>
+    getLevel(levelInViewIndex: number): Promise<ILevel | undefined>
     getViewIndex(levelInViewIndex: number): Promise<number | undefined>
     getAllViewIndex(): Promise<number[] | undefined>
-    getView(levelInViewIndex: number, recursive?: boolean): Promise<IView | undefined>
+    getView(levelInViewIndex: number): Promise<IView | undefined>
 }
 
 export class LevelInView implements ILevelInView {
@@ -5095,7 +4940,7 @@ export class LevelInView implements ILevelInView {
     viewIndex?: number
     view?: IView
     
-    static async createFromTable(table: ILevelInViewTable, index: number, recursive: boolean = false): Promise<ILevelInView> {
+    static async createFromTable(table: ILevelInViewTable, index: number): Promise<ILevelInView> {
         let result = new LevelInView()
         result.index = index
         
@@ -5104,13 +4949,6 @@ export class LevelInView implements ILevelInView {
             table.getLevelIndex(index).then(v => result.levelIndex = v),
             table.getViewIndex(index).then(v => result.viewIndex = v),
         ])
-        
-        if (recursive) {
-            await Promise.all([
-                table.getLevel(index).then(v => result.level = v),
-                table.getView(index).then(v => result.view = v),
-            ])
-        }
         
         return result
     }
@@ -5138,8 +4976,8 @@ export class LevelInViewTable implements ILevelInViewTable {
         return (await this.entityTable.getArray("double:Extents" + new Converters.AABoxConverter().columns[0]))?.length ?? 0
     }
     
-    async get(levelInViewIndex: number, recursive?: boolean): Promise<ILevelInView> {
-        return await LevelInView.createFromTable(this, levelInViewIndex, recursive)
+    async get(levelInViewIndex: number): Promise<ILevelInView> {
+        return await LevelInView.createFromTable(this, levelInViewIndex)
     }
     
     async getAll(): Promise<ILevelInView[]> {
@@ -5159,7 +4997,7 @@ export class LevelInViewTable implements ILevelInViewTable {
         
         let levelInView: ILevelInView[] = []
         
-        for (let i = 0; i <= extents!.length; i++) {
+        for (let i = 0; i < extents!.length; i++) {
             levelInView.push({
                 index: i,
                 extents: extents ? extents[i] : undefined,
@@ -5195,14 +5033,14 @@ export class LevelInViewTable implements ILevelInViewTable {
         return await this.entityTable.getArray("index:Vim.Level:Level")
     }
     
-    async getLevel(levelInViewIndex: number, recursive?: boolean): Promise<ILevel | undefined> {
+    async getLevel(levelInViewIndex: number): Promise<ILevel | undefined> {
         const index = await this.getLevelIndex(levelInViewIndex)
         
         if (index === undefined) {
             return undefined
         }
         
-        return await this.document.level?.get(index, recursive)
+        return await this.document.level?.get(index)
     }
     
     async getViewIndex(levelInViewIndex: number): Promise<number | undefined> {
@@ -5213,14 +5051,14 @@ export class LevelInViewTable implements ILevelInViewTable {
         return await this.entityTable.getArray("index:Vim.View:View")
     }
     
-    async getView(levelInViewIndex: number, recursive?: boolean): Promise<IView | undefined> {
+    async getView(levelInViewIndex: number): Promise<IView | undefined> {
         const index = await this.getViewIndex(levelInViewIndex)
         
         if (index === undefined) {
             return undefined
         }
         
-        return await this.document.view?.get(index, recursive)
+        return await this.document.view?.get(index)
     }
     
 }
@@ -5240,7 +5078,7 @@ export interface ICamera {
 
 export interface ICameraTable {
     getCount(): Promise<number>
-    get(cameraIndex: number, recursive?: boolean): Promise<ICamera>
+    get(cameraIndex: number): Promise<ICamera>
     getAll(): Promise<ICamera[]>
     
     getId(cameraIndex: number): Promise<number | undefined>
@@ -5275,7 +5113,7 @@ export class Camera implements ICamera {
     rightOffset?: number
     upOffset?: number
     
-    static async createFromTable(table: ICameraTable, index: number, recursive: boolean = false): Promise<ICamera> {
+    static async createFromTable(table: ICameraTable, index: number): Promise<ICamera> {
         let result = new Camera()
         result.index = index
         
@@ -5315,8 +5153,8 @@ export class CameraTable implements ICameraTable {
         return (await this.entityTable.getArray("int:Id"))?.length ?? 0
     }
     
-    async get(cameraIndex: number, recursive?: boolean): Promise<ICamera> {
-        return await Camera.createFromTable(this, cameraIndex, recursive)
+    async get(cameraIndex: number): Promise<ICamera> {
+        return await Camera.createFromTable(this, cameraIndex)
     }
     
     async getAll(): Promise<ICamera[]> {
@@ -5346,7 +5184,7 @@ export class CameraTable implements ICameraTable {
         
         let camera: ICamera[] = []
         
-        for (let i = 0; i <= id!.length; i++) {
+        for (let i = 0; i < id!.length; i++) {
             camera.push({
                 index: i,
                 id: id ? id[i] : undefined,
@@ -5462,7 +5300,7 @@ export interface IMaterial {
 
 export interface IMaterialTable {
     getCount(): Promise<number>
-    get(materialIndex: number, recursive?: boolean): Promise<IMaterial>
+    get(materialIndex: number): Promise<IMaterial>
     getAll(): Promise<IMaterial[]>
     
     getName(materialIndex: number): Promise<string | undefined>
@@ -5490,13 +5328,13 @@ export interface IMaterialTable {
     
     getColorTextureFileIndex(materialIndex: number): Promise<number | undefined>
     getAllColorTextureFileIndex(): Promise<number[] | undefined>
-    getColorTextureFile(materialIndex: number, recursive?: boolean): Promise<IAsset | undefined>
+    getColorTextureFile(materialIndex: number): Promise<IAsset | undefined>
     getNormalTextureFileIndex(materialIndex: number): Promise<number | undefined>
     getAllNormalTextureFileIndex(): Promise<number[] | undefined>
-    getNormalTextureFile(materialIndex: number, recursive?: boolean): Promise<IAsset | undefined>
+    getNormalTextureFile(materialIndex: number): Promise<IAsset | undefined>
     getElementIndex(materialIndex: number): Promise<number | undefined>
     getAllElementIndex(): Promise<number[] | undefined>
-    getElement(materialIndex: number, recursive?: boolean): Promise<IElement | undefined>
+    getElement(materialIndex: number): Promise<IElement | undefined>
 }
 
 export class Material implements IMaterial {
@@ -5520,7 +5358,7 @@ export class Material implements IMaterial {
     elementIndex?: number
     element?: IElement
     
-    static async createFromTable(table: IMaterialTable, index: number, recursive: boolean = false): Promise<IMaterial> {
+    static async createFromTable(table: IMaterialTable, index: number): Promise<IMaterial> {
         let result = new Material()
         result.index = index
         
@@ -5540,14 +5378,6 @@ export class Material implements IMaterial {
             table.getNormalTextureFileIndex(index).then(v => result.normalTextureFileIndex = v),
             table.getElementIndex(index).then(v => result.elementIndex = v),
         ])
-        
-        if (recursive) {
-            await Promise.all([
-                table.getColorTextureFile(index).then(v => result.colorTextureFile = v),
-                table.getNormalTextureFile(index).then(v => result.normalTextureFile = v),
-                table.getElement(index).then(v => result.element = v),
-            ])
-        }
         
         return result
     }
@@ -5575,8 +5405,8 @@ export class MaterialTable implements IMaterialTable {
         return (await this.entityTable.getArray("string:Name"))?.length ?? 0
     }
     
-    async get(materialIndex: number, recursive?: boolean): Promise<IMaterial> {
-        return await Material.createFromTable(this, materialIndex, recursive)
+    async get(materialIndex: number): Promise<IMaterial> {
+        return await Material.createFromTable(this, materialIndex)
     }
     
     async getAll(): Promise<IMaterial[]> {
@@ -5626,7 +5456,7 @@ export class MaterialTable implements IMaterialTable {
         
         let material: IMaterial[] = []
         
-        for (let i = 0; i <= name!.length; i++) {
+        for (let i = 0; i < name!.length; i++) {
             material.push({
                 index: i,
                 name: name ? name[i] : undefined,
@@ -5785,14 +5615,14 @@ export class MaterialTable implements IMaterialTable {
         return await this.entityTable.getArray("index:Vim.Asset:ColorTextureFile")
     }
     
-    async getColorTextureFile(materialIndex: number, recursive?: boolean): Promise<IAsset | undefined> {
+    async getColorTextureFile(materialIndex: number): Promise<IAsset | undefined> {
         const index = await this.getColorTextureFileIndex(materialIndex)
         
         if (index === undefined) {
             return undefined
         }
         
-        return await this.document.asset?.get(index, recursive)
+        return await this.document.asset?.get(index)
     }
     
     async getNormalTextureFileIndex(materialIndex: number): Promise<number | undefined> {
@@ -5803,14 +5633,14 @@ export class MaterialTable implements IMaterialTable {
         return await this.entityTable.getArray("index:Vim.Asset:NormalTextureFile")
     }
     
-    async getNormalTextureFile(materialIndex: number, recursive?: boolean): Promise<IAsset | undefined> {
+    async getNormalTextureFile(materialIndex: number): Promise<IAsset | undefined> {
         const index = await this.getNormalTextureFileIndex(materialIndex)
         
         if (index === undefined) {
             return undefined
         }
         
-        return await this.document.asset?.get(index, recursive)
+        return await this.document.asset?.get(index)
     }
     
     async getElementIndex(materialIndex: number): Promise<number | undefined> {
@@ -5821,14 +5651,14 @@ export class MaterialTable implements IMaterialTable {
         return await this.entityTable.getArray("index:Vim.Element:Element")
     }
     
-    async getElement(materialIndex: number, recursive?: boolean): Promise<IElement | undefined> {
+    async getElement(materialIndex: number): Promise<IElement | undefined> {
         const index = await this.getElementIndex(materialIndex)
         
         if (index === undefined) {
             return undefined
         }
         
-        return await this.document.element?.get(index, recursive)
+        return await this.document.element?.get(index)
     }
     
 }
@@ -5847,7 +5677,7 @@ export interface IMaterialInElement {
 
 export interface IMaterialInElementTable {
     getCount(): Promise<number>
-    get(materialInElementIndex: number, recursive?: boolean): Promise<IMaterialInElement>
+    get(materialInElementIndex: number): Promise<IMaterialInElement>
     getAll(): Promise<IMaterialInElement[]>
     
     getArea(materialInElementIndex: number): Promise<number | undefined>
@@ -5859,10 +5689,10 @@ export interface IMaterialInElementTable {
     
     getMaterialIndex(materialInElementIndex: number): Promise<number | undefined>
     getAllMaterialIndex(): Promise<number[] | undefined>
-    getMaterial(materialInElementIndex: number, recursive?: boolean): Promise<IMaterial | undefined>
+    getMaterial(materialInElementIndex: number): Promise<IMaterial | undefined>
     getElementIndex(materialInElementIndex: number): Promise<number | undefined>
     getAllElementIndex(): Promise<number[] | undefined>
-    getElement(materialInElementIndex: number, recursive?: boolean): Promise<IElement | undefined>
+    getElement(materialInElementIndex: number): Promise<IElement | undefined>
 }
 
 export class MaterialInElement implements IMaterialInElement {
@@ -5876,7 +5706,7 @@ export class MaterialInElement implements IMaterialInElement {
     elementIndex?: number
     element?: IElement
     
-    static async createFromTable(table: IMaterialInElementTable, index: number, recursive: boolean = false): Promise<IMaterialInElement> {
+    static async createFromTable(table: IMaterialInElementTable, index: number): Promise<IMaterialInElement> {
         let result = new MaterialInElement()
         result.index = index
         
@@ -5887,13 +5717,6 @@ export class MaterialInElement implements IMaterialInElement {
             table.getMaterialIndex(index).then(v => result.materialIndex = v),
             table.getElementIndex(index).then(v => result.elementIndex = v),
         ])
-        
-        if (recursive) {
-            await Promise.all([
-                table.getMaterial(index).then(v => result.material = v),
-                table.getElement(index).then(v => result.element = v),
-            ])
-        }
         
         return result
     }
@@ -5921,8 +5744,8 @@ export class MaterialInElementTable implements IMaterialInElementTable {
         return (await this.entityTable.getArray("double:Area"))?.length ?? 0
     }
     
-    async get(materialInElementIndex: number, recursive?: boolean): Promise<IMaterialInElement> {
-        return await MaterialInElement.createFromTable(this, materialInElementIndex, recursive)
+    async get(materialInElementIndex: number): Promise<IMaterialInElement> {
+        return await MaterialInElement.createFromTable(this, materialInElementIndex)
     }
     
     async getAll(): Promise<IMaterialInElement[]> {
@@ -5944,7 +5767,7 @@ export class MaterialInElementTable implements IMaterialInElementTable {
         
         let materialInElement: IMaterialInElement[] = []
         
-        for (let i = 0; i <= area!.length; i++) {
+        for (let i = 0; i < area!.length; i++) {
             materialInElement.push({
                 index: i,
                 area: area ? area[i] : undefined,
@@ -5990,14 +5813,14 @@ export class MaterialInElementTable implements IMaterialInElementTable {
         return await this.entityTable.getArray("index:Vim.Material:Material")
     }
     
-    async getMaterial(materialInElementIndex: number, recursive?: boolean): Promise<IMaterial | undefined> {
+    async getMaterial(materialInElementIndex: number): Promise<IMaterial | undefined> {
         const index = await this.getMaterialIndex(materialInElementIndex)
         
         if (index === undefined) {
             return undefined
         }
         
-        return await this.document.material?.get(index, recursive)
+        return await this.document.material?.get(index)
     }
     
     async getElementIndex(materialInElementIndex: number): Promise<number | undefined> {
@@ -6008,14 +5831,14 @@ export class MaterialInElementTable implements IMaterialInElementTable {
         return await this.entityTable.getArray("index:Vim.Element:Element")
     }
     
-    async getElement(materialInElementIndex: number, recursive?: boolean): Promise<IElement | undefined> {
+    async getElement(materialInElementIndex: number): Promise<IElement | undefined> {
         const index = await this.getElementIndex(materialInElementIndex)
         
         if (index === undefined) {
             return undefined
         }
         
-        return await this.document.element?.get(index, recursive)
+        return await this.document.element?.get(index)
     }
     
 }
@@ -6034,7 +5857,7 @@ export interface ICompoundStructureLayer {
 
 export interface ICompoundStructureLayerTable {
     getCount(): Promise<number>
-    get(compoundStructureLayerIndex: number, recursive?: boolean): Promise<ICompoundStructureLayer>
+    get(compoundStructureLayerIndex: number): Promise<ICompoundStructureLayer>
     getAll(): Promise<ICompoundStructureLayer[]>
     
     getOrderIndex(compoundStructureLayerIndex: number): Promise<number | undefined>
@@ -6046,10 +5869,10 @@ export interface ICompoundStructureLayerTable {
     
     getMaterialIndex(compoundStructureLayerIndex: number): Promise<number | undefined>
     getAllMaterialIndex(): Promise<number[] | undefined>
-    getMaterial(compoundStructureLayerIndex: number, recursive?: boolean): Promise<IMaterial | undefined>
+    getMaterial(compoundStructureLayerIndex: number): Promise<IMaterial | undefined>
     getCompoundStructureIndex(compoundStructureLayerIndex: number): Promise<number | undefined>
     getAllCompoundStructureIndex(): Promise<number[] | undefined>
-    getCompoundStructure(compoundStructureLayerIndex: number, recursive?: boolean): Promise<ICompoundStructure | undefined>
+    getCompoundStructure(compoundStructureLayerIndex: number): Promise<ICompoundStructure | undefined>
 }
 
 export class CompoundStructureLayer implements ICompoundStructureLayer {
@@ -6063,7 +5886,7 @@ export class CompoundStructureLayer implements ICompoundStructureLayer {
     compoundStructureIndex?: number
     compoundStructure?: ICompoundStructure
     
-    static async createFromTable(table: ICompoundStructureLayerTable, index: number, recursive: boolean = false): Promise<ICompoundStructureLayer> {
+    static async createFromTable(table: ICompoundStructureLayerTable, index: number): Promise<ICompoundStructureLayer> {
         let result = new CompoundStructureLayer()
         result.index = index
         
@@ -6074,13 +5897,6 @@ export class CompoundStructureLayer implements ICompoundStructureLayer {
             table.getMaterialIndex(index).then(v => result.materialIndex = v),
             table.getCompoundStructureIndex(index).then(v => result.compoundStructureIndex = v),
         ])
-        
-        if (recursive) {
-            await Promise.all([
-                table.getMaterial(index).then(v => result.material = v),
-                table.getCompoundStructure(index).then(v => result.compoundStructure = v),
-            ])
-        }
         
         return result
     }
@@ -6108,8 +5924,8 @@ export class CompoundStructureLayerTable implements ICompoundStructureLayerTable
         return (await this.entityTable.getArray("int:OrderIndex"))?.length ?? 0
     }
     
-    async get(compoundStructureLayerIndex: number, recursive?: boolean): Promise<ICompoundStructureLayer> {
-        return await CompoundStructureLayer.createFromTable(this, compoundStructureLayerIndex, recursive)
+    async get(compoundStructureLayerIndex: number): Promise<ICompoundStructureLayer> {
+        return await CompoundStructureLayer.createFromTable(this, compoundStructureLayerIndex)
     }
     
     async getAll(): Promise<ICompoundStructureLayer[]> {
@@ -6131,7 +5947,7 @@ export class CompoundStructureLayerTable implements ICompoundStructureLayerTable
         
         let compoundStructureLayer: ICompoundStructureLayer[] = []
         
-        for (let i = 0; i <= orderIndex!.length; i++) {
+        for (let i = 0; i < orderIndex!.length; i++) {
             compoundStructureLayer.push({
                 index: i,
                 orderIndex: orderIndex ? orderIndex[i] : undefined,
@@ -6177,14 +5993,14 @@ export class CompoundStructureLayerTable implements ICompoundStructureLayerTable
         return await this.entityTable.getArray("index:Vim.Material:Material")
     }
     
-    async getMaterial(compoundStructureLayerIndex: number, recursive?: boolean): Promise<IMaterial | undefined> {
+    async getMaterial(compoundStructureLayerIndex: number): Promise<IMaterial | undefined> {
         const index = await this.getMaterialIndex(compoundStructureLayerIndex)
         
         if (index === undefined) {
             return undefined
         }
         
-        return await this.document.material?.get(index, recursive)
+        return await this.document.material?.get(index)
     }
     
     async getCompoundStructureIndex(compoundStructureLayerIndex: number): Promise<number | undefined> {
@@ -6195,14 +6011,14 @@ export class CompoundStructureLayerTable implements ICompoundStructureLayerTable
         return await this.entityTable.getArray("index:Vim.CompoundStructure:CompoundStructure")
     }
     
-    async getCompoundStructure(compoundStructureLayerIndex: number, recursive?: boolean): Promise<ICompoundStructure | undefined> {
+    async getCompoundStructure(compoundStructureLayerIndex: number): Promise<ICompoundStructure | undefined> {
         const index = await this.getCompoundStructureIndex(compoundStructureLayerIndex)
         
         if (index === undefined) {
             return undefined
         }
         
-        return await this.document.compoundStructure?.get(index, recursive)
+        return await this.document.compoundStructure?.get(index)
     }
     
 }
@@ -6217,7 +6033,7 @@ export interface ICompoundStructure {
 
 export interface ICompoundStructureTable {
     getCount(): Promise<number>
-    get(compoundStructureIndex: number, recursive?: boolean): Promise<ICompoundStructure>
+    get(compoundStructureIndex: number): Promise<ICompoundStructure>
     getAll(): Promise<ICompoundStructure[]>
     
     getWidth(compoundStructureIndex: number): Promise<number | undefined>
@@ -6225,7 +6041,7 @@ export interface ICompoundStructureTable {
     
     getStructuralLayerIndex(compoundStructureIndex: number): Promise<number | undefined>
     getAllStructuralLayerIndex(): Promise<number[] | undefined>
-    getStructuralLayer(compoundStructureIndex: number, recursive?: boolean): Promise<ICompoundStructureLayer | undefined>
+    getStructuralLayer(compoundStructureIndex: number): Promise<ICompoundStructureLayer | undefined>
 }
 
 export class CompoundStructure implements ICompoundStructure {
@@ -6235,7 +6051,7 @@ export class CompoundStructure implements ICompoundStructure {
     structuralLayerIndex?: number
     structuralLayer?: ICompoundStructureLayer
     
-    static async createFromTable(table: ICompoundStructureTable, index: number, recursive: boolean = false): Promise<ICompoundStructure> {
+    static async createFromTable(table: ICompoundStructureTable, index: number): Promise<ICompoundStructure> {
         let result = new CompoundStructure()
         result.index = index
         
@@ -6243,12 +6059,6 @@ export class CompoundStructure implements ICompoundStructure {
             table.getWidth(index).then(v => result.width = v),
             table.getStructuralLayerIndex(index).then(v => result.structuralLayerIndex = v),
         ])
-        
-        if (recursive) {
-            await Promise.all([
-                table.getStructuralLayer(index).then(v => result.structuralLayer = v),
-            ])
-        }
         
         return result
     }
@@ -6276,8 +6086,8 @@ export class CompoundStructureTable implements ICompoundStructureTable {
         return (await this.entityTable.getArray("double:Width"))?.length ?? 0
     }
     
-    async get(compoundStructureIndex: number, recursive?: boolean): Promise<ICompoundStructure> {
-        return await CompoundStructure.createFromTable(this, compoundStructureIndex, recursive)
+    async get(compoundStructureIndex: number): Promise<ICompoundStructure> {
+        return await CompoundStructure.createFromTable(this, compoundStructureIndex)
     }
     
     async getAll(): Promise<ICompoundStructure[]> {
@@ -6293,7 +6103,7 @@ export class CompoundStructureTable implements ICompoundStructureTable {
         
         let compoundStructure: ICompoundStructure[] = []
         
-        for (let i = 0; i <= width!.length; i++) {
+        for (let i = 0; i < width!.length; i++) {
             compoundStructure.push({
                 index: i,
                 width: width ? width[i] : undefined,
@@ -6320,14 +6130,14 @@ export class CompoundStructureTable implements ICompoundStructureTable {
         return await this.entityTable.getArray("index:Vim.CompoundStructureLayer:StructuralLayer")
     }
     
-    async getStructuralLayer(compoundStructureIndex: number, recursive?: boolean): Promise<ICompoundStructureLayer | undefined> {
+    async getStructuralLayer(compoundStructureIndex: number): Promise<ICompoundStructureLayer | undefined> {
         const index = await this.getStructuralLayerIndex(compoundStructureIndex)
         
         if (index === undefined) {
             return undefined
         }
         
-        return await this.document.compoundStructureLayer?.get(index, recursive)
+        return await this.document.compoundStructureLayer?.get(index)
     }
     
 }
@@ -6341,12 +6151,12 @@ export interface INode {
 
 export interface INodeTable {
     getCount(): Promise<number>
-    get(nodeIndex: number, recursive?: boolean): Promise<INode>
+    get(nodeIndex: number): Promise<INode>
     getAll(): Promise<INode[]>
     
     getElementIndex(nodeIndex: number): Promise<number | undefined>
     getAllElementIndex(): Promise<number[] | undefined>
-    getElement(nodeIndex: number, recursive?: boolean): Promise<IElement | undefined>
+    getElement(nodeIndex: number): Promise<IElement | undefined>
 }
 
 export class Node implements INode {
@@ -6355,19 +6165,13 @@ export class Node implements INode {
     elementIndex?: number
     element?: IElement
     
-    static async createFromTable(table: INodeTable, index: number, recursive: boolean = false): Promise<INode> {
+    static async createFromTable(table: INodeTable, index: number): Promise<INode> {
         let result = new Node()
         result.index = index
         
         await Promise.all([
             table.getElementIndex(index).then(v => result.elementIndex = v),
         ])
-        
-        if (recursive) {
-            await Promise.all([
-                table.getElement(index).then(v => result.element = v),
-            ])
-        }
         
         return result
     }
@@ -6395,8 +6199,8 @@ export class NodeTable implements INodeTable {
         return (await this.entityTable.getArray("index:Vim.Element:Element"))?.length ?? 0
     }
     
-    async get(nodeIndex: number, recursive?: boolean): Promise<INode> {
-        return await Node.createFromTable(this, nodeIndex, recursive)
+    async get(nodeIndex: number): Promise<INode> {
+        return await Node.createFromTable(this, nodeIndex)
     }
     
     async getAll(): Promise<INode[]> {
@@ -6410,7 +6214,7 @@ export class NodeTable implements INodeTable {
         
         let node: INode[] = []
         
-        for (let i = 0; i <= elementIndex!.length; i++) {
+        for (let i = 0; i < elementIndex!.length; i++) {
             node.push({
                 index: i,
                 elementIndex: elementIndex ? elementIndex[i] : undefined
@@ -6428,14 +6232,14 @@ export class NodeTable implements INodeTable {
         return await this.entityTable.getArray("index:Vim.Element:Element")
     }
     
-    async getElement(nodeIndex: number, recursive?: boolean): Promise<IElement | undefined> {
+    async getElement(nodeIndex: number): Promise<IElement | undefined> {
         const index = await this.getElementIndex(nodeIndex)
         
         if (index === undefined) {
             return undefined
         }
         
-        return await this.document.element?.get(index, recursive)
+        return await this.document.element?.get(index)
     }
     
 }
@@ -6449,7 +6253,7 @@ export interface IGeometry {
 
 export interface IGeometryTable {
     getCount(): Promise<number>
-    get(geometryIndex: number, recursive?: boolean): Promise<IGeometry>
+    get(geometryIndex: number): Promise<IGeometry>
     getAll(): Promise<IGeometry[]>
     
     getBox(geometryIndex: number): Promise<AABox | undefined>
@@ -6466,7 +6270,7 @@ export class Geometry implements IGeometry {
     vertexCount?: number
     faceCount?: number
     
-    static async createFromTable(table: IGeometryTable, index: number, recursive: boolean = false): Promise<IGeometry> {
+    static async createFromTable(table: IGeometryTable, index: number): Promise<IGeometry> {
         let result = new Geometry()
         result.index = index
         
@@ -6500,8 +6304,8 @@ export class GeometryTable implements IGeometryTable {
         return (await this.entityTable.getArray("float:Box" + new Converters.AABoxConverter().columns[0]))?.length ?? 0
     }
     
-    async get(geometryIndex: number, recursive?: boolean): Promise<IGeometry> {
-        return await Geometry.createFromTable(this, geometryIndex, recursive)
+    async get(geometryIndex: number): Promise<IGeometry> {
+        return await Geometry.createFromTable(this, geometryIndex)
     }
     
     async getAll(): Promise<IGeometry[]> {
@@ -6521,7 +6325,7 @@ export class GeometryTable implements IGeometryTable {
         
         let geometry: IGeometry[] = []
         
-        for (let i = 0; i <= box!.length; i++) {
+        for (let i = 0; i < box!.length; i++) {
             geometry.push({
                 index: i,
                 box: box ? box[i] : undefined,
@@ -6576,12 +6380,12 @@ export interface IShape {
 
 export interface IShapeTable {
     getCount(): Promise<number>
-    get(shapeIndex: number, recursive?: boolean): Promise<IShape>
+    get(shapeIndex: number): Promise<IShape>
     getAll(): Promise<IShape[]>
     
     getElementIndex(shapeIndex: number): Promise<number | undefined>
     getAllElementIndex(): Promise<number[] | undefined>
-    getElement(shapeIndex: number, recursive?: boolean): Promise<IElement | undefined>
+    getElement(shapeIndex: number): Promise<IElement | undefined>
 }
 
 export class Shape implements IShape {
@@ -6590,19 +6394,13 @@ export class Shape implements IShape {
     elementIndex?: number
     element?: IElement
     
-    static async createFromTable(table: IShapeTable, index: number, recursive: boolean = false): Promise<IShape> {
+    static async createFromTable(table: IShapeTable, index: number): Promise<IShape> {
         let result = new Shape()
         result.index = index
         
         await Promise.all([
             table.getElementIndex(index).then(v => result.elementIndex = v),
         ])
-        
-        if (recursive) {
-            await Promise.all([
-                table.getElement(index).then(v => result.element = v),
-            ])
-        }
         
         return result
     }
@@ -6630,8 +6428,8 @@ export class ShapeTable implements IShapeTable {
         return (await this.entityTable.getArray("index:Vim.Element:Element"))?.length ?? 0
     }
     
-    async get(shapeIndex: number, recursive?: boolean): Promise<IShape> {
-        return await Shape.createFromTable(this, shapeIndex, recursive)
+    async get(shapeIndex: number): Promise<IShape> {
+        return await Shape.createFromTable(this, shapeIndex)
     }
     
     async getAll(): Promise<IShape[]> {
@@ -6645,7 +6443,7 @@ export class ShapeTable implements IShapeTable {
         
         let shape: IShape[] = []
         
-        for (let i = 0; i <= elementIndex!.length; i++) {
+        for (let i = 0; i < elementIndex!.length; i++) {
             shape.push({
                 index: i,
                 elementIndex: elementIndex ? elementIndex[i] : undefined
@@ -6663,14 +6461,14 @@ export class ShapeTable implements IShapeTable {
         return await this.entityTable.getArray("index:Vim.Element:Element")
     }
     
-    async getElement(shapeIndex: number, recursive?: boolean): Promise<IElement | undefined> {
+    async getElement(shapeIndex: number): Promise<IElement | undefined> {
         const index = await this.getElementIndex(shapeIndex)
         
         if (index === undefined) {
             return undefined
         }
         
-        return await this.document.element?.get(index, recursive)
+        return await this.document.element?.get(index)
     }
     
 }
@@ -6684,12 +6482,12 @@ export interface IShapeCollection {
 
 export interface IShapeCollectionTable {
     getCount(): Promise<number>
-    get(shapeCollectionIndex: number, recursive?: boolean): Promise<IShapeCollection>
+    get(shapeCollectionIndex: number): Promise<IShapeCollection>
     getAll(): Promise<IShapeCollection[]>
     
     getElementIndex(shapeCollectionIndex: number): Promise<number | undefined>
     getAllElementIndex(): Promise<number[] | undefined>
-    getElement(shapeCollectionIndex: number, recursive?: boolean): Promise<IElement | undefined>
+    getElement(shapeCollectionIndex: number): Promise<IElement | undefined>
 }
 
 export class ShapeCollection implements IShapeCollection {
@@ -6698,19 +6496,13 @@ export class ShapeCollection implements IShapeCollection {
     elementIndex?: number
     element?: IElement
     
-    static async createFromTable(table: IShapeCollectionTable, index: number, recursive: boolean = false): Promise<IShapeCollection> {
+    static async createFromTable(table: IShapeCollectionTable, index: number): Promise<IShapeCollection> {
         let result = new ShapeCollection()
         result.index = index
         
         await Promise.all([
             table.getElementIndex(index).then(v => result.elementIndex = v),
         ])
-        
-        if (recursive) {
-            await Promise.all([
-                table.getElement(index).then(v => result.element = v),
-            ])
-        }
         
         return result
     }
@@ -6738,8 +6530,8 @@ export class ShapeCollectionTable implements IShapeCollectionTable {
         return (await this.entityTable.getArray("index:Vim.Element:Element"))?.length ?? 0
     }
     
-    async get(shapeCollectionIndex: number, recursive?: boolean): Promise<IShapeCollection> {
-        return await ShapeCollection.createFromTable(this, shapeCollectionIndex, recursive)
+    async get(shapeCollectionIndex: number): Promise<IShapeCollection> {
+        return await ShapeCollection.createFromTable(this, shapeCollectionIndex)
     }
     
     async getAll(): Promise<IShapeCollection[]> {
@@ -6753,7 +6545,7 @@ export class ShapeCollectionTable implements IShapeCollectionTable {
         
         let shapeCollection: IShapeCollection[] = []
         
-        for (let i = 0; i <= elementIndex!.length; i++) {
+        for (let i = 0; i < elementIndex!.length; i++) {
             shapeCollection.push({
                 index: i,
                 elementIndex: elementIndex ? elementIndex[i] : undefined
@@ -6771,14 +6563,14 @@ export class ShapeCollectionTable implements IShapeCollectionTable {
         return await this.entityTable.getArray("index:Vim.Element:Element")
     }
     
-    async getElement(shapeCollectionIndex: number, recursive?: boolean): Promise<IElement | undefined> {
+    async getElement(shapeCollectionIndex: number): Promise<IElement | undefined> {
         const index = await this.getElementIndex(shapeCollectionIndex)
         
         if (index === undefined) {
             return undefined
         }
         
-        return await this.document.element?.get(index, recursive)
+        return await this.document.element?.get(index)
     }
     
 }
@@ -6794,15 +6586,15 @@ export interface IShapeInShapeCollection {
 
 export interface IShapeInShapeCollectionTable {
     getCount(): Promise<number>
-    get(shapeInShapeCollectionIndex: number, recursive?: boolean): Promise<IShapeInShapeCollection>
+    get(shapeInShapeCollectionIndex: number): Promise<IShapeInShapeCollection>
     getAll(): Promise<IShapeInShapeCollection[]>
     
     getShapeIndex(shapeInShapeCollectionIndex: number): Promise<number | undefined>
     getAllShapeIndex(): Promise<number[] | undefined>
-    getShape(shapeInShapeCollectionIndex: number, recursive?: boolean): Promise<IShape | undefined>
+    getShape(shapeInShapeCollectionIndex: number): Promise<IShape | undefined>
     getShapeCollectionIndex(shapeInShapeCollectionIndex: number): Promise<number | undefined>
     getAllShapeCollectionIndex(): Promise<number[] | undefined>
-    getShapeCollection(shapeInShapeCollectionIndex: number, recursive?: boolean): Promise<IShapeCollection | undefined>
+    getShapeCollection(shapeInShapeCollectionIndex: number): Promise<IShapeCollection | undefined>
 }
 
 export class ShapeInShapeCollection implements IShapeInShapeCollection {
@@ -6813,7 +6605,7 @@ export class ShapeInShapeCollection implements IShapeInShapeCollection {
     shapeCollectionIndex?: number
     shapeCollection?: IShapeCollection
     
-    static async createFromTable(table: IShapeInShapeCollectionTable, index: number, recursive: boolean = false): Promise<IShapeInShapeCollection> {
+    static async createFromTable(table: IShapeInShapeCollectionTable, index: number): Promise<IShapeInShapeCollection> {
         let result = new ShapeInShapeCollection()
         result.index = index
         
@@ -6821,13 +6613,6 @@ export class ShapeInShapeCollection implements IShapeInShapeCollection {
             table.getShapeIndex(index).then(v => result.shapeIndex = v),
             table.getShapeCollectionIndex(index).then(v => result.shapeCollectionIndex = v),
         ])
-        
-        if (recursive) {
-            await Promise.all([
-                table.getShape(index).then(v => result.shape = v),
-                table.getShapeCollection(index).then(v => result.shapeCollection = v),
-            ])
-        }
         
         return result
     }
@@ -6855,8 +6640,8 @@ export class ShapeInShapeCollectionTable implements IShapeInShapeCollectionTable
         return (await this.entityTable.getArray("index:Vim.Shape:Shape"))?.length ?? 0
     }
     
-    async get(shapeInShapeCollectionIndex: number, recursive?: boolean): Promise<IShapeInShapeCollection> {
-        return await ShapeInShapeCollection.createFromTable(this, shapeInShapeCollectionIndex, recursive)
+    async get(shapeInShapeCollectionIndex: number): Promise<IShapeInShapeCollection> {
+        return await ShapeInShapeCollection.createFromTable(this, shapeInShapeCollectionIndex)
     }
     
     async getAll(): Promise<IShapeInShapeCollection[]> {
@@ -6872,7 +6657,7 @@ export class ShapeInShapeCollectionTable implements IShapeInShapeCollectionTable
         
         let shapeInShapeCollection: IShapeInShapeCollection[] = []
         
-        for (let i = 0; i <= shapeIndex!.length; i++) {
+        for (let i = 0; i < shapeIndex!.length; i++) {
             shapeInShapeCollection.push({
                 index: i,
                 shapeIndex: shapeIndex ? shapeIndex[i] : undefined,
@@ -6891,14 +6676,14 @@ export class ShapeInShapeCollectionTable implements IShapeInShapeCollectionTable
         return await this.entityTable.getArray("index:Vim.Shape:Shape")
     }
     
-    async getShape(shapeInShapeCollectionIndex: number, recursive?: boolean): Promise<IShape | undefined> {
+    async getShape(shapeInShapeCollectionIndex: number): Promise<IShape | undefined> {
         const index = await this.getShapeIndex(shapeInShapeCollectionIndex)
         
         if (index === undefined) {
             return undefined
         }
         
-        return await this.document.shape?.get(index, recursive)
+        return await this.document.shape?.get(index)
     }
     
     async getShapeCollectionIndex(shapeInShapeCollectionIndex: number): Promise<number | undefined> {
@@ -6909,14 +6694,14 @@ export class ShapeInShapeCollectionTable implements IShapeInShapeCollectionTable
         return await this.entityTable.getArray("index:Vim.ShapeCollection:ShapeCollection")
     }
     
-    async getShapeCollection(shapeInShapeCollectionIndex: number, recursive?: boolean): Promise<IShapeCollection | undefined> {
+    async getShapeCollection(shapeInShapeCollectionIndex: number): Promise<IShapeCollection | undefined> {
         const index = await this.getShapeCollectionIndex(shapeInShapeCollectionIndex)
         
         if (index === undefined) {
             return undefined
         }
         
-        return await this.document.shapeCollection?.get(index, recursive)
+        return await this.document.shapeCollection?.get(index)
     }
     
 }
@@ -6931,7 +6716,7 @@ export interface ISystem {
 
 export interface ISystemTable {
     getCount(): Promise<number>
-    get(systemIndex: number, recursive?: boolean): Promise<ISystem>
+    get(systemIndex: number): Promise<ISystem>
     getAll(): Promise<ISystem[]>
     
     getSystemType(systemIndex: number): Promise<number | undefined>
@@ -6939,7 +6724,7 @@ export interface ISystemTable {
     
     getElementIndex(systemIndex: number): Promise<number | undefined>
     getAllElementIndex(): Promise<number[] | undefined>
-    getElement(systemIndex: number, recursive?: boolean): Promise<IElement | undefined>
+    getElement(systemIndex: number): Promise<IElement | undefined>
 }
 
 export class System implements ISystem {
@@ -6949,7 +6734,7 @@ export class System implements ISystem {
     elementIndex?: number
     element?: IElement
     
-    static async createFromTable(table: ISystemTable, index: number, recursive: boolean = false): Promise<ISystem> {
+    static async createFromTable(table: ISystemTable, index: number): Promise<ISystem> {
         let result = new System()
         result.index = index
         
@@ -6957,12 +6742,6 @@ export class System implements ISystem {
             table.getSystemType(index).then(v => result.systemType = v),
             table.getElementIndex(index).then(v => result.elementIndex = v),
         ])
-        
-        if (recursive) {
-            await Promise.all([
-                table.getElement(index).then(v => result.element = v),
-            ])
-        }
         
         return result
     }
@@ -6990,8 +6769,8 @@ export class SystemTable implements ISystemTable {
         return (await this.entityTable.getArray("int:SystemType"))?.length ?? 0
     }
     
-    async get(systemIndex: number, recursive?: boolean): Promise<ISystem> {
-        return await System.createFromTable(this, systemIndex, recursive)
+    async get(systemIndex: number): Promise<ISystem> {
+        return await System.createFromTable(this, systemIndex)
     }
     
     async getAll(): Promise<ISystem[]> {
@@ -7007,7 +6786,7 @@ export class SystemTable implements ISystemTable {
         
         let system: ISystem[] = []
         
-        for (let i = 0; i <= systemType!.length; i++) {
+        for (let i = 0; i < systemType!.length; i++) {
             system.push({
                 index: i,
                 systemType: systemType ? systemType[i] : undefined,
@@ -7034,14 +6813,14 @@ export class SystemTable implements ISystemTable {
         return await this.entityTable.getArray("index:Vim.Element:Element")
     }
     
-    async getElement(systemIndex: number, recursive?: boolean): Promise<IElement | undefined> {
+    async getElement(systemIndex: number): Promise<IElement | undefined> {
         const index = await this.getElementIndex(systemIndex)
         
         if (index === undefined) {
             return undefined
         }
         
-        return await this.document.element?.get(index, recursive)
+        return await this.document.element?.get(index)
     }
     
 }
@@ -7058,7 +6837,7 @@ export interface IElementInSystem {
 
 export interface IElementInSystemTable {
     getCount(): Promise<number>
-    get(elementInSystemIndex: number, recursive?: boolean): Promise<IElementInSystem>
+    get(elementInSystemIndex: number): Promise<IElementInSystem>
     getAll(): Promise<IElementInSystem[]>
     
     getRoles(elementInSystemIndex: number): Promise<number | undefined>
@@ -7066,10 +6845,10 @@ export interface IElementInSystemTable {
     
     getSystemIndex(elementInSystemIndex: number): Promise<number | undefined>
     getAllSystemIndex(): Promise<number[] | undefined>
-    getSystem(elementInSystemIndex: number, recursive?: boolean): Promise<ISystem | undefined>
+    getSystem(elementInSystemIndex: number): Promise<ISystem | undefined>
     getElementIndex(elementInSystemIndex: number): Promise<number | undefined>
     getAllElementIndex(): Promise<number[] | undefined>
-    getElement(elementInSystemIndex: number, recursive?: boolean): Promise<IElement | undefined>
+    getElement(elementInSystemIndex: number): Promise<IElement | undefined>
 }
 
 export class ElementInSystem implements IElementInSystem {
@@ -7081,7 +6860,7 @@ export class ElementInSystem implements IElementInSystem {
     elementIndex?: number
     element?: IElement
     
-    static async createFromTable(table: IElementInSystemTable, index: number, recursive: boolean = false): Promise<IElementInSystem> {
+    static async createFromTable(table: IElementInSystemTable, index: number): Promise<IElementInSystem> {
         let result = new ElementInSystem()
         result.index = index
         
@@ -7090,13 +6869,6 @@ export class ElementInSystem implements IElementInSystem {
             table.getSystemIndex(index).then(v => result.systemIndex = v),
             table.getElementIndex(index).then(v => result.elementIndex = v),
         ])
-        
-        if (recursive) {
-            await Promise.all([
-                table.getSystem(index).then(v => result.system = v),
-                table.getElement(index).then(v => result.element = v),
-            ])
-        }
         
         return result
     }
@@ -7124,8 +6896,8 @@ export class ElementInSystemTable implements IElementInSystemTable {
         return (await this.entityTable.getArray("int:Roles"))?.length ?? 0
     }
     
-    async get(elementInSystemIndex: number, recursive?: boolean): Promise<IElementInSystem> {
-        return await ElementInSystem.createFromTable(this, elementInSystemIndex, recursive)
+    async get(elementInSystemIndex: number): Promise<IElementInSystem> {
+        return await ElementInSystem.createFromTable(this, elementInSystemIndex)
     }
     
     async getAll(): Promise<IElementInSystem[]> {
@@ -7143,7 +6915,7 @@ export class ElementInSystemTable implements IElementInSystemTable {
         
         let elementInSystem: IElementInSystem[] = []
         
-        for (let i = 0; i <= roles!.length; i++) {
+        for (let i = 0; i < roles!.length; i++) {
             elementInSystem.push({
                 index: i,
                 roles: roles ? roles[i] : undefined,
@@ -7171,14 +6943,14 @@ export class ElementInSystemTable implements IElementInSystemTable {
         return await this.entityTable.getArray("index:Vim.System:System")
     }
     
-    async getSystem(elementInSystemIndex: number, recursive?: boolean): Promise<ISystem | undefined> {
+    async getSystem(elementInSystemIndex: number): Promise<ISystem | undefined> {
         const index = await this.getSystemIndex(elementInSystemIndex)
         
         if (index === undefined) {
             return undefined
         }
         
-        return await this.document.system?.get(index, recursive)
+        return await this.document.system?.get(index)
     }
     
     async getElementIndex(elementInSystemIndex: number): Promise<number | undefined> {
@@ -7189,14 +6961,14 @@ export class ElementInSystemTable implements IElementInSystemTable {
         return await this.entityTable.getArray("index:Vim.Element:Element")
     }
     
-    async getElement(elementInSystemIndex: number, recursive?: boolean): Promise<IElement | undefined> {
+    async getElement(elementInSystemIndex: number): Promise<IElement | undefined> {
         const index = await this.getElementIndex(elementInSystemIndex)
         
         if (index === undefined) {
             return undefined
         }
         
-        return await this.document.element?.get(index, recursive)
+        return await this.document.element?.get(index)
     }
     
 }
@@ -7213,7 +6985,7 @@ export interface IWarning {
 
 export interface IWarningTable {
     getCount(): Promise<number>
-    get(warningIndex: number, recursive?: boolean): Promise<IWarning>
+    get(warningIndex: number): Promise<IWarning>
     getAll(): Promise<IWarning[]>
     
     getGuid(warningIndex: number): Promise<string | undefined>
@@ -7225,7 +6997,7 @@ export interface IWarningTable {
     
     getBimDocumentIndex(warningIndex: number): Promise<number | undefined>
     getAllBimDocumentIndex(): Promise<number[] | undefined>
-    getBimDocument(warningIndex: number, recursive?: boolean): Promise<IBimDocument | undefined>
+    getBimDocument(warningIndex: number): Promise<IBimDocument | undefined>
 }
 
 export class Warning implements IWarning {
@@ -7237,7 +7009,7 @@ export class Warning implements IWarning {
     bimDocumentIndex?: number
     bimDocument?: IBimDocument
     
-    static async createFromTable(table: IWarningTable, index: number, recursive: boolean = false): Promise<IWarning> {
+    static async createFromTable(table: IWarningTable, index: number): Promise<IWarning> {
         let result = new Warning()
         result.index = index
         
@@ -7247,12 +7019,6 @@ export class Warning implements IWarning {
             table.getDescription(index).then(v => result.description = v),
             table.getBimDocumentIndex(index).then(v => result.bimDocumentIndex = v),
         ])
-        
-        if (recursive) {
-            await Promise.all([
-                table.getBimDocument(index).then(v => result.bimDocument = v),
-            ])
-        }
         
         return result
     }
@@ -7280,8 +7046,8 @@ export class WarningTable implements IWarningTable {
         return (await this.entityTable.getArray("string:Guid"))?.length ?? 0
     }
     
-    async get(warningIndex: number, recursive?: boolean): Promise<IWarning> {
-        return await Warning.createFromTable(this, warningIndex, recursive)
+    async get(warningIndex: number): Promise<IWarning> {
+        return await Warning.createFromTable(this, warningIndex)
     }
     
     async getAll(): Promise<IWarning[]> {
@@ -7301,7 +7067,7 @@ export class WarningTable implements IWarningTable {
         
         let warning: IWarning[] = []
         
-        for (let i = 0; i <= guid!.length; i++) {
+        for (let i = 0; i < guid!.length; i++) {
             warning.push({
                 index: i,
                 guid: guid ? guid[i] : undefined,
@@ -7346,14 +7112,14 @@ export class WarningTable implements IWarningTable {
         return await this.entityTable.getArray("index:Vim.BimDocument:BimDocument")
     }
     
-    async getBimDocument(warningIndex: number, recursive?: boolean): Promise<IBimDocument | undefined> {
+    async getBimDocument(warningIndex: number): Promise<IBimDocument | undefined> {
         const index = await this.getBimDocumentIndex(warningIndex)
         
         if (index === undefined) {
             return undefined
         }
         
-        return await this.document.bimDocument?.get(index, recursive)
+        return await this.document.bimDocument?.get(index)
     }
     
 }
@@ -7369,15 +7135,15 @@ export interface IElementInWarning {
 
 export interface IElementInWarningTable {
     getCount(): Promise<number>
-    get(elementInWarningIndex: number, recursive?: boolean): Promise<IElementInWarning>
+    get(elementInWarningIndex: number): Promise<IElementInWarning>
     getAll(): Promise<IElementInWarning[]>
     
     getWarningIndex(elementInWarningIndex: number): Promise<number | undefined>
     getAllWarningIndex(): Promise<number[] | undefined>
-    getWarning(elementInWarningIndex: number, recursive?: boolean): Promise<IWarning | undefined>
+    getWarning(elementInWarningIndex: number): Promise<IWarning | undefined>
     getElementIndex(elementInWarningIndex: number): Promise<number | undefined>
     getAllElementIndex(): Promise<number[] | undefined>
-    getElement(elementInWarningIndex: number, recursive?: boolean): Promise<IElement | undefined>
+    getElement(elementInWarningIndex: number): Promise<IElement | undefined>
 }
 
 export class ElementInWarning implements IElementInWarning {
@@ -7388,7 +7154,7 @@ export class ElementInWarning implements IElementInWarning {
     elementIndex?: number
     element?: IElement
     
-    static async createFromTable(table: IElementInWarningTable, index: number, recursive: boolean = false): Promise<IElementInWarning> {
+    static async createFromTable(table: IElementInWarningTable, index: number): Promise<IElementInWarning> {
         let result = new ElementInWarning()
         result.index = index
         
@@ -7396,13 +7162,6 @@ export class ElementInWarning implements IElementInWarning {
             table.getWarningIndex(index).then(v => result.warningIndex = v),
             table.getElementIndex(index).then(v => result.elementIndex = v),
         ])
-        
-        if (recursive) {
-            await Promise.all([
-                table.getWarning(index).then(v => result.warning = v),
-                table.getElement(index).then(v => result.element = v),
-            ])
-        }
         
         return result
     }
@@ -7430,8 +7189,8 @@ export class ElementInWarningTable implements IElementInWarningTable {
         return (await this.entityTable.getArray("index:Vim.Warning:Warning"))?.length ?? 0
     }
     
-    async get(elementInWarningIndex: number, recursive?: boolean): Promise<IElementInWarning> {
-        return await ElementInWarning.createFromTable(this, elementInWarningIndex, recursive)
+    async get(elementInWarningIndex: number): Promise<IElementInWarning> {
+        return await ElementInWarning.createFromTable(this, elementInWarningIndex)
     }
     
     async getAll(): Promise<IElementInWarning[]> {
@@ -7447,7 +7206,7 @@ export class ElementInWarningTable implements IElementInWarningTable {
         
         let elementInWarning: IElementInWarning[] = []
         
-        for (let i = 0; i <= warningIndex!.length; i++) {
+        for (let i = 0; i < warningIndex!.length; i++) {
             elementInWarning.push({
                 index: i,
                 warningIndex: warningIndex ? warningIndex[i] : undefined,
@@ -7466,14 +7225,14 @@ export class ElementInWarningTable implements IElementInWarningTable {
         return await this.entityTable.getArray("index:Vim.Warning:Warning")
     }
     
-    async getWarning(elementInWarningIndex: number, recursive?: boolean): Promise<IWarning | undefined> {
+    async getWarning(elementInWarningIndex: number): Promise<IWarning | undefined> {
         const index = await this.getWarningIndex(elementInWarningIndex)
         
         if (index === undefined) {
             return undefined
         }
         
-        return await this.document.warning?.get(index, recursive)
+        return await this.document.warning?.get(index)
     }
     
     async getElementIndex(elementInWarningIndex: number): Promise<number | undefined> {
@@ -7484,14 +7243,14 @@ export class ElementInWarningTable implements IElementInWarningTable {
         return await this.entityTable.getArray("index:Vim.Element:Element")
     }
     
-    async getElement(elementInWarningIndex: number, recursive?: boolean): Promise<IElement | undefined> {
+    async getElement(elementInWarningIndex: number): Promise<IElement | undefined> {
         const index = await this.getElementIndex(elementInWarningIndex)
         
         if (index === undefined) {
             return undefined
         }
         
-        return await this.document.element?.get(index, recursive)
+        return await this.document.element?.get(index)
     }
     
 }
@@ -7508,7 +7267,7 @@ export interface IBasePoint {
 
 export interface IBasePointTable {
     getCount(): Promise<number>
-    get(basePointIndex: number, recursive?: boolean): Promise<IBasePoint>
+    get(basePointIndex: number): Promise<IBasePoint>
     getAll(): Promise<IBasePoint[]>
     
     getIsSurveyPoint(basePointIndex: number): Promise<boolean | undefined>
@@ -7520,7 +7279,7 @@ export interface IBasePointTable {
     
     getElementIndex(basePointIndex: number): Promise<number | undefined>
     getAllElementIndex(): Promise<number[] | undefined>
-    getElement(basePointIndex: number, recursive?: boolean): Promise<IElement | undefined>
+    getElement(basePointIndex: number): Promise<IElement | undefined>
 }
 
 export class BasePoint implements IBasePoint {
@@ -7532,7 +7291,7 @@ export class BasePoint implements IBasePoint {
     elementIndex?: number
     element?: IElement
     
-    static async createFromTable(table: IBasePointTable, index: number, recursive: boolean = false): Promise<IBasePoint> {
+    static async createFromTable(table: IBasePointTable, index: number): Promise<IBasePoint> {
         let result = new BasePoint()
         result.index = index
         
@@ -7542,12 +7301,6 @@ export class BasePoint implements IBasePoint {
             table.getSharedPosition(index).then(v => result.sharedPosition = v),
             table.getElementIndex(index).then(v => result.elementIndex = v),
         ])
-        
-        if (recursive) {
-            await Promise.all([
-                table.getElement(index).then(v => result.element = v),
-            ])
-        }
         
         return result
     }
@@ -7575,8 +7328,8 @@ export class BasePointTable implements IBasePointTable {
         return (await this.entityTable.getArray("byte:IsSurveyPoint"))?.length ?? 0
     }
     
-    async get(basePointIndex: number, recursive?: boolean): Promise<IBasePoint> {
-        return await BasePoint.createFromTable(this, basePointIndex, recursive)
+    async get(basePointIndex: number): Promise<IBasePoint> {
+        return await BasePoint.createFromTable(this, basePointIndex)
     }
     
     async getAll(): Promise<IBasePoint[]> {
@@ -7600,7 +7353,7 @@ export class BasePointTable implements IBasePointTable {
         
         let basePoint: IBasePoint[] = []
         
-        for (let i = 0; i <= isSurveyPoint!.length; i++) {
+        for (let i = 0; i < isSurveyPoint!.length; i++) {
             basePoint.push({
                 index: i,
                 isSurveyPoint: isSurveyPoint ? isSurveyPoint[i] : undefined,
@@ -7661,14 +7414,14 @@ export class BasePointTable implements IBasePointTable {
         return await this.entityTable.getArray("index:Vim.Element:Element")
     }
     
-    async getElement(basePointIndex: number, recursive?: boolean): Promise<IElement | undefined> {
+    async getElement(basePointIndex: number): Promise<IElement | undefined> {
         const index = await this.getElementIndex(basePointIndex)
         
         if (index === undefined) {
             return undefined
         }
         
-        return await this.document.element?.get(index, recursive)
+        return await this.document.element?.get(index)
     }
     
 }
@@ -7686,7 +7439,7 @@ export interface IPhaseFilter {
 
 export interface IPhaseFilterTable {
     getCount(): Promise<number>
-    get(phaseFilterIndex: number, recursive?: boolean): Promise<IPhaseFilter>
+    get(phaseFilterIndex: number): Promise<IPhaseFilter>
     getAll(): Promise<IPhaseFilter[]>
     
     getNew(phaseFilterIndex: number): Promise<number | undefined>
@@ -7700,7 +7453,7 @@ export interface IPhaseFilterTable {
     
     getElementIndex(phaseFilterIndex: number): Promise<number | undefined>
     getAllElementIndex(): Promise<number[] | undefined>
-    getElement(phaseFilterIndex: number, recursive?: boolean): Promise<IElement | undefined>
+    getElement(phaseFilterIndex: number): Promise<IElement | undefined>
 }
 
 export class PhaseFilter implements IPhaseFilter {
@@ -7713,7 +7466,7 @@ export class PhaseFilter implements IPhaseFilter {
     elementIndex?: number
     element?: IElement
     
-    static async createFromTable(table: IPhaseFilterTable, index: number, recursive: boolean = false): Promise<IPhaseFilter> {
+    static async createFromTable(table: IPhaseFilterTable, index: number): Promise<IPhaseFilter> {
         let result = new PhaseFilter()
         result.index = index
         
@@ -7724,12 +7477,6 @@ export class PhaseFilter implements IPhaseFilter {
             table.getTemporary(index).then(v => result.temporary = v),
             table.getElementIndex(index).then(v => result.elementIndex = v),
         ])
-        
-        if (recursive) {
-            await Promise.all([
-                table.getElement(index).then(v => result.element = v),
-            ])
-        }
         
         return result
     }
@@ -7757,8 +7504,8 @@ export class PhaseFilterTable implements IPhaseFilterTable {
         return (await this.entityTable.getArray("int:New"))?.length ?? 0
     }
     
-    async get(phaseFilterIndex: number, recursive?: boolean): Promise<IPhaseFilter> {
-        return await PhaseFilter.createFromTable(this, phaseFilterIndex, recursive)
+    async get(phaseFilterIndex: number): Promise<IPhaseFilter> {
+        return await PhaseFilter.createFromTable(this, phaseFilterIndex)
     }
     
     async getAll(): Promise<IPhaseFilter[]> {
@@ -7780,7 +7527,7 @@ export class PhaseFilterTable implements IPhaseFilterTable {
         
         let phaseFilter: IPhaseFilter[] = []
         
-        for (let i = 0; i <= _new!.length; i++) {
+        for (let i = 0; i < _new!.length; i++) {
             phaseFilter.push({
                 index: i,
                 _new: _new ? _new[i] : undefined,
@@ -7834,14 +7581,14 @@ export class PhaseFilterTable implements IPhaseFilterTable {
         return await this.entityTable.getArray("index:Vim.Element:Element")
     }
     
-    async getElement(phaseFilterIndex: number, recursive?: boolean): Promise<IElement | undefined> {
+    async getElement(phaseFilterIndex: number): Promise<IElement | undefined> {
         const index = await this.getElementIndex(phaseFilterIndex)
         
         if (index === undefined) {
             return undefined
         }
         
-        return await this.document.element?.get(index, recursive)
+        return await this.document.element?.get(index)
     }
     
 }
@@ -7859,7 +7606,7 @@ export interface IGrid {
 
 export interface IGridTable {
     getCount(): Promise<number>
-    get(gridIndex: number, recursive?: boolean): Promise<IGrid>
+    get(gridIndex: number): Promise<IGrid>
     getAll(): Promise<IGrid[]>
     
     getStartPoint(gridIndex: number): Promise<Vector3 | undefined>
@@ -7873,7 +7620,7 @@ export interface IGridTable {
     
     getElementIndex(gridIndex: number): Promise<number | undefined>
     getAllElementIndex(): Promise<number[] | undefined>
-    getElement(gridIndex: number, recursive?: boolean): Promise<IElement | undefined>
+    getElement(gridIndex: number): Promise<IElement | undefined>
 }
 
 export class Grid implements IGrid {
@@ -7886,7 +7633,7 @@ export class Grid implements IGrid {
     elementIndex?: number
     element?: IElement
     
-    static async createFromTable(table: IGridTable, index: number, recursive: boolean = false): Promise<IGrid> {
+    static async createFromTable(table: IGridTable, index: number): Promise<IGrid> {
         let result = new Grid()
         result.index = index
         
@@ -7897,12 +7644,6 @@ export class Grid implements IGrid {
             table.getExtents(index).then(v => result.extents = v),
             table.getElementIndex(index).then(v => result.elementIndex = v),
         ])
-        
-        if (recursive) {
-            await Promise.all([
-                table.getElement(index).then(v => result.element = v),
-            ])
-        }
         
         return result
     }
@@ -7930,8 +7671,8 @@ export class GridTable implements IGridTable {
         return (await this.entityTable.getArray("double:StartPoint" + new Converters.Vector3Converter().columns[0]))?.length ?? 0
     }
     
-    async get(gridIndex: number, recursive?: boolean): Promise<IGrid> {
-        return await Grid.createFromTable(this, gridIndex, recursive)
+    async get(gridIndex: number): Promise<IGrid> {
+        return await Grid.createFromTable(this, gridIndex)
     }
     
     async getAll(): Promise<IGrid[]> {
@@ -7959,7 +7700,7 @@ export class GridTable implements IGridTable {
         
         let grid: IGrid[] = []
         
-        for (let i = 0; i <= startPoint!.length; i++) {
+        for (let i = 0; i < startPoint!.length; i++) {
             grid.push({
                 index: i,
                 startPoint: startPoint ? startPoint[i] : undefined,
@@ -8037,14 +7778,14 @@ export class GridTable implements IGridTable {
         return await this.entityTable.getArray("index:Vim.Element:Element")
     }
     
-    async getElement(gridIndex: number, recursive?: boolean): Promise<IElement | undefined> {
+    async getElement(gridIndex: number): Promise<IElement | undefined> {
         const index = await this.getElementIndex(gridIndex)
         
         if (index === undefined) {
             return undefined
         }
         
-        return await this.document.element?.get(index, recursive)
+        return await this.document.element?.get(index)
     }
     
 }
@@ -8064,7 +7805,7 @@ export interface IArea {
 
 export interface IAreaTable {
     getCount(): Promise<number>
-    get(areaIndex: number, recursive?: boolean): Promise<IArea>
+    get(areaIndex: number): Promise<IArea>
     getAll(): Promise<IArea[]>
     
     getValue(areaIndex: number): Promise<number | undefined>
@@ -8078,10 +7819,10 @@ export interface IAreaTable {
     
     getAreaSchemeIndex(areaIndex: number): Promise<number | undefined>
     getAllAreaSchemeIndex(): Promise<number[] | undefined>
-    getAreaScheme(areaIndex: number, recursive?: boolean): Promise<IAreaScheme | undefined>
+    getAreaScheme(areaIndex: number): Promise<IAreaScheme | undefined>
     getElementIndex(areaIndex: number): Promise<number | undefined>
     getAllElementIndex(): Promise<number[] | undefined>
-    getElement(areaIndex: number, recursive?: boolean): Promise<IElement | undefined>
+    getElement(areaIndex: number): Promise<IElement | undefined>
 }
 
 export class Area implements IArea {
@@ -8096,7 +7837,7 @@ export class Area implements IArea {
     elementIndex?: number
     element?: IElement
     
-    static async createFromTable(table: IAreaTable, index: number, recursive: boolean = false): Promise<IArea> {
+    static async createFromTable(table: IAreaTable, index: number): Promise<IArea> {
         let result = new Area()
         result.index = index
         
@@ -8108,13 +7849,6 @@ export class Area implements IArea {
             table.getAreaSchemeIndex(index).then(v => result.areaSchemeIndex = v),
             table.getElementIndex(index).then(v => result.elementIndex = v),
         ])
-        
-        if (recursive) {
-            await Promise.all([
-                table.getAreaScheme(index).then(v => result.areaScheme = v),
-                table.getElement(index).then(v => result.element = v),
-            ])
-        }
         
         return result
     }
@@ -8142,8 +7876,8 @@ export class AreaTable implements IAreaTable {
         return (await this.entityTable.getArray("double:Value"))?.length ?? 0
     }
     
-    async get(areaIndex: number, recursive?: boolean): Promise<IArea> {
-        return await Area.createFromTable(this, areaIndex, recursive)
+    async get(areaIndex: number): Promise<IArea> {
+        return await Area.createFromTable(this, areaIndex)
     }
     
     async getAll(): Promise<IArea[]> {
@@ -8167,7 +7901,7 @@ export class AreaTable implements IAreaTable {
         
         let area: IArea[] = []
         
-        for (let i = 0; i <= value!.length; i++) {
+        for (let i = 0; i < value!.length; i++) {
             area.push({
                 index: i,
                 value: value ? value[i] : undefined,
@@ -8222,14 +7956,14 @@ export class AreaTable implements IAreaTable {
         return await this.entityTable.getArray("index:Vim.AreaScheme:AreaScheme")
     }
     
-    async getAreaScheme(areaIndex: number, recursive?: boolean): Promise<IAreaScheme | undefined> {
+    async getAreaScheme(areaIndex: number): Promise<IAreaScheme | undefined> {
         const index = await this.getAreaSchemeIndex(areaIndex)
         
         if (index === undefined) {
             return undefined
         }
         
-        return await this.document.areaScheme?.get(index, recursive)
+        return await this.document.areaScheme?.get(index)
     }
     
     async getElementIndex(areaIndex: number): Promise<number | undefined> {
@@ -8240,14 +7974,14 @@ export class AreaTable implements IAreaTable {
         return await this.entityTable.getArray("index:Vim.Element:Element")
     }
     
-    async getElement(areaIndex: number, recursive?: boolean): Promise<IElement | undefined> {
+    async getElement(areaIndex: number): Promise<IElement | undefined> {
         const index = await this.getElementIndex(areaIndex)
         
         if (index === undefined) {
             return undefined
         }
         
-        return await this.document.element?.get(index, recursive)
+        return await this.document.element?.get(index)
     }
     
 }
@@ -8262,7 +7996,7 @@ export interface IAreaScheme {
 
 export interface IAreaSchemeTable {
     getCount(): Promise<number>
-    get(areaSchemeIndex: number, recursive?: boolean): Promise<IAreaScheme>
+    get(areaSchemeIndex: number): Promise<IAreaScheme>
     getAll(): Promise<IAreaScheme[]>
     
     getIsGrossBuildingArea(areaSchemeIndex: number): Promise<boolean | undefined>
@@ -8270,7 +8004,7 @@ export interface IAreaSchemeTable {
     
     getElementIndex(areaSchemeIndex: number): Promise<number | undefined>
     getAllElementIndex(): Promise<number[] | undefined>
-    getElement(areaSchemeIndex: number, recursive?: boolean): Promise<IElement | undefined>
+    getElement(areaSchemeIndex: number): Promise<IElement | undefined>
 }
 
 export class AreaScheme implements IAreaScheme {
@@ -8280,7 +8014,7 @@ export class AreaScheme implements IAreaScheme {
     elementIndex?: number
     element?: IElement
     
-    static async createFromTable(table: IAreaSchemeTable, index: number, recursive: boolean = false): Promise<IAreaScheme> {
+    static async createFromTable(table: IAreaSchemeTable, index: number): Promise<IAreaScheme> {
         let result = new AreaScheme()
         result.index = index
         
@@ -8288,12 +8022,6 @@ export class AreaScheme implements IAreaScheme {
             table.getIsGrossBuildingArea(index).then(v => result.isGrossBuildingArea = v),
             table.getElementIndex(index).then(v => result.elementIndex = v),
         ])
-        
-        if (recursive) {
-            await Promise.all([
-                table.getElement(index).then(v => result.element = v),
-            ])
-        }
         
         return result
     }
@@ -8321,8 +8049,8 @@ export class AreaSchemeTable implements IAreaSchemeTable {
         return (await this.entityTable.getArray("byte:IsGrossBuildingArea"))?.length ?? 0
     }
     
-    async get(areaSchemeIndex: number, recursive?: boolean): Promise<IAreaScheme> {
-        return await AreaScheme.createFromTable(this, areaSchemeIndex, recursive)
+    async get(areaSchemeIndex: number): Promise<IAreaScheme> {
+        return await AreaScheme.createFromTable(this, areaSchemeIndex)
     }
     
     async getAll(): Promise<IAreaScheme[]> {
@@ -8338,7 +8066,7 @@ export class AreaSchemeTable implements IAreaSchemeTable {
         
         let areaScheme: IAreaScheme[] = []
         
-        for (let i = 0; i <= isGrossBuildingArea!.length; i++) {
+        for (let i = 0; i < isGrossBuildingArea!.length; i++) {
             areaScheme.push({
                 index: i,
                 isGrossBuildingArea: isGrossBuildingArea ? isGrossBuildingArea[i] : undefined,
@@ -8365,14 +8093,14 @@ export class AreaSchemeTable implements IAreaSchemeTable {
         return await this.entityTable.getArray("index:Vim.Element:Element")
     }
     
-    async getElement(areaSchemeIndex: number, recursive?: boolean): Promise<IElement | undefined> {
+    async getElement(areaSchemeIndex: number): Promise<IElement | undefined> {
         const index = await this.getElementIndex(areaSchemeIndex)
         
         if (index === undefined) {
             return undefined
         }
         
-        return await this.document.element?.get(index, recursive)
+        return await this.document.element?.get(index)
     }
     
 }
@@ -8423,20 +8151,20 @@ export class VimDocument {
     areaScheme: IAreaSchemeTable | undefined
     
     entities: BFast
-    strings: string[]
+    strings: string[] | undefined
     
-    private constructor(entities: BFast, strings: string[]) {
+    private constructor(entities: BFast, strings: string[] | undefined) {
         this.entities = entities
         this.strings = strings
     }
     
-    static async createFromBfast(bfast: BFast): Promise<VimDocument | undefined> {
-        const loaded = await VimLoader.loadFromBfast(bfast)
-        
-        if (loaded === undefined)
+    static async createFromBfast(bfast: BFast, ignoreStrings: boolean = false): Promise<VimDocument | undefined> {
+        const loaded = await VimLoader.loadFromBfast(bfast, ignoreStrings)
+
+        if (loaded[0] === undefined)
             return undefined
         
-        let doc = new VimDocument(loaded[0], loaded[1])
+        let doc = new VimDocument(loaded[0]!, loaded[1])
         
         doc.asset = await AssetTable.createFromDocument(doc)
         doc.displayUnit = await DisplayUnitTable.createFromDocument(doc)
