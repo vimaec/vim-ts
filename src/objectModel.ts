@@ -8160,7 +8160,7 @@ export class VimDocument {
     
     static async createFromBfast(bfast: BFast, ignoreStrings: boolean = false): Promise<VimDocument | undefined> {
         const loaded = await VimLoader.loadFromBfast(bfast, ignoreStrings)
-
+        
         if (loaded[0] === undefined)
             return undefined
         
