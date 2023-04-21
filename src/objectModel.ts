@@ -5,7 +5,7 @@
 import { BFast } from "./bfast"
 import { EntityTable } from "./entityTable"
 import { VimLoader } from "./vimLoader"
-import { Vector2, Vector3, Vector4, AABox, AABox2D, AABox4D, Matrix4x4 } from "./structures"
+import { Vector2, Vector3, AABox, AABox2D} from "./structures"
 import * as Converters from "./converters"
 
 export interface IAsset {
