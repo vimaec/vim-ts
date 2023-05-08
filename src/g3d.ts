@@ -231,7 +231,7 @@ export class G3d {
   instanceNodes : Int32Array
   meshVertexOffsets: Int32Array
   meshInstances: Array<Array<number>>
-  meshOpaqueCount: Array<number>
+  meshOpaqueCount: Int32Array
 
   rawG3d: AbstractG3d
 
@@ -277,11 +277,7 @@ export class G3d {
       }
     }
 
-    this.meshVertexOffsets = this.computeMeshVertexOffsets()
-    this.rebaseIndices()
-    this.meshInstances = this.computeMeshInstances()
-    this.meshOpaqueCount = this.computeMeshOpaqueCount()
-    this.sortSubmeshes()
+    this.recompute()
   }
 
   static createFromAbstract(g3d: AbstractG3d) {
@@ -387,9 +383,14 @@ export class G3d {
     
     this.materialColors.set(g3d.materialColors, materialStart * G3d.COLOR_SIZE)
   }
-    
-    
-  
+
+  recompute(){
+    this.meshVertexOffsets = this.computeMeshVertexOffsets()
+    this.rebaseIndices()
+    this.meshInstances = this.computeMeshInstances()
+    this.meshOpaqueCount = this.computeMeshOpaqueCount()
+    this.sortSubmeshes()
+  }
 
   /**
    * Computes the index of the first vertex of each mesh
@@ -607,7 +608,7 @@ export class G3d {
    * Computes an array where true if any of the materials used by a mesh has transparency.
    */
   private computeMeshOpaqueCount () {
-    const result = new Array<number>(this.getMeshCount()).fill(0)
+    const result = new Int32Array(this.getMeshCount())
     for (let m = 0; m < result.length; m++) {
       const subStart = this.getMeshSubmeshStart(m, 'all')
       const subEnd = this.getMeshSubmeshEnd(m, 'all')
