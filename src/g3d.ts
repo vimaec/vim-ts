@@ -341,6 +341,56 @@ export class G3d {
     return G3d.createFromAbstract(g3d)
   }
 
+  static allocate(
+    instanceCount: number,
+    meshCount: number, 
+    submeshCont: number, 
+    indexCount: number, 
+    vertexCount: number,
+    materialCount: number
+  ){
+      var g3d = new G3d(
+        new Int32Array(instanceCount),
+        new Uint16Array(instanceCount),
+        new Float32Array(instanceCount * G3d.MATRIX_SIZE),
+        new Int32Array(instanceCount),
+        new Int32Array(meshCount),
+        new Int32Array(submeshCont),
+        new Int32Array(submeshCont),
+        new Uint32Array(indexCount), 
+        new Float32Array(vertexCount * G3d.POSITION_SIZE), 
+        new Float32Array(materialCount * G3d.COLOR_SIZE)
+      )
+    return g3d
+  }
+
+  insert(g3d: G3d,
+    instanceStart: number,
+    mesheStart: number, 
+    submesStart: number, 
+    indexStart: number, 
+    vertexStart: number,
+    materialStart: number
+  ){
+    this.instanceMeshes.set(g3d.instanceMeshes, instanceStart)
+    this.instanceFlags.set(g3d.instanceFlags, instanceStart)
+    this.instanceTransforms.set(g3d.instanceTransforms, instanceStart * G3d.MATRIX_SIZE)
+    this.instanceNodes.set(g3d.instanceNodes, instanceStart)
+
+    this.meshSubmeshes.set(g3d.meshSubmeshes, mesheStart)
+
+    this.submeshIndexOffset.set(g3d.submeshIndexOffset, submesStart)
+    this.submeshMaterial.set(g3d.submeshMaterial, submesStart)
+
+    this.indices.set(g3d.indices, indexStart)
+    this.positions.set(g3d.positions, vertexStart)
+    
+    this.materialColors.set(g3d.materialColors, materialStart * G3d.COLOR_SIZE)
+  }
+    
+    
+  
+
   /**
    * Computes the index of the first vertex of each mesh
    */
@@ -537,6 +587,18 @@ export class G3d {
       const end = this.getMeshIndexEnd(m, 'all')
       for (let i = start; i < end; i++) {
         this.indices[i] -= offset
+      }
+    }
+  }
+
+  private unbaseIndices() {
+    const count = this.getMeshCount();
+    for (let m = 0; m < count; m++) {
+      const offset = this.meshVertexOffsets[m];
+      const start = this.getMeshIndexStart(m, 'all');
+      const end = this.getMeshIndexEnd(m, 'all');
+      for (let i = start; i < end; i++) {
+        this.indices[i] += offset;
       }
     }
   }
@@ -739,6 +801,7 @@ export class G3d {
     _positions.set(this.positions)
     _positions.set(other.positions, this.positions.length)
 
+    this.unbaseIndices()
     const _indices = new Uint32Array(this.indices.length + other.indices.length)
     _indices.set(this.indices)
     _indices.set(other.indices.map(i => i + this.positions.length / 3), this.indices.length)
@@ -1018,6 +1081,8 @@ export class G3d {
         'Invalid material color buffer, must be divisible by ' + G3d.COLOR_SIZE
       )
     }
+
+    
     console.assert(this.meshInstances.length === this.getMeshCount())
     console.assert(this.meshOpaqueCount.length === this.getMeshCount())
     console.assert(this.meshSubmeshes.length === this.getMeshCount())
