@@ -1732,6 +1732,8 @@ export interface ILevel {
     index: number
     elevation?: number
     
+    familyTypeIndex?: number
+    familyType?: IFamilyType
     elementIndex?: number
     element?: IElement
 }
@@ -1744,6 +1746,9 @@ export interface ILevelTable {
     getElevation(levelIndex: number): Promise<number | undefined>
     getAllElevation(): Promise<number[] | undefined>
     
+    getFamilyTypeIndex(levelIndex: number): Promise<number | undefined>
+    getAllFamilyTypeIndex(): Promise<number[] | undefined>
+    getFamilyType(levelIndex: number): Promise<IFamilyType | undefined>
     getElementIndex(levelIndex: number): Promise<number | undefined>
     getAllElementIndex(): Promise<number[] | undefined>
     getElement(levelIndex: number): Promise<IElement | undefined>
@@ -1753,6 +1758,8 @@ export class Level implements ILevel {
     index: number
     elevation?: number
     
+    familyTypeIndex?: number
+    familyType?: IFamilyType
     elementIndex?: number
     element?: IElement
     
@@ -1762,6 +1769,7 @@ export class Level implements ILevel {
         
         await Promise.all([
             table.getElevation(index).then(v => result.elevation = v),
+            table.getFamilyTypeIndex(index).then(v => result.familyTypeIndex = v),
             table.getElementIndex(index).then(v => result.elementIndex = v),
         ])
         
@@ -1799,10 +1807,12 @@ export class LevelTable implements ILevelTable {
         const localTable = await this.entityTable.getLocal()
         
         let elevation: number[] | undefined
+        let familyTypeIndex: number[] | undefined
         let elementIndex: number[] | undefined
         
         await Promise.all([
             localTable.getArray("double:Elevation").then(a => elevation = a),
+            localTable.getArray("index:Vim.FamilyType:FamilyType").then(a => familyTypeIndex = a),
             localTable.getArray("index:Vim.Element:Element").then(a => elementIndex = a),
         ])
         
@@ -1812,6 +1822,7 @@ export class LevelTable implements ILevelTable {
             level.push({
                 index: i,
                 elevation: elevation ? elevation[i] : undefined,
+                familyTypeIndex: familyTypeIndex ? familyTypeIndex[i] : undefined,
                 elementIndex: elementIndex ? elementIndex[i] : undefined
             })
         }
@@ -1825,6 +1836,24 @@ export class LevelTable implements ILevelTable {
     
     async getAllElevation(): Promise<number[] | undefined>{
         return await this.entityTable.getArray("double:Elevation")
+    }
+    
+    async getFamilyTypeIndex(levelIndex: number): Promise<number | undefined> {
+        return await this.entityTable.getNumber(levelIndex, "index:Vim.FamilyType:FamilyType")
+    }
+    
+    async getAllFamilyTypeIndex(): Promise<number[] | undefined> {
+        return await this.entityTable.getArray("index:Vim.FamilyType:FamilyType")
+    }
+    
+    async getFamilyType(levelIndex: number): Promise<IFamilyType | undefined> {
+        const index = await this.getFamilyTypeIndex(levelIndex)
+        
+        if (index === undefined) {
+            return undefined
+        }
+        
+        return await this.document.familyType?.get(index)
     }
     
     async getElementIndex(levelIndex: number): Promise<number | undefined> {
@@ -4175,6 +4204,8 @@ export interface IView {
     
     cameraIndex?: number
     camera?: ICamera
+    familyTypeIndex?: number
+    familyType?: IFamilyType
     elementIndex?: number
     element?: IElement
 }
@@ -4208,6 +4239,9 @@ export interface IViewTable {
     getCameraIndex(viewIndex: number): Promise<number | undefined>
     getAllCameraIndex(): Promise<number[] | undefined>
     getCamera(viewIndex: number): Promise<ICamera | undefined>
+    getFamilyTypeIndex(viewIndex: number): Promise<number | undefined>
+    getAllFamilyTypeIndex(): Promise<number[] | undefined>
+    getFamilyType(viewIndex: number): Promise<IFamilyType | undefined>
     getElementIndex(viewIndex: number): Promise<number | undefined>
     getAllElementIndex(): Promise<number[] | undefined>
     getElement(viewIndex: number): Promise<IElement | undefined>
@@ -4228,6 +4262,8 @@ export class View implements IView {
     
     cameraIndex?: number
     camera?: ICamera
+    familyTypeIndex?: number
+    familyType?: IFamilyType
     elementIndex?: number
     element?: IElement
     
@@ -4247,6 +4283,7 @@ export class View implements IView {
             table.getOutline(index).then(v => result.outline = v),
             table.getDetailLevel(index).then(v => result.detailLevel = v),
             table.getCameraIndex(index).then(v => result.cameraIndex = v),
+            table.getFamilyTypeIndex(index).then(v => result.familyTypeIndex = v),
             table.getElementIndex(index).then(v => result.elementIndex = v),
         ])
         
@@ -4300,6 +4337,7 @@ export class ViewTable implements IViewTable {
         let outline: AABox2D[] | undefined
         let detailLevel: number[] | undefined
         let cameraIndex: number[] | undefined
+        let familyTypeIndex: number[] | undefined
         let elementIndex: number[] | undefined
         
         await Promise.all([
@@ -4320,6 +4358,7 @@ export class ViewTable implements IViewTable {
                 .then(a => outline = Converters.convertArray(outlineConverter, a)),
             localTable.getArray("int:DetailLevel").then(a => detailLevel = a),
             localTable.getArray("index:Vim.Camera:Camera").then(a => cameraIndex = a),
+            localTable.getArray("index:Vim.FamilyType:FamilyType").then(a => familyTypeIndex = a),
             localTable.getArray("index:Vim.Element:Element").then(a => elementIndex = a),
         ])
         
@@ -4339,6 +4378,7 @@ export class ViewTable implements IViewTable {
                 outline: outline ? outline[i] : undefined,
                 detailLevel: detailLevel ? detailLevel[i] : undefined,
                 cameraIndex: cameraIndex ? cameraIndex[i] : undefined,
+                familyTypeIndex: familyTypeIndex ? familyTypeIndex[i] : undefined,
                 elementIndex: elementIndex ? elementIndex[i] : undefined
             })
         }
@@ -4490,6 +4530,24 @@ export class ViewTable implements IViewTable {
         }
         
         return await this.document.camera?.get(index)
+    }
+    
+    async getFamilyTypeIndex(viewIndex: number): Promise<number | undefined> {
+        return await this.entityTable.getNumber(viewIndex, "index:Vim.FamilyType:FamilyType")
+    }
+    
+    async getAllFamilyTypeIndex(): Promise<number[] | undefined> {
+        return await this.entityTable.getArray("index:Vim.FamilyType:FamilyType")
+    }
+    
+    async getFamilyType(viewIndex: number): Promise<IFamilyType | undefined> {
+        const index = await this.getFamilyTypeIndex(viewIndex)
+        
+        if (index === undefined) {
+            return undefined
+        }
+        
+        return await this.document.familyType?.get(index)
     }
     
     async getElementIndex(viewIndex: number): Promise<number | undefined> {
@@ -6710,6 +6768,8 @@ export interface ISystem {
     index: number
     systemType?: number
     
+    familyTypeIndex?: number
+    familyType?: IFamilyType
     elementIndex?: number
     element?: IElement
 }
@@ -6722,6 +6782,9 @@ export interface ISystemTable {
     getSystemType(systemIndex: number): Promise<number | undefined>
     getAllSystemType(): Promise<number[] | undefined>
     
+    getFamilyTypeIndex(systemIndex: number): Promise<number | undefined>
+    getAllFamilyTypeIndex(): Promise<number[] | undefined>
+    getFamilyType(systemIndex: number): Promise<IFamilyType | undefined>
     getElementIndex(systemIndex: number): Promise<number | undefined>
     getAllElementIndex(): Promise<number[] | undefined>
     getElement(systemIndex: number): Promise<IElement | undefined>
@@ -6731,6 +6794,8 @@ export class System implements ISystem {
     index: number
     systemType?: number
     
+    familyTypeIndex?: number
+    familyType?: IFamilyType
     elementIndex?: number
     element?: IElement
     
@@ -6740,6 +6805,7 @@ export class System implements ISystem {
         
         await Promise.all([
             table.getSystemType(index).then(v => result.systemType = v),
+            table.getFamilyTypeIndex(index).then(v => result.familyTypeIndex = v),
             table.getElementIndex(index).then(v => result.elementIndex = v),
         ])
         
@@ -6777,10 +6843,12 @@ export class SystemTable implements ISystemTable {
         const localTable = await this.entityTable.getLocal()
         
         let systemType: number[] | undefined
+        let familyTypeIndex: number[] | undefined
         let elementIndex: number[] | undefined
         
         await Promise.all([
             localTable.getArray("int:SystemType").then(a => systemType = a),
+            localTable.getArray("index:Vim.FamilyType:FamilyType").then(a => familyTypeIndex = a),
             localTable.getArray("index:Vim.Element:Element").then(a => elementIndex = a),
         ])
         
@@ -6790,6 +6858,7 @@ export class SystemTable implements ISystemTable {
             system.push({
                 index: i,
                 systemType: systemType ? systemType[i] : undefined,
+                familyTypeIndex: familyTypeIndex ? familyTypeIndex[i] : undefined,
                 elementIndex: elementIndex ? elementIndex[i] : undefined
             })
         }
@@ -6803,6 +6872,24 @@ export class SystemTable implements ISystemTable {
     
     async getAllSystemType(): Promise<number[] | undefined>{
         return await this.entityTable.getArray("int:SystemType")
+    }
+    
+    async getFamilyTypeIndex(systemIndex: number): Promise<number | undefined> {
+        return await this.entityTable.getNumber(systemIndex, "index:Vim.FamilyType:FamilyType")
+    }
+    
+    async getAllFamilyTypeIndex(): Promise<number[] | undefined> {
+        return await this.entityTable.getArray("index:Vim.FamilyType:FamilyType")
+    }
+    
+    async getFamilyType(systemIndex: number): Promise<IFamilyType | undefined> {
+        const index = await this.getFamilyTypeIndex(systemIndex)
+        
+        if (index === undefined) {
+            return undefined
+        }
+        
+        return await this.document.familyType?.get(index)
     }
     
     async getElementIndex(systemIndex: number): Promise<number | undefined> {
@@ -7600,6 +7687,8 @@ export interface IGrid {
     isCurved?: boolean
     extents?: AABox
     
+    familyTypeIndex?: number
+    familyType?: IFamilyType
     elementIndex?: number
     element?: IElement
 }
@@ -7618,6 +7707,9 @@ export interface IGridTable {
     getExtents(gridIndex: number): Promise<AABox | undefined>
     getAllExtents(): Promise<AABox[] | undefined>
     
+    getFamilyTypeIndex(gridIndex: number): Promise<number | undefined>
+    getAllFamilyTypeIndex(): Promise<number[] | undefined>
+    getFamilyType(gridIndex: number): Promise<IFamilyType | undefined>
     getElementIndex(gridIndex: number): Promise<number | undefined>
     getAllElementIndex(): Promise<number[] | undefined>
     getElement(gridIndex: number): Promise<IElement | undefined>
@@ -7630,6 +7722,8 @@ export class Grid implements IGrid {
     isCurved?: boolean
     extents?: AABox
     
+    familyTypeIndex?: number
+    familyType?: IFamilyType
     elementIndex?: number
     element?: IElement
     
@@ -7642,6 +7736,7 @@ export class Grid implements IGrid {
             table.getEndPoint(index).then(v => result.endPoint = v),
             table.getIsCurved(index).then(v => result.isCurved = v),
             table.getExtents(index).then(v => result.extents = v),
+            table.getFamilyTypeIndex(index).then(v => result.familyTypeIndex = v),
             table.getElementIndex(index).then(v => result.elementIndex = v),
         ])
         
@@ -7685,6 +7780,7 @@ export class GridTable implements IGridTable {
         let isCurved: boolean[] | undefined
         const extentsConverter = new Converters.AABoxConverter()
         let extents: AABox[] | undefined
+        let familyTypeIndex: number[] | undefined
         let elementIndex: number[] | undefined
         
         await Promise.all([
@@ -7695,6 +7791,7 @@ export class GridTable implements IGridTable {
             localTable.getBooleanArray("byte:IsCurved").then(a => isCurved = a),
             Promise.all(extentsConverter.columns.map(c => this.entityTable.getArray("double:Extents" + c)))
                 .then(a => extents = Converters.convertArray(extentsConverter, a)),
+            localTable.getArray("index:Vim.FamilyType:FamilyType").then(a => familyTypeIndex = a),
             localTable.getArray("index:Vim.Element:Element").then(a => elementIndex = a),
         ])
         
@@ -7707,6 +7804,7 @@ export class GridTable implements IGridTable {
                 endPoint: endPoint ? endPoint[i] : undefined,
                 isCurved: isCurved ? isCurved[i] : undefined,
                 extents: extents ? extents[i] : undefined,
+                familyTypeIndex: familyTypeIndex ? familyTypeIndex[i] : undefined,
                 elementIndex: elementIndex ? elementIndex[i] : undefined
             })
         }
@@ -7768,6 +7866,24 @@ export class GridTable implements IGridTable {
         let numbers = await Promise.all(converter.columns.map(c => this.entityTable.getArray("double:Extents" + c)))
         
         return Converters.convertArray(converter, numbers)
+    }
+    
+    async getFamilyTypeIndex(gridIndex: number): Promise<number | undefined> {
+        return await this.entityTable.getNumber(gridIndex, "index:Vim.FamilyType:FamilyType")
+    }
+    
+    async getAllFamilyTypeIndex(): Promise<number[] | undefined> {
+        return await this.entityTable.getArray("index:Vim.FamilyType:FamilyType")
+    }
+    
+    async getFamilyType(gridIndex: number): Promise<IFamilyType | undefined> {
+        const index = await this.getFamilyTypeIndex(gridIndex)
+        
+        if (index === undefined) {
+            return undefined
+        }
+        
+        return await this.document.familyType?.get(index)
     }
     
     async getElementIndex(gridIndex: number): Promise<number | undefined> {
@@ -8105,6 +8221,378 @@ export class AreaSchemeTable implements IAreaSchemeTable {
     
 }
 
+export interface ISchedule {
+    index: number
+    
+    elementIndex?: number
+    element?: IElement
+}
+
+export interface IScheduleTable {
+    getCount(): Promise<number>
+    get(scheduleIndex: number): Promise<ISchedule>
+    getAll(): Promise<ISchedule[]>
+    
+    getElementIndex(scheduleIndex: number): Promise<number | undefined>
+    getAllElementIndex(): Promise<number[] | undefined>
+    getElement(scheduleIndex: number): Promise<IElement | undefined>
+}
+
+export class Schedule implements ISchedule {
+    index: number
+    
+    elementIndex?: number
+    element?: IElement
+    
+    static async createFromTable(table: IScheduleTable, index: number): Promise<ISchedule> {
+        let result = new Schedule()
+        result.index = index
+        
+        await Promise.all([
+            table.getElementIndex(index).then(v => result.elementIndex = v),
+        ])
+        
+        return result
+    }
+}
+
+export class ScheduleTable implements IScheduleTable {
+    private document: VimDocument
+    private entityTable: EntityTable
+    
+    static async createFromDocument(document: VimDocument): Promise<IScheduleTable | undefined> {
+        const entity = await document.entities.getBfast("Vim.Schedule")
+        
+        if (!entity) {
+            return undefined
+        }
+        
+        let table = new ScheduleTable()
+        table.document = document
+        table.entityTable = new EntityTable(entity, document.strings)
+        
+        return table
+    }
+    
+    async getCount(): Promise<number> {
+        return (await this.entityTable.getArray("index:Vim.Element:Element"))?.length ?? 0
+    }
+    
+    async get(scheduleIndex: number): Promise<ISchedule> {
+        return await Schedule.createFromTable(this, scheduleIndex)
+    }
+    
+    async getAll(): Promise<ISchedule[]> {
+        const localTable = await this.entityTable.getLocal()
+        
+        let elementIndex: number[] | undefined
+        
+        await Promise.all([
+            localTable.getArray("index:Vim.Element:Element").then(a => elementIndex = a),
+        ])
+        
+        let schedule: ISchedule[] = []
+        
+        for (let i = 0; i < elementIndex!.length; i++) {
+            schedule.push({
+                index: i,
+                elementIndex: elementIndex ? elementIndex[i] : undefined
+            })
+        }
+        
+        return schedule
+    }
+    
+    async getElementIndex(scheduleIndex: number): Promise<number | undefined> {
+        return await this.entityTable.getNumber(scheduleIndex, "index:Vim.Element:Element")
+    }
+    
+    async getAllElementIndex(): Promise<number[] | undefined> {
+        return await this.entityTable.getArray("index:Vim.Element:Element")
+    }
+    
+    async getElement(scheduleIndex: number): Promise<IElement | undefined> {
+        const index = await this.getElementIndex(scheduleIndex)
+        
+        if (index === undefined) {
+            return undefined
+        }
+        
+        return await this.document.element?.get(index)
+    }
+    
+}
+
+export interface IScheduleColumn {
+    index: number
+    name?: string
+    columnIndex?: number
+    
+    scheduleIndex?: number
+    schedule?: ISchedule
+}
+
+export interface IScheduleColumnTable {
+    getCount(): Promise<number>
+    get(scheduleColumnIndex: number): Promise<IScheduleColumn>
+    getAll(): Promise<IScheduleColumn[]>
+    
+    getName(scheduleColumnIndex: number): Promise<string | undefined>
+    getAllName(): Promise<string[] | undefined>
+    getColumnIndex(scheduleColumnIndex: number): Promise<number | undefined>
+    getAllColumnIndex(): Promise<number[] | undefined>
+    
+    getScheduleIndex(scheduleColumnIndex: number): Promise<number | undefined>
+    getAllScheduleIndex(): Promise<number[] | undefined>
+    getSchedule(scheduleColumnIndex: number): Promise<ISchedule | undefined>
+}
+
+export class ScheduleColumn implements IScheduleColumn {
+    index: number
+    name?: string
+    columnIndex?: number
+    
+    scheduleIndex?: number
+    schedule?: ISchedule
+    
+    static async createFromTable(table: IScheduleColumnTable, index: number): Promise<IScheduleColumn> {
+        let result = new ScheduleColumn()
+        result.index = index
+        
+        await Promise.all([
+            table.getName(index).then(v => result.name = v),
+            table.getColumnIndex(index).then(v => result.columnIndex = v),
+            table.getScheduleIndex(index).then(v => result.scheduleIndex = v),
+        ])
+        
+        return result
+    }
+}
+
+export class ScheduleColumnTable implements IScheduleColumnTable {
+    private document: VimDocument
+    private entityTable: EntityTable
+    
+    static async createFromDocument(document: VimDocument): Promise<IScheduleColumnTable | undefined> {
+        const entity = await document.entities.getBfast("Vim.ScheduleColumn")
+        
+        if (!entity) {
+            return undefined
+        }
+        
+        let table = new ScheduleColumnTable()
+        table.document = document
+        table.entityTable = new EntityTable(entity, document.strings)
+        
+        return table
+    }
+    
+    async getCount(): Promise<number> {
+        return (await this.entityTable.getArray("string:Name"))?.length ?? 0
+    }
+    
+    async get(scheduleColumnIndex: number): Promise<IScheduleColumn> {
+        return await ScheduleColumn.createFromTable(this, scheduleColumnIndex)
+    }
+    
+    async getAll(): Promise<IScheduleColumn[]> {
+        const localTable = await this.entityTable.getLocal()
+        
+        let name: string[] | undefined
+        let columnIndex: number[] | undefined
+        let scheduleIndex: number[] | undefined
+        
+        await Promise.all([
+            localTable.getStringArray("string:Name").then(a => name = a),
+            localTable.getArray("int:ColumnIndex").then(a => columnIndex = a),
+            localTable.getArray("index:Vim.Schedule:Schedule").then(a => scheduleIndex = a),
+        ])
+        
+        let scheduleColumn: IScheduleColumn[] = []
+        
+        for (let i = 0; i < name!.length; i++) {
+            scheduleColumn.push({
+                index: i,
+                name: name ? name[i] : undefined,
+                columnIndex: columnIndex ? columnIndex[i] : undefined,
+                scheduleIndex: scheduleIndex ? scheduleIndex[i] : undefined
+            })
+        }
+        
+        return scheduleColumn
+    }
+    
+    async getName(scheduleColumnIndex: number): Promise<string | undefined>{
+        return await this.entityTable.getString(scheduleColumnIndex, "string:Name")
+    }
+    
+    async getAllName(): Promise<string[] | undefined>{
+        return await this.entityTable.getStringArray("string:Name")
+    }
+    
+    async getColumnIndex(scheduleColumnIndex: number): Promise<number | undefined>{
+        return await this.entityTable.getNumber(scheduleColumnIndex, "int:ColumnIndex")
+    }
+    
+    async getAllColumnIndex(): Promise<number[] | undefined>{
+        return await this.entityTable.getArray("int:ColumnIndex")
+    }
+    
+    async getScheduleIndex(scheduleColumnIndex: number): Promise<number | undefined> {
+        return await this.entityTable.getNumber(scheduleColumnIndex, "index:Vim.Schedule:Schedule")
+    }
+    
+    async getAllScheduleIndex(): Promise<number[] | undefined> {
+        return await this.entityTable.getArray("index:Vim.Schedule:Schedule")
+    }
+    
+    async getSchedule(scheduleColumnIndex: number): Promise<ISchedule | undefined> {
+        const index = await this.getScheduleIndex(scheduleColumnIndex)
+        
+        if (index === undefined) {
+            return undefined
+        }
+        
+        return await this.document.schedule?.get(index)
+    }
+    
+}
+
+export interface IScheduleCell {
+    index: number
+    value?: string
+    rowIndex?: number
+    
+    scheduleColumnIndex?: number
+    scheduleColumn?: IScheduleColumn
+}
+
+export interface IScheduleCellTable {
+    getCount(): Promise<number>
+    get(scheduleCellIndex: number): Promise<IScheduleCell>
+    getAll(): Promise<IScheduleCell[]>
+    
+    getValue(scheduleCellIndex: number): Promise<string | undefined>
+    getAllValue(): Promise<string[] | undefined>
+    getRowIndex(scheduleCellIndex: number): Promise<number | undefined>
+    getAllRowIndex(): Promise<number[] | undefined>
+    
+    getScheduleColumnIndex(scheduleCellIndex: number): Promise<number | undefined>
+    getAllScheduleColumnIndex(): Promise<number[] | undefined>
+    getScheduleColumn(scheduleCellIndex: number): Promise<IScheduleColumn | undefined>
+}
+
+export class ScheduleCell implements IScheduleCell {
+    index: number
+    value?: string
+    rowIndex?: number
+    
+    scheduleColumnIndex?: number
+    scheduleColumn?: IScheduleColumn
+    
+    static async createFromTable(table: IScheduleCellTable, index: number): Promise<IScheduleCell> {
+        let result = new ScheduleCell()
+        result.index = index
+        
+        await Promise.all([
+            table.getValue(index).then(v => result.value = v),
+            table.getRowIndex(index).then(v => result.rowIndex = v),
+            table.getScheduleColumnIndex(index).then(v => result.scheduleColumnIndex = v),
+        ])
+        
+        return result
+    }
+}
+
+export class ScheduleCellTable implements IScheduleCellTable {
+    private document: VimDocument
+    private entityTable: EntityTable
+    
+    static async createFromDocument(document: VimDocument): Promise<IScheduleCellTable | undefined> {
+        const entity = await document.entities.getBfast("Vim.ScheduleCell")
+        
+        if (!entity) {
+            return undefined
+        }
+        
+        let table = new ScheduleCellTable()
+        table.document = document
+        table.entityTable = new EntityTable(entity, document.strings)
+        
+        return table
+    }
+    
+    async getCount(): Promise<number> {
+        return (await this.entityTable.getArray("string:Value"))?.length ?? 0
+    }
+    
+    async get(scheduleCellIndex: number): Promise<IScheduleCell> {
+        return await ScheduleCell.createFromTable(this, scheduleCellIndex)
+    }
+    
+    async getAll(): Promise<IScheduleCell[]> {
+        const localTable = await this.entityTable.getLocal()
+        
+        let value: string[] | undefined
+        let rowIndex: number[] | undefined
+        let scheduleColumnIndex: number[] | undefined
+        
+        await Promise.all([
+            localTable.getStringArray("string:Value").then(a => value = a),
+            localTable.getArray("int:RowIndex").then(a => rowIndex = a),
+            localTable.getArray("index:Vim.ScheduleColumn:ScheduleColumn").then(a => scheduleColumnIndex = a),
+        ])
+        
+        let scheduleCell: IScheduleCell[] = []
+        
+        for (let i = 0; i < value!.length; i++) {
+            scheduleCell.push({
+                index: i,
+                value: value ? value[i] : undefined,
+                rowIndex: rowIndex ? rowIndex[i] : undefined,
+                scheduleColumnIndex: scheduleColumnIndex ? scheduleColumnIndex[i] : undefined
+            })
+        }
+        
+        return scheduleCell
+    }
+    
+    async getValue(scheduleCellIndex: number): Promise<string | undefined>{
+        return await this.entityTable.getString(scheduleCellIndex, "string:Value")
+    }
+    
+    async getAllValue(): Promise<string[] | undefined>{
+        return await this.entityTable.getStringArray("string:Value")
+    }
+    
+    async getRowIndex(scheduleCellIndex: number): Promise<number | undefined>{
+        return await this.entityTable.getNumber(scheduleCellIndex, "int:RowIndex")
+    }
+    
+    async getAllRowIndex(): Promise<number[] | undefined>{
+        return await this.entityTable.getArray("int:RowIndex")
+    }
+    
+    async getScheduleColumnIndex(scheduleCellIndex: number): Promise<number | undefined> {
+        return await this.entityTable.getNumber(scheduleCellIndex, "index:Vim.ScheduleColumn:ScheduleColumn")
+    }
+    
+    async getAllScheduleColumnIndex(): Promise<number[] | undefined> {
+        return await this.entityTable.getArray("index:Vim.ScheduleColumn:ScheduleColumn")
+    }
+    
+    async getScheduleColumn(scheduleCellIndex: number): Promise<IScheduleColumn | undefined> {
+        const index = await this.getScheduleColumnIndex(scheduleCellIndex)
+        
+        if (index === undefined) {
+            return undefined
+        }
+        
+        return await this.document.scheduleColumn?.get(index)
+    }
+    
+}
+
 export class VimDocument {
     asset: IAssetTable | undefined
     displayUnit: IDisplayUnitTable | undefined
@@ -8149,6 +8637,9 @@ export class VimDocument {
     grid: IGridTable | undefined
     area: IAreaTable | undefined
     areaScheme: IAreaSchemeTable | undefined
+    schedule: IScheduleTable | undefined
+    scheduleColumn: IScheduleColumnTable | undefined
+    scheduleCell: IScheduleCellTable | undefined
     
     entities: BFast
     strings: string[] | undefined
@@ -8209,6 +8700,9 @@ export class VimDocument {
         doc.grid = await GridTable.createFromDocument(doc)
         doc.area = await AreaTable.createFromDocument(doc)
         doc.areaScheme = await AreaSchemeTable.createFromDocument(doc)
+        doc.schedule = await ScheduleTable.createFromDocument(doc)
+        doc.scheduleColumn = await ScheduleColumnTable.createFromDocument(doc)
+        doc.scheduleCell = await ScheduleCellTable.createFromDocument(doc)
         
         return doc
     }
