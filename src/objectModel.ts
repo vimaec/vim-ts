@@ -5,7 +5,7 @@
 import { BFast } from "./bfast"
 import { EntityTable } from "./entityTable"
 import { VimLoader } from "./vimLoader"
-import { Vector2, Vector3, AABox, AABox2D} from "./structures"
+import { Vector2, Vector3, Vector4, AABox, AABox2D, AABox4D, Matrix4x4 } from "./structures"
 import * as Converters from "./converters"
 
 export interface IAsset {
@@ -591,7 +591,7 @@ export class ParameterTable implements IParameterTable {
 
 export interface IElement {
     index: number
-    id?: number
+    id?: bigint
     type?: string
     name?: string
     uniqueId?: string
@@ -628,8 +628,8 @@ export interface IElementTable {
     get(elementIndex: number): Promise<IElement>
     getAll(): Promise<IElement[]>
     
-    getId(elementIndex: number): Promise<number | undefined>
-    getAllId(): Promise<number[] | undefined>
+    getId(elementIndex: number): Promise<bigint | undefined>
+    getAllId(): Promise<bigint[] | undefined>
     getType(elementIndex: number): Promise<string | undefined>
     getAllType(): Promise<string[] | undefined>
     getName(elementIndex: number): Promise<string | undefined>
@@ -680,7 +680,7 @@ export interface IElementTable {
 
 export class Element implements IElement {
     index: number
-    id?: number
+    id?: bigint
     type?: string
     name?: string
     uniqueId?: string
@@ -759,7 +759,7 @@ export class ElementTable implements IElementTable {
     }
     
     async getCount(): Promise<number> {
-        return (await this.entityTable.getArray("int:Id"))?.length ?? 0
+        return (await this.entityTable.getArray("long:Id"))?.length ?? 0
     }
     
     async get(elementIndex: number): Promise<IElement> {
@@ -769,7 +769,7 @@ export class ElementTable implements IElementTable {
     async getAll(): Promise<IElement[]> {
         const localTable = await this.entityTable.getLocal()
         
-        let id: number[] | undefined
+        let id: bigint[] | undefined
         let type: string[] | undefined
         let name: string[] | undefined
         let uniqueId: string[] | undefined
@@ -790,7 +790,7 @@ export class ElementTable implements IElementTable {
         let roomIndex: number[] | undefined
         
         await Promise.all([
-            localTable.getArray("int:Id").then(a => id = a),
+            localTable.getBigInt64Array("long:Id").then(a => id = a),
             localTable.getStringArray("string:Type").then(a => type = a),
             localTable.getStringArray("string:Name").then(a => name = a),
             localTable.getStringArray("string:UniqueId").then(a => uniqueId = a),
@@ -840,12 +840,12 @@ export class ElementTable implements IElementTable {
         return element
     }
     
-    async getId(elementIndex: number): Promise<number | undefined>{
-        return await this.entityTable.getNumber(elementIndex, "int:Id")
+    async getId(elementIndex: number): Promise<bigint | undefined>{
+        return await this.entityTable.getBigInt64(elementIndex, "long:Id")
     }
     
-    async getAllId(): Promise<number[] | undefined>{
-        return await this.entityTable.getArray("int:Id")
+    async getAllId(): Promise<bigint[] | undefined>{
+        return await this.entityTable.getBigInt64Array("long:Id")
     }
     
     async getType(elementIndex: number): Promise<string | undefined>{
@@ -3142,7 +3142,7 @@ export class PhaseOrderInBimDocumentTable implements IPhaseOrderInBimDocumentTab
 export interface ICategory {
     index: number
     name?: string
-    id?: number
+    id?: bigint
     categoryType?: string
     lineColor?: Vector3
     builtInCategory?: string
@@ -3160,8 +3160,8 @@ export interface ICategoryTable {
     
     getName(categoryIndex: number): Promise<string | undefined>
     getAllName(): Promise<string[] | undefined>
-    getId(categoryIndex: number): Promise<number | undefined>
-    getAllId(): Promise<number[] | undefined>
+    getId(categoryIndex: number): Promise<bigint | undefined>
+    getAllId(): Promise<bigint[] | undefined>
     getCategoryType(categoryIndex: number): Promise<string | undefined>
     getAllCategoryType(): Promise<string[] | undefined>
     getLineColor(categoryIndex: number): Promise<Vector3 | undefined>
@@ -3180,7 +3180,7 @@ export interface ICategoryTable {
 export class Category implements ICategory {
     index: number
     name?: string
-    id?: number
+    id?: bigint
     categoryType?: string
     lineColor?: Vector3
     builtInCategory?: string
@@ -3238,7 +3238,7 @@ export class CategoryTable implements ICategoryTable {
         const localTable = await this.entityTable.getLocal()
         
         let name: string[] | undefined
-        let id: number[] | undefined
+        let id: bigint[] | undefined
         let categoryType: string[] | undefined
         const lineColorConverter = new Converters.Vector3Converter()
         let lineColor: Vector3[] | undefined
@@ -3248,7 +3248,7 @@ export class CategoryTable implements ICategoryTable {
         
         await Promise.all([
             localTable.getStringArray("string:Name").then(a => name = a),
-            localTable.getArray("int:Id").then(a => id = a),
+            localTable.getBigInt64Array("long:Id").then(a => id = a),
             localTable.getStringArray("string:CategoryType").then(a => categoryType = a),
             Promise.all(lineColorConverter.columns.map(c => this.entityTable.getArray("double:LineColor" + c)))
                 .then(a => lineColor = Converters.convertArray(lineColorConverter, a)),
@@ -3283,12 +3283,12 @@ export class CategoryTable implements ICategoryTable {
         return await this.entityTable.getStringArray("string:Name")
     }
     
-    async getId(categoryIndex: number): Promise<number | undefined>{
-        return await this.entityTable.getNumber(categoryIndex, "int:Id")
+    async getId(categoryIndex: number): Promise<bigint | undefined>{
+        return await this.entityTable.getBigInt64(categoryIndex, "long:Id")
     }
     
-    async getAllId(): Promise<number[] | undefined>{
-        return await this.entityTable.getArray("int:Id")
+    async getAllId(): Promise<bigint[] | undefined>{
+        return await this.entityTable.getBigInt64Array("long:Id")
     }
     
     async getCategoryType(categoryIndex: number): Promise<string | undefined>{
