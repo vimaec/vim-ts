@@ -87,7 +87,7 @@ export function parseName(name: string): [number, ArrayConstructor]{
        return Int32Array
      case 'float':
        return Float32Array
-     case 'long':
+     case 'long': // TODO: messy?
      case 'double':
        return Float64Array
      default:
@@ -235,13 +235,19 @@ export function parseName(name: string): [number, ArrayConstructor]{
     * Returns a number array from the buffer associated with name
     * @param name buffer name
     */
-   async getArray (name: string) {
+   async getArray (name: string) : Promise<number[]> {
      const buffer = await this.getBuffer(name)
      if (!buffer) return
      const type = name.split(':')[0]
      const Ctor = typeConstructor(type)
      const array = new Ctor(buffer)
      return Array.from(array)
+   }
+
+   async getBigInt64Array(name: string) : Promise<BigInt64Array> {
+    const buffer = await this.getBuffer(name)
+    if (!buffer) return
+    return new BigInt64Array(buffer);
    }
  
    /**

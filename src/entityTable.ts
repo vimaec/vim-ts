@@ -21,6 +21,15 @@ export class EntityTable {
         return this.bfast.getArray(columnName)
     }
 
+    async getBigInt(elementIndex: number, columnName: string): Promise<bigint | undefined> {
+        const array = await this.bfast.getBigInt64Array(columnName)
+
+        if ((array?.length ?? -1) <= elementIndex)
+            return undefined
+
+        return array![elementIndex]
+    }
+
     async getNumber(elementIndex: number, columnName: string): Promise<number | undefined> {
         const array = await this.bfast.getArray(columnName)
 
