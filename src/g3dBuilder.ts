@@ -83,24 +83,33 @@ export class G3dBuilder{
     this.offsets = offsets
   }
 
-  static fromIndex(index: G3dMeshIndex, start = 0, end? : number){
-    end = end ?? index.getTotalMeshCount()
-    
-    const mesh = new Array<number>(end-start)
-    for(let i=start; i < end ; i++){
-      mesh[i -start] = i
+  static fromIndexMeshes(index: G3dMeshIndex, meshes? : number[]){
+    meshes = meshes ?? [...Array(index.getMeshCount()).keys()]
+    var counts = index.getAttributeCounts(meshes)
+    var offsets = index.meshOffsets(meshes)
+    return new G3dBuilder(
+      meshes,
+      counts.instanceCount,
+      counts.meshCount,
+      counts.submeshCount,
+      counts.indexCount,
+      counts.vertexCount,
+      counts.materialCount,
+      offsets
+    )
+  }
+
+  static fromIndexInstances(index: G3dMeshIndex, instances? : number[]){
+    const meshes = new Set<number>()
+    if(instances){
+      instances.forEach(i => {
+        meshes.add(index.instanceFiles[i])
+      })
+    } else{
+      index.instanceFiles.forEach(i => meshes.add(i))
     }
 
-    return new G3dBuilder(
-      mesh,
-      index.getTotalInstanceCount(start, end),
-      index.getTotalMeshCount(start, end),
-      index.getTotalSubmeshCount(start, end),
-      index.getTotalIndexCount(start, end),
-      index.getTotalVertexCount(start, end),
-      index.getTotalMaterialCount(start, end),
-      index.rangeOffsets(start, end)
-    )
+    return this.fromIndexMeshes(index, Array.from(meshes))
   }
 
   all(getUrl: (m: number) => string, verbose: boolean){
