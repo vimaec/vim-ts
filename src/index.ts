@@ -7,6 +7,7 @@ export * from './g3dBuilder'
 export * from './remoteG3d'
 export * from './remoteBuffer'
 export * from './requestTracker'
+export * from './requester'
 
 export * from './vimHeader'
 export * from './objectModel'

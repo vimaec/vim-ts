@@ -112,8 +112,7 @@ export class G3dBuilder{
     return this.fromIndexMeshes(index, Array.from(meshes))
   }
 
-  all(getUrl: (m: number) => string, verbose: boolean){
-    var requester = new Requester(verbose)
+  all(getUrl: (m: number) => string, requester = new Requester()){
 
     return Promise.all(this.meshes.map(async (m, i) => {
       const url = getUrl(m)
