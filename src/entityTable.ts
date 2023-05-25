@@ -2,7 +2,7 @@
  * @module vim-ts
  */
 
-import { BFast } from './bfast'
+import { BFast, NumericArray } from './bfast'
 
 export class EntityTable {
     private readonly bfast: BFast
@@ -17,24 +17,26 @@ export class EntityTable {
         return new EntityTable(await this.bfast.getSelf(), this.strings)
     }
 
-    getArray(columnName: string): Promise<number[] | undefined> {
+    getArray(columnName: string): Promise<NumericArray | undefined> {
         return this.bfast.getArray(columnName)
     }
 
-    getBigInt64Array(columnName: string): Promise<BigInt64Array | undefined> {
-        return this.bfast.getBigInt64Array(columnName);
-    }
+    // TODO: remove me
+    // getBigInt64Array(columnName: string): Promise<BigInt64Array | undefined> {
+    //     return this.bfast.getBigInt64Array(columnName);
+    // }
 
-    async getBigInt64(elementIndex: number, columnName: string): Promise<bigint | undefined> {
-        const array = await this.bfast.getBigInt64Array(columnName)
+    // TODO: remove me
+    // async getBigInt64(elementIndex: number, columnName: string): Promise<bigint | undefined> {
+    //     const array = await this.bfast.getBigInt64Array(columnName)
 
-        if ((array?.length ?? -1) <= elementIndex)
-            return undefined
+    //     if ((array?.length ?? -1) <= elementIndex)
+    //         return undefined
 
-        return array![elementIndex]
-    }
+    //     return array![elementIndex]
+    // }
 
-    async getNumber(elementIndex: number, columnName: string): Promise<number | undefined> {
+    async getNumber(elementIndex: number, columnName: string): Promise<number | BigInt | undefined> {
         const array = await this.bfast.getArray(columnName)
 
         if ((array?.length ?? -1) <= elementIndex)
