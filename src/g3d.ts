@@ -106,7 +106,11 @@ export class G3d {
       }
     }
 
-    this.recompute()
+    this.meshVertexOffsets = this.computeMeshVertexOffsets()
+    this.rebaseIndices()
+    this.meshInstances = this.computeMeshInstances()
+    this.meshOpaqueCount = this.computeMeshOpaqueCount()
+    this.sortSubmeshes()
   }
 
   static createFromAbstract(g3d: AbstractG3d) {
@@ -171,61 +175,6 @@ export class G3d {
   static async createFromBfast (bfast: BFast) {
     const g3d = await AbstractG3d.createFromBfast(bfast, VimAttributes.all)
     return G3d.createFromAbstract(g3d)
-  }
-
-  static allocate(
-    instanceCount: number,
-    meshCount: number, 
-    submeshCont: number, 
-    indexCount: number, 
-    vertexCount: number,
-    materialCount: number
-  ){
-      var g3d = new G3d(
-        new Int32Array(instanceCount),
-        new Uint16Array(instanceCount),
-        new Float32Array(instanceCount * G3d.MATRIX_SIZE),
-        new Int32Array(instanceCount),
-        new Int32Array(meshCount),
-        new Int32Array(submeshCont),
-        new Int32Array(submeshCont),
-        new Uint32Array(indexCount), 
-        new Float32Array(vertexCount * G3d.POSITION_SIZE), 
-        new Float32Array(materialCount * G3d.COLOR_SIZE)
-      )
-    return g3d
-  }
-
-  insert(g3d: G3d,
-    instanceStart: number,
-    mesheStart: number, 
-    submesStart: number, 
-    indexStart: number, 
-    vertexStart: number,
-    materialStart: number
-  ){
-    this.instanceMeshes.set(g3d.instanceMeshes, instanceStart)
-    this.instanceFlags.set(g3d.instanceFlags, instanceStart)
-    this.instanceTransforms.set(g3d.instanceTransforms, instanceStart * G3d.MATRIX_SIZE)
-    this.instanceNodes.set(g3d.instanceNodes, instanceStart)
-
-    this.meshSubmeshes.set(g3d.meshSubmeshes, mesheStart)
-
-    this.submeshIndexOffset.set(g3d.submeshIndexOffset, submesStart)
-    this.submeshMaterial.set(g3d.submeshMaterial, submesStart)
-
-    this.indices.set(g3d.indices, indexStart)
-    this.positions.set(g3d.positions, vertexStart)
-    
-    this.materialColors.set(g3d.materialColors, materialStart * G3d.COLOR_SIZE)
-  }
-
-  recompute(){
-    this.meshVertexOffsets = this.computeMeshVertexOffsets()
-    this.rebaseIndices()
-    this.meshInstances = this.computeMeshInstances()
-    this.meshOpaqueCount = this.computeMeshOpaqueCount()
-    this.sortSubmeshes()
   }
 
   /**
@@ -456,9 +405,18 @@ export class G3d {
     return result
   }
 
-
-
   // ------------- All -----------------
+
+  /**Given VIM instance indices returns the corresponding G3d indices */
+  remapInstances(instances : number[]){
+    const map = new Map<number, number>()
+    for(let i =0; i < instances.length; i++){
+      map.set(this.instanceNodes[i], i)
+    }
+
+    return instances.map((i) => map.get(i))
+  }
+
   getVertexCount = () => this.positions.length / G3d.POSITION_SIZE
   getIndexCount = () => this.indices.length
 
