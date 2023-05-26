@@ -100,14 +100,17 @@ export class G3dBuilder{
   }
 
   static fromIndexInstances(index: G3dMeshIndex, instances? : number[]){
-    const meshes = new Set<number>()
-    if(instances){
-      instances.forEach(i => {
-        meshes.add(index.instanceFiles[i])
-      })
-    } else{
-      index.instanceFiles.forEach(i => meshes.add(i))
+    if(!instances){
+      return this.fromIndexMeshes(index, undefined)
     }
+
+    const meshes = new Set<number>()
+    instances.forEach(i => {
+      const mesh = index.instanceFiles[i]
+      if(mesh >= 0){
+        meshes.add(mesh)
+      }
+    })
 
     return this.fromIndexMeshes(index, Array.from(meshes))
   }
