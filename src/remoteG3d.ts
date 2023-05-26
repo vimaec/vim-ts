@@ -22,9 +22,8 @@ class G3dRemoteAttribute {
     return await this.bfast.getValue(this.descriptor.description, index)
   }
 
-  async getNumber(index: number){
-    const count = await this.bfast.getValue(this.descriptor.description, index)
-    return count
+  async getNumber(index: number): Promise<number> {
+    return Number(await this.bfast.getValue(this.descriptor.description, index))
   }
 
   async getValue<T extends TypedArray>(index: number){
