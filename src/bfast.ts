@@ -51,30 +51,33 @@ export type NumericArray =
   */
 export function parseName(name: string): [number, NumericArrayConstructor]{
   if(name.startsWith('g3d')){
-    const result = name.includes(':int8:') ? [1, Int8Array]
-     : name.includes(':uint8:') ? [1, Uint8Array]
-     : name.includes(':uint16:') ? [2, Uint16Array]
-     : name.includes(':int16:') ? [2, Int16Array]
-     : name.includes(':int32:') ? [4, Int32Array]
-     : name.includes(':float32:') ? [4, Float32Array]
-     : name.includes(':uint32:') ? [4, Uint32Array]
-     : [-1, undefined] 
-
+    const result =
+        name.includes(':int8:')    ? [1, Int8Array]
+      : name.includes(':uint8:')   ? [1, Uint8Array]
+      : name.includes(':int16:')   ? [2, Int16Array]
+      : name.includes(':uint16:')  ? [2, Uint16Array]
+      : name.includes(':int32:')   ? [4, Int32Array]
+      : name.includes(':uint32:')  ? [4, Uint32Array]
+      : name.includes(':int64:')   ? [8, BigInt64Array]
+      : name.includes(':uint64:')  ? [8, BigUint64Array]
+      : name.includes(':float32:') ? [4, Float32Array]
+      : name.includes(':float64:') ? [8, Float64Array]
+      : [-1, undefined] 
     return result as [number, NumericArrayConstructor]
   }
   else{
     const result =
-      name.startsWith('byte:') ? [1, Int8Array]
-     :name.startsWith('ubyte:') ? [1, Uint8Array]
-     :name.startsWith('short:') ? [2, Int16Array]
-     :name.startsWith('ushort:') ? [2, Uint16Array]
-     :name.startsWith('int:') ? [4, Int32Array]
-     :name.startsWith('uint:') ? [4, Uint32Array]
-     :name.startsWith('long:') ? [8,BigInt64Array]
-     :name.startsWith('ulong:') ? [8,BigUint64Array]
-     :name.startsWith('float:') ? [4, Float32Array]
-     :name.startsWith('double:') ? [8,Float64Array]
-     : [4, Int32Array] 
+        name.startsWith('byte:')   ? [1, Int8Array]
+      : name.startsWith('ubyte:')  ? [1, Uint8Array]
+      : name.startsWith('short:')  ? [2, Int16Array]
+      : name.startsWith('ushort:') ? [2, Uint16Array]
+      : name.startsWith('int:')    ? [4, Int32Array]
+      : name.startsWith('uint:')   ? [4, Uint32Array]
+      : name.startsWith('long:')   ? [8, BigInt64Array]
+      : name.startsWith('ulong:')  ? [8, BigUint64Array]
+      : name.startsWith('float:')  ? [4, Float32Array]
+      : name.startsWith('double:') ? [8, Float64Array]
+      : [-1, undefined] 
      return result as [number, NumericArrayConstructor]
   }
 }
