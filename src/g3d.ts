@@ -640,10 +640,12 @@ export class G3d {
     _positions.set(other.positions, this.positions.length)
 
     this.unbaseIndices()
+    other.unbaseIndices()
     const _indices = new Uint32Array(this.indices.length + other.indices.length)
     _indices.set(this.indices)
     _indices.set(other.indices.map(i => i + this.positions.length / 3), this.indices.length)
     this.rebaseIndices()
+    other.rebaseIndices()
 
     const _meshSubmeshes = new Int32Array(this.meshSubmeshes.length + other.meshSubmeshes.length)
     _meshSubmeshes.set(this.meshSubmeshes)
