@@ -24,10 +24,10 @@ export type NumericArray =
    | Uint16Array
    | Int32Array
    | Uint32Array
-   | BigInt64Array
-   | BigUint64Array
    | Float32Array
    | Float64Array
+   | BigInt64Array
+   | BigUint64Array
  
  export class Range {
    start: number
@@ -63,10 +63,15 @@ export function parseName(name: string): [number, NumericArrayConstructor]{
     return result as [number, NumericArrayConstructor]
   }
   else{
-    const result = name.startsWith('byte:') ? [1, Int8Array]
+    const result =
+      name.startsWith('byte:') ? [1, Int8Array]
+     :name.startsWith('ubyte:') ? [1, Uint8Array]
      :name.startsWith('short:') ? [2, Int16Array]
+     :name.startsWith('ushort:') ? [2, Uint16Array]
      :name.startsWith('int:') ? [4, Int32Array]
+     :name.startsWith('uint:') ? [4, Uint32Array]
      :name.startsWith('long:') ? [8,BigInt64Array]
+     :name.startsWith('ulong:') ? [8,BigUint64Array]
      :name.startsWith('float:') ? [4, Float32Array]
      :name.startsWith('double:') ? [8,Float64Array]
      : [4, Int32Array] 
@@ -77,13 +82,16 @@ export function parseName(name: string): [number, NumericArrayConstructor]{
  export function typeSize (type: string) {
    switch (type) {
      case 'byte':
+     case 'ubyte':
        return 1
      case 'short':
+     case 'ushort':
        return 2
      case 'int':
      case 'float':
        return 4
      case 'long':
+     case 'ulong':
      case 'double':
        return 8
      default:
@@ -95,16 +103,24 @@ export function parseName(name: string): [number, NumericArrayConstructor]{
    switch (type) {
      case 'byte':
        return Int8Array
+     case 'ubyte':
+       return Uint8Array
      case 'short':
        return Int16Array
+     case 'ushort':
+       return Uint16Array
      case 'int':
        return Int32Array
+     case 'uint':
+       return Uint32Array
+     case 'long':
+       return BigInt64Array
+     case 'ulong':
+       return BigUint64Array
      case 'float':
        return Float32Array
      case 'double':
        return Float64Array
-     case 'long':
-       return BigInt64Array
      default:
        return Int32Array
    }
@@ -256,16 +272,8 @@ export function parseName(name: string): [number, NumericArrayConstructor]{
      const Ctor = typeConstructor(type)
      const array = new Ctor(buffer)
      return array
-     // return Array.from(array)
    }
 
-   // TODO: remove me
-   // async getBigInt64Array(name: string): Promise<BigInt64Array | undefined> {
-   //  const buffer = await this.getBuffer(name)
-   //  if (!buffer) return undefined
-   //  return new BigInt64Array(buffer);
-   // }
- 
    /**
     * Returns a single value from given buffer name
     * @param name buffer name
