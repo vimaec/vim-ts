@@ -26,10 +26,10 @@ describe('testing objectModel.ts file', () => {
         expect(doc).not.toBe(undefined)
         expect(doc!.element).not.toBe(undefined)
         expect(await doc!.element!.getCount()).toBe(4464)
-        expect(await doc!.element!.getId(0)).toBe(-1)
-        expect(await doc!.element!.getId(1)).toBe(1222722)
-        expect(await doc!.element!.getId(2)).toBe(32440)
-        expect(await doc!.element!.getId(3)).toBe(118390)
+        expect(await doc!.element!.getId(0)).toBe(-1n)
+        expect(await doc!.element!.getId(1)).toBe(1222722n)
+        expect(await doc!.element!.getId(2)).toBe(32440n)
+        expect(await doc!.element!.getId(3)).toBe(118390n)
         expect(await doc!.element!.get(30)).toMatchObject({})
     })
 })
@@ -46,7 +46,7 @@ describe('testing objectModel.ts array getter', () => {
         expect(doc!.element).not.toBe(undefined);
         expect(ids).not.toBe(undefined)
         expect(ids!.length).toBe(4464)
-        expect(ids!.slice(0, 10)).toEqual([ -1, 1222722, 32440, 118390, 174750, 18438, 355500, 185913, 9946, 182664 ])
+        expect(ids!.slice(0, 10)).toEqual(new BigInt64Array([ -1n, 1222722n, 32440n, 118390n, 174750n, 18438n, 355500n, 185913n, 9946n, 182664n ]))
     })
 })
 

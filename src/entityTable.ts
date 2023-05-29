@@ -45,7 +45,14 @@ export class EntityTable {
         if (!array)
             return undefined
 
-        return (array instanceof BigInt64Array) ? array : new BigInt64Array(array)
+        if (array instanceof BigInt64Array)
+            return array;
+
+        const result = new BigInt64Array(array.length)
+        for (var i = 0; i < array.length; ++i) {
+            result[i] = BigInt(array[i])
+        }
+        return result
     }
 
     async getBigInt(elementIndex: number, columnName: string): Promise<bigint | undefined> {
@@ -83,8 +90,7 @@ export class EntityTable {
             return undefined
 
         const result = new Array(array.length)
-        for (let i = 0; i < array.length; ++i)
-        {
+        for (let i = 0; i < array.length; ++i) {
             result[i] = Boolean(array[i])
         }
         return result
@@ -118,8 +124,7 @@ export class EntityTable {
             return undefined
 
         const result = new Array(array.length)
-        for (let i = 0; i < array.length; ++i)
-        {
+        for (let i = 0; i < array.length; ++i) {
             result[i] = this.strings[this.toIndex(array[i])]
         }
         return result
