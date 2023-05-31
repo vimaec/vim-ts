@@ -595,7 +595,9 @@ export interface IElement {
     type?: string
     name?: string
     uniqueId?: string
-    location?: Vector3
+    location_X?: number
+    location_Y?: number
+    location_Z?: number
     familyName?: string
     isPinned?: boolean
     
@@ -636,8 +638,12 @@ export interface IElementTable {
     getAllName(): Promise<string[] | undefined>
     getUniqueId(elementIndex: number): Promise<string | undefined>
     getAllUniqueId(): Promise<string[] | undefined>
-    getLocation(elementIndex: number): Promise<Vector3 | undefined>
-    getAllLocation(): Promise<Vector3[] | undefined>
+    getLocation_X(elementIndex: number): Promise<number | undefined>
+    getAllLocation_X(): Promise<number[] | undefined>
+    getLocation_Y(elementIndex: number): Promise<number | undefined>
+    getAllLocation_Y(): Promise<number[] | undefined>
+    getLocation_Z(elementIndex: number): Promise<number | undefined>
+    getAllLocation_Z(): Promise<number[] | undefined>
     getFamilyName(elementIndex: number): Promise<string | undefined>
     getAllFamilyName(): Promise<string[] | undefined>
     getIsPinned(elementIndex: number): Promise<boolean | undefined>
@@ -684,7 +690,9 @@ export class Element implements IElement {
     type?: string
     name?: string
     uniqueId?: string
-    location?: Vector3
+    location_X?: number
+    location_Y?: number
+    location_Z?: number
     familyName?: string
     isPinned?: boolean
     
@@ -720,7 +728,9 @@ export class Element implements IElement {
             table.getType(index).then(v => result.type = v),
             table.getName(index).then(v => result.name = v),
             table.getUniqueId(index).then(v => result.uniqueId = v),
-            table.getLocation(index).then(v => result.location = v),
+            table.getLocation_X(index).then(v => result.location_X = v),
+            table.getLocation_Y(index).then(v => result.location_Y = v),
+            table.getLocation_Z(index).then(v => result.location_Z = v),
             table.getFamilyName(index).then(v => result.familyName = v),
             table.getIsPinned(index).then(v => result.isPinned = v),
             table.getLevelIndex(index).then(v => result.levelIndex = v),
@@ -773,8 +783,9 @@ export class ElementTable implements IElementTable {
         let type: string[] | undefined
         let name: string[] | undefined
         let uniqueId: string[] | undefined
-        const locationConverter = new Converters.Vector3Converter()
-        let location: Vector3[] | undefined
+        let location_X: number[] | undefined
+        let location_Y: number[] | undefined
+        let location_Z: number[] | undefined
         let familyName: string[] | undefined
         let isPinned: boolean[] | undefined
         let levelIndex: number[] | undefined
@@ -794,8 +805,9 @@ export class ElementTable implements IElementTable {
             (async () => { type = (await localTable.getStringArray("string:Type")) })(),
             (async () => { name = (await localTable.getStringArray("string:Name")) })(),
             (async () => { uniqueId = (await localTable.getStringArray("string:UniqueId")) })(),
-            Promise.all(locationConverter.columns.map(c => this.entityTable.getNumberArray("float:Location" + c)))
-                .then(a => location = Converters.convertArray(locationConverter, a)),
+            (async () => { location_X = (await localTable.getNumberArray("float:Location.X")) })(),
+            (async () => { location_Y = (await localTable.getNumberArray("float:Location.Y")) })(),
+            (async () => { location_Z = (await localTable.getNumberArray("float:Location.Z")) })(),
             (async () => { familyName = (await localTable.getStringArray("string:FamilyName")) })(),
             (async () => { isPinned = (await localTable.getBooleanArray("byte:IsPinned")) })(),
             (async () => { levelIndex = (await localTable.getNumberArray("index:Vim.Level:Level")) })(),
@@ -820,7 +832,9 @@ export class ElementTable implements IElementTable {
                 type: type ? type[i] : undefined,
                 name: name ? name[i] : undefined,
                 uniqueId: uniqueId ? uniqueId[i] : undefined,
-                location: location ? location[i] : undefined,
+                location_X: location_X ? location_X[i] : undefined,
+                location_Y: location_Y ? location_Y[i] : undefined,
+                location_Z: location_Z ? location_Z[i] : undefined,
                 familyName: familyName ? familyName[i] : undefined,
                 isPinned: isPinned ? isPinned[i] : undefined,
                 levelIndex: levelIndex ? levelIndex[i] : undefined,
@@ -872,20 +886,28 @@ export class ElementTable implements IElementTable {
         return (await this.entityTable.getStringArray("string:UniqueId"))
     }
     
-    async getLocation(elementIndex: number): Promise<Vector3 | undefined> {
-        const converter = new Converters.Vector3Converter()
-        
-        let numbers = await Promise.all(converter.columns.map(c => this.entityTable.getNumber(elementIndex, "float:Location" + c)))
-        
-        return Converters.convert(converter, numbers)
+    async getLocation_X(elementIndex: number): Promise<number | undefined> {
+        return (await this.entityTable.getNumber(elementIndex, "float:Location.X"))
     }
     
-    async getAllLocation(): Promise<Vector3[] | undefined> {
-        const converter = new Converters.Vector3Converter()
-        
-        let numbers = await Promise.all(converter.columns.map(c => this.entityTable.getNumberArray("float:Location" + c)))
-        
-        return Converters.convertArray(converter, numbers)
+    async getAllLocation_X(): Promise<number[] | undefined> {
+        return (await this.entityTable.getNumberArray("float:Location.X"))
+    }
+    
+    async getLocation_Y(elementIndex: number): Promise<number | undefined> {
+        return (await this.entityTable.getNumber(elementIndex, "float:Location.Y"))
+    }
+    
+    async getAllLocation_Y(): Promise<number[] | undefined> {
+        return (await this.entityTable.getNumberArray("float:Location.Y"))
+    }
+    
+    async getLocation_Z(elementIndex: number): Promise<number | undefined> {
+        return (await this.entityTable.getNumber(elementIndex, "float:Location.Z"))
+    }
+    
+    async getAllLocation_Z(): Promise<number[] | undefined> {
+        return (await this.entityTable.getNumberArray("float:Location.Z"))
     }
     
     async getFamilyName(elementIndex: number): Promise<string | undefined> {
@@ -1322,7 +1344,9 @@ export class WorksetTable implements IWorksetTable {
 export interface IAssemblyInstance {
     index: number
     assemblyTypeName?: string
-    position?: Vector3
+    position_X?: number
+    position_Y?: number
+    position_Z?: number
     
     elementIndex?: number
     element?: IElement
@@ -1335,8 +1359,12 @@ export interface IAssemblyInstanceTable {
     
     getAssemblyTypeName(assemblyInstanceIndex: number): Promise<string | undefined>
     getAllAssemblyTypeName(): Promise<string[] | undefined>
-    getPosition(assemblyInstanceIndex: number): Promise<Vector3 | undefined>
-    getAllPosition(): Promise<Vector3[] | undefined>
+    getPosition_X(assemblyInstanceIndex: number): Promise<number | undefined>
+    getAllPosition_X(): Promise<number[] | undefined>
+    getPosition_Y(assemblyInstanceIndex: number): Promise<number | undefined>
+    getAllPosition_Y(): Promise<number[] | undefined>
+    getPosition_Z(assemblyInstanceIndex: number): Promise<number | undefined>
+    getAllPosition_Z(): Promise<number[] | undefined>
     
     getElementIndex(assemblyInstanceIndex: number): Promise<number | undefined>
     getAllElementIndex(): Promise<number[] | undefined>
@@ -1346,7 +1374,9 @@ export interface IAssemblyInstanceTable {
 export class AssemblyInstance implements IAssemblyInstance {
     index: number
     assemblyTypeName?: string
-    position?: Vector3
+    position_X?: number
+    position_Y?: number
+    position_Z?: number
     
     elementIndex?: number
     element?: IElement
@@ -1357,7 +1387,9 @@ export class AssemblyInstance implements IAssemblyInstance {
         
         await Promise.all([
             table.getAssemblyTypeName(index).then(v => result.assemblyTypeName = v),
-            table.getPosition(index).then(v => result.position = v),
+            table.getPosition_X(index).then(v => result.position_X = v),
+            table.getPosition_Y(index).then(v => result.position_Y = v),
+            table.getPosition_Z(index).then(v => result.position_Z = v),
             table.getElementIndex(index).then(v => result.elementIndex = v),
         ])
         
@@ -1395,14 +1427,16 @@ export class AssemblyInstanceTable implements IAssemblyInstanceTable {
         const localTable = await this.entityTable.getLocal()
         
         let assemblyTypeName: string[] | undefined
-        const positionConverter = new Converters.Vector3Converter()
-        let position: Vector3[] | undefined
+        let position_X: number[] | undefined
+        let position_Y: number[] | undefined
+        let position_Z: number[] | undefined
         let elementIndex: number[] | undefined
         
         await Promise.all([
             (async () => { assemblyTypeName = (await localTable.getStringArray("string:AssemblyTypeName")) })(),
-            Promise.all(positionConverter.columns.map(c => this.entityTable.getNumberArray("float:Position" + c)))
-                .then(a => position = Converters.convertArray(positionConverter, a)),
+            (async () => { position_X = (await localTable.getNumberArray("float:Position.X")) })(),
+            (async () => { position_Y = (await localTable.getNumberArray("float:Position.Y")) })(),
+            (async () => { position_Z = (await localTable.getNumberArray("float:Position.Z")) })(),
             (async () => { elementIndex = (await localTable.getNumberArray("index:Vim.Element:Element")) })(),
         ])
         
@@ -1412,7 +1446,9 @@ export class AssemblyInstanceTable implements IAssemblyInstanceTable {
             assemblyInstance.push({
                 index: i,
                 assemblyTypeName: assemblyTypeName ? assemblyTypeName[i] : undefined,
-                position: position ? position[i] : undefined,
+                position_X: position_X ? position_X[i] : undefined,
+                position_Y: position_Y ? position_Y[i] : undefined,
+                position_Z: position_Z ? position_Z[i] : undefined,
                 elementIndex: elementIndex ? elementIndex[i] : undefined
             })
         }
@@ -1428,20 +1464,28 @@ export class AssemblyInstanceTable implements IAssemblyInstanceTable {
         return (await this.entityTable.getStringArray("string:AssemblyTypeName"))
     }
     
-    async getPosition(assemblyInstanceIndex: number): Promise<Vector3 | undefined> {
-        const converter = new Converters.Vector3Converter()
-        
-        let numbers = await Promise.all(converter.columns.map(c => this.entityTable.getNumber(assemblyInstanceIndex, "float:Position" + c)))
-        
-        return Converters.convert(converter, numbers)
+    async getPosition_X(assemblyInstanceIndex: number): Promise<number | undefined> {
+        return (await this.entityTable.getNumber(assemblyInstanceIndex, "float:Position.X"))
     }
     
-    async getAllPosition(): Promise<Vector3[] | undefined> {
-        const converter = new Converters.Vector3Converter()
-        
-        let numbers = await Promise.all(converter.columns.map(c => this.entityTable.getNumberArray("float:Position" + c)))
-        
-        return Converters.convertArray(converter, numbers)
+    async getAllPosition_X(): Promise<number[] | undefined> {
+        return (await this.entityTable.getNumberArray("float:Position.X"))
+    }
+    
+    async getPosition_Y(assemblyInstanceIndex: number): Promise<number | undefined> {
+        return (await this.entityTable.getNumber(assemblyInstanceIndex, "float:Position.Y"))
+    }
+    
+    async getAllPosition_Y(): Promise<number[] | undefined> {
+        return (await this.entityTable.getNumberArray("float:Position.Y"))
+    }
+    
+    async getPosition_Z(assemblyInstanceIndex: number): Promise<number | undefined> {
+        return (await this.entityTable.getNumber(assemblyInstanceIndex, "float:Position.Z"))
+    }
+    
+    async getAllPosition_Z(): Promise<number[] | undefined> {
+        return (await this.entityTable.getNumberArray("float:Position.Z"))
     }
     
     async getElementIndex(assemblyInstanceIndex: number): Promise<number | undefined> {
@@ -1467,7 +1511,9 @@ export class AssemblyInstanceTable implements IAssemblyInstanceTable {
 export interface IGroup {
     index: number
     groupType?: string
-    position?: Vector3
+    position_X?: number
+    position_Y?: number
+    position_Z?: number
     
     elementIndex?: number
     element?: IElement
@@ -1480,8 +1526,12 @@ export interface IGroupTable {
     
     getGroupType(groupIndex: number): Promise<string | undefined>
     getAllGroupType(): Promise<string[] | undefined>
-    getPosition(groupIndex: number): Promise<Vector3 | undefined>
-    getAllPosition(): Promise<Vector3[] | undefined>
+    getPosition_X(groupIndex: number): Promise<number | undefined>
+    getAllPosition_X(): Promise<number[] | undefined>
+    getPosition_Y(groupIndex: number): Promise<number | undefined>
+    getAllPosition_Y(): Promise<number[] | undefined>
+    getPosition_Z(groupIndex: number): Promise<number | undefined>
+    getAllPosition_Z(): Promise<number[] | undefined>
     
     getElementIndex(groupIndex: number): Promise<number | undefined>
     getAllElementIndex(): Promise<number[] | undefined>
@@ -1491,7 +1541,9 @@ export interface IGroupTable {
 export class Group implements IGroup {
     index: number
     groupType?: string
-    position?: Vector3
+    position_X?: number
+    position_Y?: number
+    position_Z?: number
     
     elementIndex?: number
     element?: IElement
@@ -1502,7 +1554,9 @@ export class Group implements IGroup {
         
         await Promise.all([
             table.getGroupType(index).then(v => result.groupType = v),
-            table.getPosition(index).then(v => result.position = v),
+            table.getPosition_X(index).then(v => result.position_X = v),
+            table.getPosition_Y(index).then(v => result.position_Y = v),
+            table.getPosition_Z(index).then(v => result.position_Z = v),
             table.getElementIndex(index).then(v => result.elementIndex = v),
         ])
         
@@ -1540,14 +1594,16 @@ export class GroupTable implements IGroupTable {
         const localTable = await this.entityTable.getLocal()
         
         let groupType: string[] | undefined
-        const positionConverter = new Converters.Vector3Converter()
-        let position: Vector3[] | undefined
+        let position_X: number[] | undefined
+        let position_Y: number[] | undefined
+        let position_Z: number[] | undefined
         let elementIndex: number[] | undefined
         
         await Promise.all([
             (async () => { groupType = (await localTable.getStringArray("string:GroupType")) })(),
-            Promise.all(positionConverter.columns.map(c => this.entityTable.getNumberArray("float:Position" + c)))
-                .then(a => position = Converters.convertArray(positionConverter, a)),
+            (async () => { position_X = (await localTable.getNumberArray("float:Position.X")) })(),
+            (async () => { position_Y = (await localTable.getNumberArray("float:Position.Y")) })(),
+            (async () => { position_Z = (await localTable.getNumberArray("float:Position.Z")) })(),
             (async () => { elementIndex = (await localTable.getNumberArray("index:Vim.Element:Element")) })(),
         ])
         
@@ -1557,7 +1613,9 @@ export class GroupTable implements IGroupTable {
             group.push({
                 index: i,
                 groupType: groupType ? groupType[i] : undefined,
-                position: position ? position[i] : undefined,
+                position_X: position_X ? position_X[i] : undefined,
+                position_Y: position_Y ? position_Y[i] : undefined,
+                position_Z: position_Z ? position_Z[i] : undefined,
                 elementIndex: elementIndex ? elementIndex[i] : undefined
             })
         }
@@ -1573,20 +1631,28 @@ export class GroupTable implements IGroupTable {
         return (await this.entityTable.getStringArray("string:GroupType"))
     }
     
-    async getPosition(groupIndex: number): Promise<Vector3 | undefined> {
-        const converter = new Converters.Vector3Converter()
-        
-        let numbers = await Promise.all(converter.columns.map(c => this.entityTable.getNumber(groupIndex, "float:Position" + c)))
-        
-        return Converters.convert(converter, numbers)
+    async getPosition_X(groupIndex: number): Promise<number | undefined> {
+        return (await this.entityTable.getNumber(groupIndex, "float:Position.X"))
     }
     
-    async getAllPosition(): Promise<Vector3[] | undefined> {
-        const converter = new Converters.Vector3Converter()
-        
-        let numbers = await Promise.all(converter.columns.map(c => this.entityTable.getNumberArray("float:Position" + c)))
-        
-        return Converters.convertArray(converter, numbers)
+    async getAllPosition_X(): Promise<number[] | undefined> {
+        return (await this.entityTable.getNumberArray("float:Position.X"))
+    }
+    
+    async getPosition_Y(groupIndex: number): Promise<number | undefined> {
+        return (await this.entityTable.getNumber(groupIndex, "float:Position.Y"))
+    }
+    
+    async getAllPosition_Y(): Promise<number[] | undefined> {
+        return (await this.entityTable.getNumberArray("float:Position.Y"))
+    }
+    
+    async getPosition_Z(groupIndex: number): Promise<number | undefined> {
+        return (await this.entityTable.getNumber(groupIndex, "float:Position.Z"))
+    }
+    
+    async getAllPosition_Z(): Promise<number[] | undefined> {
+        return (await this.entityTable.getNumberArray("float:Position.Z"))
     }
     
     async getElementIndex(groupIndex: number): Promise<number | undefined> {
@@ -3144,7 +3210,9 @@ export interface ICategory {
     name?: string
     id?: BigInt
     categoryType?: string
-    lineColor?: Vector3
+    lineColor_X?: number
+    lineColor_Y?: number
+    lineColor_Z?: number
     builtInCategory?: string
     
     parentIndex?: number
@@ -3164,8 +3232,12 @@ export interface ICategoryTable {
     getAllId(): Promise<BigInt64Array | undefined>
     getCategoryType(categoryIndex: number): Promise<string | undefined>
     getAllCategoryType(): Promise<string[] | undefined>
-    getLineColor(categoryIndex: number): Promise<Vector3 | undefined>
-    getAllLineColor(): Promise<Vector3[] | undefined>
+    getLineColor_X(categoryIndex: number): Promise<number | undefined>
+    getAllLineColor_X(): Promise<number[] | undefined>
+    getLineColor_Y(categoryIndex: number): Promise<number | undefined>
+    getAllLineColor_Y(): Promise<number[] | undefined>
+    getLineColor_Z(categoryIndex: number): Promise<number | undefined>
+    getAllLineColor_Z(): Promise<number[] | undefined>
     getBuiltInCategory(categoryIndex: number): Promise<string | undefined>
     getAllBuiltInCategory(): Promise<string[] | undefined>
     
@@ -3182,7 +3254,9 @@ export class Category implements ICategory {
     name?: string
     id?: BigInt
     categoryType?: string
-    lineColor?: Vector3
+    lineColor_X?: number
+    lineColor_Y?: number
+    lineColor_Z?: number
     builtInCategory?: string
     
     parentIndex?: number
@@ -3198,7 +3272,9 @@ export class Category implements ICategory {
             table.getName(index).then(v => result.name = v),
             table.getId(index).then(v => result.id = v),
             table.getCategoryType(index).then(v => result.categoryType = v),
-            table.getLineColor(index).then(v => result.lineColor = v),
+            table.getLineColor_X(index).then(v => result.lineColor_X = v),
+            table.getLineColor_Y(index).then(v => result.lineColor_Y = v),
+            table.getLineColor_Z(index).then(v => result.lineColor_Z = v),
             table.getBuiltInCategory(index).then(v => result.builtInCategory = v),
             table.getParentIndex(index).then(v => result.parentIndex = v),
             table.getMaterialIndex(index).then(v => result.materialIndex = v),
@@ -3240,8 +3316,9 @@ export class CategoryTable implements ICategoryTable {
         let name: string[] | undefined
         let id: BigInt64Array | undefined
         let categoryType: string[] | undefined
-        const lineColorConverter = new Converters.Vector3Converter()
-        let lineColor: Vector3[] | undefined
+        let lineColor_X: number[] | undefined
+        let lineColor_Y: number[] | undefined
+        let lineColor_Z: number[] | undefined
         let builtInCategory: string[] | undefined
         let parentIndex: number[] | undefined
         let materialIndex: number[] | undefined
@@ -3250,8 +3327,9 @@ export class CategoryTable implements ICategoryTable {
             (async () => { name = (await localTable.getStringArray("string:Name")) })(),
             (async () => { id = (await localTable.getBigIntArray("long:Id")) ?? (await localTable.getBigIntArray("int:Id")) })(),
             (async () => { categoryType = (await localTable.getStringArray("string:CategoryType")) })(),
-            Promise.all(lineColorConverter.columns.map(c => this.entityTable.getNumberArray("double:LineColor" + c)))
-                .then(a => lineColor = Converters.convertArray(lineColorConverter, a)),
+            (async () => { lineColor_X = (await localTable.getNumberArray("double:LineColor.X")) })(),
+            (async () => { lineColor_Y = (await localTable.getNumberArray("double:LineColor.Y")) })(),
+            (async () => { lineColor_Z = (await localTable.getNumberArray("double:LineColor.Z")) })(),
             (async () => { builtInCategory = (await localTable.getStringArray("string:BuiltInCategory")) })(),
             (async () => { parentIndex = (await localTable.getNumberArray("index:Vim.Category:Parent")) })(),
             (async () => { materialIndex = (await localTable.getNumberArray("index:Vim.Material:Material")) })(),
@@ -3265,7 +3343,9 @@ export class CategoryTable implements ICategoryTable {
                 name: name ? name[i] : undefined,
                 id: id ? id[i] : undefined,
                 categoryType: categoryType ? categoryType[i] : undefined,
-                lineColor: lineColor ? lineColor[i] : undefined,
+                lineColor_X: lineColor_X ? lineColor_X[i] : undefined,
+                lineColor_Y: lineColor_Y ? lineColor_Y[i] : undefined,
+                lineColor_Z: lineColor_Z ? lineColor_Z[i] : undefined,
                 builtInCategory: builtInCategory ? builtInCategory[i] : undefined,
                 parentIndex: parentIndex ? parentIndex[i] : undefined,
                 materialIndex: materialIndex ? materialIndex[i] : undefined
@@ -3299,20 +3379,28 @@ export class CategoryTable implements ICategoryTable {
         return (await this.entityTable.getStringArray("string:CategoryType"))
     }
     
-    async getLineColor(categoryIndex: number): Promise<Vector3 | undefined> {
-        const converter = new Converters.Vector3Converter()
-        
-        let numbers = await Promise.all(converter.columns.map(c => this.entityTable.getNumber(categoryIndex, "double:LineColor" + c)))
-        
-        return Converters.convert(converter, numbers)
+    async getLineColor_X(categoryIndex: number): Promise<number | undefined> {
+        return (await this.entityTable.getNumber(categoryIndex, "double:LineColor.X"))
     }
     
-    async getAllLineColor(): Promise<Vector3[] | undefined> {
-        const converter = new Converters.Vector3Converter()
-        
-        let numbers = await Promise.all(converter.columns.map(c => this.entityTable.getNumberArray("double:LineColor" + c)))
-        
-        return Converters.convertArray(converter, numbers)
+    async getAllLineColor_X(): Promise<number[] | undefined> {
+        return (await this.entityTable.getNumberArray("double:LineColor.X"))
+    }
+    
+    async getLineColor_Y(categoryIndex: number): Promise<number | undefined> {
+        return (await this.entityTable.getNumber(categoryIndex, "double:LineColor.Y"))
+    }
+    
+    async getAllLineColor_Y(): Promise<number[] | undefined> {
+        return (await this.entityTable.getNumberArray("double:LineColor.Y"))
+    }
+    
+    async getLineColor_Z(categoryIndex: number): Promise<number | undefined> {
+        return (await this.entityTable.getNumber(categoryIndex, "double:LineColor.Z"))
+    }
+    
+    async getAllLineColor_Z(): Promise<number[] | undefined> {
+        return (await this.entityTable.getNumberArray("double:LineColor.Z"))
     }
     
     async getBuiltInCategory(categoryIndex: number): Promise<string | undefined> {
@@ -3737,16 +3825,28 @@ export class FamilyTypeTable implements IFamilyTypeTable {
 export interface IFamilyInstance {
     index: number
     facingFlipped?: boolean
-    facingOrientation?: Vector3
+    facingOrientation_X?: number
+    facingOrientation_Y?: number
+    facingOrientation_Z?: number
     handFlipped?: boolean
     mirrored?: boolean
     hasModifiedGeometry?: boolean
     scale?: number
-    basisX?: Vector3
-    basisY?: Vector3
-    basisZ?: Vector3
-    translation?: Vector3
-    handOrientation?: Vector3
+    basisX_X?: number
+    basisX_Y?: number
+    basisX_Z?: number
+    basisY_X?: number
+    basisY_Y?: number
+    basisY_Z?: number
+    basisZ_X?: number
+    basisZ_Y?: number
+    basisZ_Z?: number
+    translation_X?: number
+    translation_Y?: number
+    translation_Z?: number
+    handOrientation_X?: number
+    handOrientation_Y?: number
+    handOrientation_Z?: number
     
     familyTypeIndex?: number
     familyType?: IFamilyType
@@ -3767,8 +3867,12 @@ export interface IFamilyInstanceTable {
     
     getFacingFlipped(familyInstanceIndex: number): Promise<boolean | undefined>
     getAllFacingFlipped(): Promise<boolean[] | undefined>
-    getFacingOrientation(familyInstanceIndex: number): Promise<Vector3 | undefined>
-    getAllFacingOrientation(): Promise<Vector3[] | undefined>
+    getFacingOrientation_X(familyInstanceIndex: number): Promise<number | undefined>
+    getAllFacingOrientation_X(): Promise<number[] | undefined>
+    getFacingOrientation_Y(familyInstanceIndex: number): Promise<number | undefined>
+    getAllFacingOrientation_Y(): Promise<number[] | undefined>
+    getFacingOrientation_Z(familyInstanceIndex: number): Promise<number | undefined>
+    getAllFacingOrientation_Z(): Promise<number[] | undefined>
     getHandFlipped(familyInstanceIndex: number): Promise<boolean | undefined>
     getAllHandFlipped(): Promise<boolean[] | undefined>
     getMirrored(familyInstanceIndex: number): Promise<boolean | undefined>
@@ -3777,16 +3881,36 @@ export interface IFamilyInstanceTable {
     getAllHasModifiedGeometry(): Promise<boolean[] | undefined>
     getScale(familyInstanceIndex: number): Promise<number | undefined>
     getAllScale(): Promise<number[] | undefined>
-    getBasisX(familyInstanceIndex: number): Promise<Vector3 | undefined>
-    getAllBasisX(): Promise<Vector3[] | undefined>
-    getBasisY(familyInstanceIndex: number): Promise<Vector3 | undefined>
-    getAllBasisY(): Promise<Vector3[] | undefined>
-    getBasisZ(familyInstanceIndex: number): Promise<Vector3 | undefined>
-    getAllBasisZ(): Promise<Vector3[] | undefined>
-    getTranslation(familyInstanceIndex: number): Promise<Vector3 | undefined>
-    getAllTranslation(): Promise<Vector3[] | undefined>
-    getHandOrientation(familyInstanceIndex: number): Promise<Vector3 | undefined>
-    getAllHandOrientation(): Promise<Vector3[] | undefined>
+    getBasisX_X(familyInstanceIndex: number): Promise<number | undefined>
+    getAllBasisX_X(): Promise<number[] | undefined>
+    getBasisX_Y(familyInstanceIndex: number): Promise<number | undefined>
+    getAllBasisX_Y(): Promise<number[] | undefined>
+    getBasisX_Z(familyInstanceIndex: number): Promise<number | undefined>
+    getAllBasisX_Z(): Promise<number[] | undefined>
+    getBasisY_X(familyInstanceIndex: number): Promise<number | undefined>
+    getAllBasisY_X(): Promise<number[] | undefined>
+    getBasisY_Y(familyInstanceIndex: number): Promise<number | undefined>
+    getAllBasisY_Y(): Promise<number[] | undefined>
+    getBasisY_Z(familyInstanceIndex: number): Promise<number | undefined>
+    getAllBasisY_Z(): Promise<number[] | undefined>
+    getBasisZ_X(familyInstanceIndex: number): Promise<number | undefined>
+    getAllBasisZ_X(): Promise<number[] | undefined>
+    getBasisZ_Y(familyInstanceIndex: number): Promise<number | undefined>
+    getAllBasisZ_Y(): Promise<number[] | undefined>
+    getBasisZ_Z(familyInstanceIndex: number): Promise<number | undefined>
+    getAllBasisZ_Z(): Promise<number[] | undefined>
+    getTranslation_X(familyInstanceIndex: number): Promise<number | undefined>
+    getAllTranslation_X(): Promise<number[] | undefined>
+    getTranslation_Y(familyInstanceIndex: number): Promise<number | undefined>
+    getAllTranslation_Y(): Promise<number[] | undefined>
+    getTranslation_Z(familyInstanceIndex: number): Promise<number | undefined>
+    getAllTranslation_Z(): Promise<number[] | undefined>
+    getHandOrientation_X(familyInstanceIndex: number): Promise<number | undefined>
+    getAllHandOrientation_X(): Promise<number[] | undefined>
+    getHandOrientation_Y(familyInstanceIndex: number): Promise<number | undefined>
+    getAllHandOrientation_Y(): Promise<number[] | undefined>
+    getHandOrientation_Z(familyInstanceIndex: number): Promise<number | undefined>
+    getAllHandOrientation_Z(): Promise<number[] | undefined>
     
     getFamilyTypeIndex(familyInstanceIndex: number): Promise<number | undefined>
     getAllFamilyTypeIndex(): Promise<number[] | undefined>
@@ -3808,16 +3932,28 @@ export interface IFamilyInstanceTable {
 export class FamilyInstance implements IFamilyInstance {
     index: number
     facingFlipped?: boolean
-    facingOrientation?: Vector3
+    facingOrientation_X?: number
+    facingOrientation_Y?: number
+    facingOrientation_Z?: number
     handFlipped?: boolean
     mirrored?: boolean
     hasModifiedGeometry?: boolean
     scale?: number
-    basisX?: Vector3
-    basisY?: Vector3
-    basisZ?: Vector3
-    translation?: Vector3
-    handOrientation?: Vector3
+    basisX_X?: number
+    basisX_Y?: number
+    basisX_Z?: number
+    basisY_X?: number
+    basisY_Y?: number
+    basisY_Z?: number
+    basisZ_X?: number
+    basisZ_Y?: number
+    basisZ_Z?: number
+    translation_X?: number
+    translation_Y?: number
+    translation_Z?: number
+    handOrientation_X?: number
+    handOrientation_Y?: number
+    handOrientation_Z?: number
     
     familyTypeIndex?: number
     familyType?: IFamilyType
@@ -3836,16 +3972,28 @@ export class FamilyInstance implements IFamilyInstance {
         
         await Promise.all([
             table.getFacingFlipped(index).then(v => result.facingFlipped = v),
-            table.getFacingOrientation(index).then(v => result.facingOrientation = v),
+            table.getFacingOrientation_X(index).then(v => result.facingOrientation_X = v),
+            table.getFacingOrientation_Y(index).then(v => result.facingOrientation_Y = v),
+            table.getFacingOrientation_Z(index).then(v => result.facingOrientation_Z = v),
             table.getHandFlipped(index).then(v => result.handFlipped = v),
             table.getMirrored(index).then(v => result.mirrored = v),
             table.getHasModifiedGeometry(index).then(v => result.hasModifiedGeometry = v),
             table.getScale(index).then(v => result.scale = v),
-            table.getBasisX(index).then(v => result.basisX = v),
-            table.getBasisY(index).then(v => result.basisY = v),
-            table.getBasisZ(index).then(v => result.basisZ = v),
-            table.getTranslation(index).then(v => result.translation = v),
-            table.getHandOrientation(index).then(v => result.handOrientation = v),
+            table.getBasisX_X(index).then(v => result.basisX_X = v),
+            table.getBasisX_Y(index).then(v => result.basisX_Y = v),
+            table.getBasisX_Z(index).then(v => result.basisX_Z = v),
+            table.getBasisY_X(index).then(v => result.basisY_X = v),
+            table.getBasisY_Y(index).then(v => result.basisY_Y = v),
+            table.getBasisY_Z(index).then(v => result.basisY_Z = v),
+            table.getBasisZ_X(index).then(v => result.basisZ_X = v),
+            table.getBasisZ_Y(index).then(v => result.basisZ_Y = v),
+            table.getBasisZ_Z(index).then(v => result.basisZ_Z = v),
+            table.getTranslation_X(index).then(v => result.translation_X = v),
+            table.getTranslation_Y(index).then(v => result.translation_Y = v),
+            table.getTranslation_Z(index).then(v => result.translation_Z = v),
+            table.getHandOrientation_X(index).then(v => result.handOrientation_X = v),
+            table.getHandOrientation_Y(index).then(v => result.handOrientation_Y = v),
+            table.getHandOrientation_Z(index).then(v => result.handOrientation_Z = v),
             table.getFamilyTypeIndex(index).then(v => result.familyTypeIndex = v),
             table.getHostIndex(index).then(v => result.hostIndex = v),
             table.getFromRoomIndex(index).then(v => result.fromRoomIndex = v),
@@ -3887,22 +4035,28 @@ export class FamilyInstanceTable implements IFamilyInstanceTable {
         const localTable = await this.entityTable.getLocal()
         
         let facingFlipped: boolean[] | undefined
-        const facingOrientationConverter = new Converters.Vector3Converter()
-        let facingOrientation: Vector3[] | undefined
+        let facingOrientation_X: number[] | undefined
+        let facingOrientation_Y: number[] | undefined
+        let facingOrientation_Z: number[] | undefined
         let handFlipped: boolean[] | undefined
         let mirrored: boolean[] | undefined
         let hasModifiedGeometry: boolean[] | undefined
         let scale: number[] | undefined
-        const basisXConverter = new Converters.Vector3Converter()
-        let basisX: Vector3[] | undefined
-        const basisYConverter = new Converters.Vector3Converter()
-        let basisY: Vector3[] | undefined
-        const basisZConverter = new Converters.Vector3Converter()
-        let basisZ: Vector3[] | undefined
-        const translationConverter = new Converters.Vector3Converter()
-        let translation: Vector3[] | undefined
-        const handOrientationConverter = new Converters.Vector3Converter()
-        let handOrientation: Vector3[] | undefined
+        let basisX_X: number[] | undefined
+        let basisX_Y: number[] | undefined
+        let basisX_Z: number[] | undefined
+        let basisY_X: number[] | undefined
+        let basisY_Y: number[] | undefined
+        let basisY_Z: number[] | undefined
+        let basisZ_X: number[] | undefined
+        let basisZ_Y: number[] | undefined
+        let basisZ_Z: number[] | undefined
+        let translation_X: number[] | undefined
+        let translation_Y: number[] | undefined
+        let translation_Z: number[] | undefined
+        let handOrientation_X: number[] | undefined
+        let handOrientation_Y: number[] | undefined
+        let handOrientation_Z: number[] | undefined
         let familyTypeIndex: number[] | undefined
         let hostIndex: number[] | undefined
         let fromRoomIndex: number[] | undefined
@@ -3911,22 +4065,28 @@ export class FamilyInstanceTable implements IFamilyInstanceTable {
         
         await Promise.all([
             (async () => { facingFlipped = (await localTable.getBooleanArray("byte:FacingFlipped")) })(),
-            Promise.all(facingOrientationConverter.columns.map(c => this.entityTable.getNumberArray("float:FacingOrientation" + c)))
-                .then(a => facingOrientation = Converters.convertArray(facingOrientationConverter, a)),
+            (async () => { facingOrientation_X = (await localTable.getNumberArray("float:FacingOrientation.X")) })(),
+            (async () => { facingOrientation_Y = (await localTable.getNumberArray("float:FacingOrientation.Y")) })(),
+            (async () => { facingOrientation_Z = (await localTable.getNumberArray("float:FacingOrientation.Z")) })(),
             (async () => { handFlipped = (await localTable.getBooleanArray("byte:HandFlipped")) })(),
             (async () => { mirrored = (await localTable.getBooleanArray("byte:Mirrored")) })(),
             (async () => { hasModifiedGeometry = (await localTable.getBooleanArray("byte:HasModifiedGeometry")) })(),
             (async () => { scale = (await localTable.getNumberArray("float:Scale")) })(),
-            Promise.all(basisXConverter.columns.map(c => this.entityTable.getNumberArray("float:BasisX" + c)))
-                .then(a => basisX = Converters.convertArray(basisXConverter, a)),
-            Promise.all(basisYConverter.columns.map(c => this.entityTable.getNumberArray("float:BasisY" + c)))
-                .then(a => basisY = Converters.convertArray(basisYConverter, a)),
-            Promise.all(basisZConverter.columns.map(c => this.entityTable.getNumberArray("float:BasisZ" + c)))
-                .then(a => basisZ = Converters.convertArray(basisZConverter, a)),
-            Promise.all(translationConverter.columns.map(c => this.entityTable.getNumberArray("float:Translation" + c)))
-                .then(a => translation = Converters.convertArray(translationConverter, a)),
-            Promise.all(handOrientationConverter.columns.map(c => this.entityTable.getNumberArray("float:HandOrientation" + c)))
-                .then(a => handOrientation = Converters.convertArray(handOrientationConverter, a)),
+            (async () => { basisX_X = (await localTable.getNumberArray("float:BasisX.X")) })(),
+            (async () => { basisX_Y = (await localTable.getNumberArray("float:BasisX.Y")) })(),
+            (async () => { basisX_Z = (await localTable.getNumberArray("float:BasisX.Z")) })(),
+            (async () => { basisY_X = (await localTable.getNumberArray("float:BasisY.X")) })(),
+            (async () => { basisY_Y = (await localTable.getNumberArray("float:BasisY.Y")) })(),
+            (async () => { basisY_Z = (await localTable.getNumberArray("float:BasisY.Z")) })(),
+            (async () => { basisZ_X = (await localTable.getNumberArray("float:BasisZ.X")) })(),
+            (async () => { basisZ_Y = (await localTable.getNumberArray("float:BasisZ.Y")) })(),
+            (async () => { basisZ_Z = (await localTable.getNumberArray("float:BasisZ.Z")) })(),
+            (async () => { translation_X = (await localTable.getNumberArray("float:Translation.X")) })(),
+            (async () => { translation_Y = (await localTable.getNumberArray("float:Translation.Y")) })(),
+            (async () => { translation_Z = (await localTable.getNumberArray("float:Translation.Z")) })(),
+            (async () => { handOrientation_X = (await localTable.getNumberArray("float:HandOrientation.X")) })(),
+            (async () => { handOrientation_Y = (await localTable.getNumberArray("float:HandOrientation.Y")) })(),
+            (async () => { handOrientation_Z = (await localTable.getNumberArray("float:HandOrientation.Z")) })(),
             (async () => { familyTypeIndex = (await localTable.getNumberArray("index:Vim.FamilyType:FamilyType")) })(),
             (async () => { hostIndex = (await localTable.getNumberArray("index:Vim.Element:Host")) })(),
             (async () => { fromRoomIndex = (await localTable.getNumberArray("index:Vim.Room:FromRoom")) })(),
@@ -3940,16 +4100,28 @@ export class FamilyInstanceTable implements IFamilyInstanceTable {
             familyInstance.push({
                 index: i,
                 facingFlipped: facingFlipped ? facingFlipped[i] : undefined,
-                facingOrientation: facingOrientation ? facingOrientation[i] : undefined,
+                facingOrientation_X: facingOrientation_X ? facingOrientation_X[i] : undefined,
+                facingOrientation_Y: facingOrientation_Y ? facingOrientation_Y[i] : undefined,
+                facingOrientation_Z: facingOrientation_Z ? facingOrientation_Z[i] : undefined,
                 handFlipped: handFlipped ? handFlipped[i] : undefined,
                 mirrored: mirrored ? mirrored[i] : undefined,
                 hasModifiedGeometry: hasModifiedGeometry ? hasModifiedGeometry[i] : undefined,
                 scale: scale ? scale[i] : undefined,
-                basisX: basisX ? basisX[i] : undefined,
-                basisY: basisY ? basisY[i] : undefined,
-                basisZ: basisZ ? basisZ[i] : undefined,
-                translation: translation ? translation[i] : undefined,
-                handOrientation: handOrientation ? handOrientation[i] : undefined,
+                basisX_X: basisX_X ? basisX_X[i] : undefined,
+                basisX_Y: basisX_Y ? basisX_Y[i] : undefined,
+                basisX_Z: basisX_Z ? basisX_Z[i] : undefined,
+                basisY_X: basisY_X ? basisY_X[i] : undefined,
+                basisY_Y: basisY_Y ? basisY_Y[i] : undefined,
+                basisY_Z: basisY_Z ? basisY_Z[i] : undefined,
+                basisZ_X: basisZ_X ? basisZ_X[i] : undefined,
+                basisZ_Y: basisZ_Y ? basisZ_Y[i] : undefined,
+                basisZ_Z: basisZ_Z ? basisZ_Z[i] : undefined,
+                translation_X: translation_X ? translation_X[i] : undefined,
+                translation_Y: translation_Y ? translation_Y[i] : undefined,
+                translation_Z: translation_Z ? translation_Z[i] : undefined,
+                handOrientation_X: handOrientation_X ? handOrientation_X[i] : undefined,
+                handOrientation_Y: handOrientation_Y ? handOrientation_Y[i] : undefined,
+                handOrientation_Z: handOrientation_Z ? handOrientation_Z[i] : undefined,
                 familyTypeIndex: familyTypeIndex ? familyTypeIndex[i] : undefined,
                 hostIndex: hostIndex ? hostIndex[i] : undefined,
                 fromRoomIndex: fromRoomIndex ? fromRoomIndex[i] : undefined,
@@ -3969,20 +4141,28 @@ export class FamilyInstanceTable implements IFamilyInstanceTable {
         return (await this.entityTable.getBooleanArray("byte:FacingFlipped"))
     }
     
-    async getFacingOrientation(familyInstanceIndex: number): Promise<Vector3 | undefined> {
-        const converter = new Converters.Vector3Converter()
-        
-        let numbers = await Promise.all(converter.columns.map(c => this.entityTable.getNumber(familyInstanceIndex, "float:FacingOrientation" + c)))
-        
-        return Converters.convert(converter, numbers)
+    async getFacingOrientation_X(familyInstanceIndex: number): Promise<number | undefined> {
+        return (await this.entityTable.getNumber(familyInstanceIndex, "float:FacingOrientation.X"))
     }
     
-    async getAllFacingOrientation(): Promise<Vector3[] | undefined> {
-        const converter = new Converters.Vector3Converter()
-        
-        let numbers = await Promise.all(converter.columns.map(c => this.entityTable.getNumberArray("float:FacingOrientation" + c)))
-        
-        return Converters.convertArray(converter, numbers)
+    async getAllFacingOrientation_X(): Promise<number[] | undefined> {
+        return (await this.entityTable.getNumberArray("float:FacingOrientation.X"))
+    }
+    
+    async getFacingOrientation_Y(familyInstanceIndex: number): Promise<number | undefined> {
+        return (await this.entityTable.getNumber(familyInstanceIndex, "float:FacingOrientation.Y"))
+    }
+    
+    async getAllFacingOrientation_Y(): Promise<number[] | undefined> {
+        return (await this.entityTable.getNumberArray("float:FacingOrientation.Y"))
+    }
+    
+    async getFacingOrientation_Z(familyInstanceIndex: number): Promise<number | undefined> {
+        return (await this.entityTable.getNumber(familyInstanceIndex, "float:FacingOrientation.Z"))
+    }
+    
+    async getAllFacingOrientation_Z(): Promise<number[] | undefined> {
+        return (await this.entityTable.getNumberArray("float:FacingOrientation.Z"))
     }
     
     async getHandFlipped(familyInstanceIndex: number): Promise<boolean | undefined> {
@@ -4017,84 +4197,124 @@ export class FamilyInstanceTable implements IFamilyInstanceTable {
         return (await this.entityTable.getNumberArray("float:Scale"))
     }
     
-    async getBasisX(familyInstanceIndex: number): Promise<Vector3 | undefined> {
-        const converter = new Converters.Vector3Converter()
-        
-        let numbers = await Promise.all(converter.columns.map(c => this.entityTable.getNumber(familyInstanceIndex, "float:BasisX" + c)))
-        
-        return Converters.convert(converter, numbers)
+    async getBasisX_X(familyInstanceIndex: number): Promise<number | undefined> {
+        return (await this.entityTable.getNumber(familyInstanceIndex, "float:BasisX.X"))
     }
     
-    async getAllBasisX(): Promise<Vector3[] | undefined> {
-        const converter = new Converters.Vector3Converter()
-        
-        let numbers = await Promise.all(converter.columns.map(c => this.entityTable.getNumberArray("float:BasisX" + c)))
-        
-        return Converters.convertArray(converter, numbers)
+    async getAllBasisX_X(): Promise<number[] | undefined> {
+        return (await this.entityTable.getNumberArray("float:BasisX.X"))
     }
     
-    async getBasisY(familyInstanceIndex: number): Promise<Vector3 | undefined> {
-        const converter = new Converters.Vector3Converter()
-        
-        let numbers = await Promise.all(converter.columns.map(c => this.entityTable.getNumber(familyInstanceIndex, "float:BasisY" + c)))
-        
-        return Converters.convert(converter, numbers)
+    async getBasisX_Y(familyInstanceIndex: number): Promise<number | undefined> {
+        return (await this.entityTable.getNumber(familyInstanceIndex, "float:BasisX.Y"))
     }
     
-    async getAllBasisY(): Promise<Vector3[] | undefined> {
-        const converter = new Converters.Vector3Converter()
-        
-        let numbers = await Promise.all(converter.columns.map(c => this.entityTable.getNumberArray("float:BasisY" + c)))
-        
-        return Converters.convertArray(converter, numbers)
+    async getAllBasisX_Y(): Promise<number[] | undefined> {
+        return (await this.entityTable.getNumberArray("float:BasisX.Y"))
     }
     
-    async getBasisZ(familyInstanceIndex: number): Promise<Vector3 | undefined> {
-        const converter = new Converters.Vector3Converter()
-        
-        let numbers = await Promise.all(converter.columns.map(c => this.entityTable.getNumber(familyInstanceIndex, "float:BasisZ" + c)))
-        
-        return Converters.convert(converter, numbers)
+    async getBasisX_Z(familyInstanceIndex: number): Promise<number | undefined> {
+        return (await this.entityTable.getNumber(familyInstanceIndex, "float:BasisX.Z"))
     }
     
-    async getAllBasisZ(): Promise<Vector3[] | undefined> {
-        const converter = new Converters.Vector3Converter()
-        
-        let numbers = await Promise.all(converter.columns.map(c => this.entityTable.getNumberArray("float:BasisZ" + c)))
-        
-        return Converters.convertArray(converter, numbers)
+    async getAllBasisX_Z(): Promise<number[] | undefined> {
+        return (await this.entityTable.getNumberArray("float:BasisX.Z"))
     }
     
-    async getTranslation(familyInstanceIndex: number): Promise<Vector3 | undefined> {
-        const converter = new Converters.Vector3Converter()
-        
-        let numbers = await Promise.all(converter.columns.map(c => this.entityTable.getNumber(familyInstanceIndex, "float:Translation" + c)))
-        
-        return Converters.convert(converter, numbers)
+    async getBasisY_X(familyInstanceIndex: number): Promise<number | undefined> {
+        return (await this.entityTable.getNumber(familyInstanceIndex, "float:BasisY.X"))
     }
     
-    async getAllTranslation(): Promise<Vector3[] | undefined> {
-        const converter = new Converters.Vector3Converter()
-        
-        let numbers = await Promise.all(converter.columns.map(c => this.entityTable.getNumberArray("float:Translation" + c)))
-        
-        return Converters.convertArray(converter, numbers)
+    async getAllBasisY_X(): Promise<number[] | undefined> {
+        return (await this.entityTable.getNumberArray("float:BasisY.X"))
     }
     
-    async getHandOrientation(familyInstanceIndex: number): Promise<Vector3 | undefined> {
-        const converter = new Converters.Vector3Converter()
-        
-        let numbers = await Promise.all(converter.columns.map(c => this.entityTable.getNumber(familyInstanceIndex, "float:HandOrientation" + c)))
-        
-        return Converters.convert(converter, numbers)
+    async getBasisY_Y(familyInstanceIndex: number): Promise<number | undefined> {
+        return (await this.entityTable.getNumber(familyInstanceIndex, "float:BasisY.Y"))
     }
     
-    async getAllHandOrientation(): Promise<Vector3[] | undefined> {
-        const converter = new Converters.Vector3Converter()
-        
-        let numbers = await Promise.all(converter.columns.map(c => this.entityTable.getNumberArray("float:HandOrientation" + c)))
-        
-        return Converters.convertArray(converter, numbers)
+    async getAllBasisY_Y(): Promise<number[] | undefined> {
+        return (await this.entityTable.getNumberArray("float:BasisY.Y"))
+    }
+    
+    async getBasisY_Z(familyInstanceIndex: number): Promise<number | undefined> {
+        return (await this.entityTable.getNumber(familyInstanceIndex, "float:BasisY.Z"))
+    }
+    
+    async getAllBasisY_Z(): Promise<number[] | undefined> {
+        return (await this.entityTable.getNumberArray("float:BasisY.Z"))
+    }
+    
+    async getBasisZ_X(familyInstanceIndex: number): Promise<number | undefined> {
+        return (await this.entityTable.getNumber(familyInstanceIndex, "float:BasisZ.X"))
+    }
+    
+    async getAllBasisZ_X(): Promise<number[] | undefined> {
+        return (await this.entityTable.getNumberArray("float:BasisZ.X"))
+    }
+    
+    async getBasisZ_Y(familyInstanceIndex: number): Promise<number | undefined> {
+        return (await this.entityTable.getNumber(familyInstanceIndex, "float:BasisZ.Y"))
+    }
+    
+    async getAllBasisZ_Y(): Promise<number[] | undefined> {
+        return (await this.entityTable.getNumberArray("float:BasisZ.Y"))
+    }
+    
+    async getBasisZ_Z(familyInstanceIndex: number): Promise<number | undefined> {
+        return (await this.entityTable.getNumber(familyInstanceIndex, "float:BasisZ.Z"))
+    }
+    
+    async getAllBasisZ_Z(): Promise<number[] | undefined> {
+        return (await this.entityTable.getNumberArray("float:BasisZ.Z"))
+    }
+    
+    async getTranslation_X(familyInstanceIndex: number): Promise<number | undefined> {
+        return (await this.entityTable.getNumber(familyInstanceIndex, "float:Translation.X"))
+    }
+    
+    async getAllTranslation_X(): Promise<number[] | undefined> {
+        return (await this.entityTable.getNumberArray("float:Translation.X"))
+    }
+    
+    async getTranslation_Y(familyInstanceIndex: number): Promise<number | undefined> {
+        return (await this.entityTable.getNumber(familyInstanceIndex, "float:Translation.Y"))
+    }
+    
+    async getAllTranslation_Y(): Promise<number[] | undefined> {
+        return (await this.entityTable.getNumberArray("float:Translation.Y"))
+    }
+    
+    async getTranslation_Z(familyInstanceIndex: number): Promise<number | undefined> {
+        return (await this.entityTable.getNumber(familyInstanceIndex, "float:Translation.Z"))
+    }
+    
+    async getAllTranslation_Z(): Promise<number[] | undefined> {
+        return (await this.entityTable.getNumberArray("float:Translation.Z"))
+    }
+    
+    async getHandOrientation_X(familyInstanceIndex: number): Promise<number | undefined> {
+        return (await this.entityTable.getNumber(familyInstanceIndex, "float:HandOrientation.X"))
+    }
+    
+    async getAllHandOrientation_X(): Promise<number[] | undefined> {
+        return (await this.entityTable.getNumberArray("float:HandOrientation.X"))
+    }
+    
+    async getHandOrientation_Y(familyInstanceIndex: number): Promise<number | undefined> {
+        return (await this.entityTable.getNumber(familyInstanceIndex, "float:HandOrientation.Y"))
+    }
+    
+    async getAllHandOrientation_Y(): Promise<number[] | undefined> {
+        return (await this.entityTable.getNumberArray("float:HandOrientation.Y"))
+    }
+    
+    async getHandOrientation_Z(familyInstanceIndex: number): Promise<number | undefined> {
+        return (await this.entityTable.getNumber(familyInstanceIndex, "float:HandOrientation.Z"))
+    }
+    
+    async getAllHandOrientation_Z(): Promise<number[] | undefined> {
+        return (await this.entityTable.getNumberArray("float:HandOrientation.Z"))
     }
     
     async getFamilyTypeIndex(familyInstanceIndex: number): Promise<number | undefined> {
@@ -4193,13 +4413,26 @@ export interface IView {
     index: number
     title?: string
     viewType?: string
-    up?: Vector3
-    right?: Vector3
-    origin?: Vector3
-    viewDirection?: Vector3
-    viewPosition?: Vector3
+    up_X?: number
+    up_Y?: number
+    up_Z?: number
+    right_X?: number
+    right_Y?: number
+    right_Z?: number
+    origin_X?: number
+    origin_Y?: number
+    origin_Z?: number
+    viewDirection_X?: number
+    viewDirection_Y?: number
+    viewDirection_Z?: number
+    viewPosition_X?: number
+    viewPosition_Y?: number
+    viewPosition_Z?: number
     scale?: number
-    outline?: AABox2D
+    outline_Min_X?: number
+    outline_Min_Y?: number
+    outline_Max_X?: number
+    outline_Max_Y?: number
     detailLevel?: number
     
     cameraIndex?: number
@@ -4219,20 +4452,46 @@ export interface IViewTable {
     getAllTitle(): Promise<string[] | undefined>
     getViewType(viewIndex: number): Promise<string | undefined>
     getAllViewType(): Promise<string[] | undefined>
-    getUp(viewIndex: number): Promise<Vector3 | undefined>
-    getAllUp(): Promise<Vector3[] | undefined>
-    getRight(viewIndex: number): Promise<Vector3 | undefined>
-    getAllRight(): Promise<Vector3[] | undefined>
-    getOrigin(viewIndex: number): Promise<Vector3 | undefined>
-    getAllOrigin(): Promise<Vector3[] | undefined>
-    getViewDirection(viewIndex: number): Promise<Vector3 | undefined>
-    getAllViewDirection(): Promise<Vector3[] | undefined>
-    getViewPosition(viewIndex: number): Promise<Vector3 | undefined>
-    getAllViewPosition(): Promise<Vector3[] | undefined>
+    getUp_X(viewIndex: number): Promise<number | undefined>
+    getAllUp_X(): Promise<number[] | undefined>
+    getUp_Y(viewIndex: number): Promise<number | undefined>
+    getAllUp_Y(): Promise<number[] | undefined>
+    getUp_Z(viewIndex: number): Promise<number | undefined>
+    getAllUp_Z(): Promise<number[] | undefined>
+    getRight_X(viewIndex: number): Promise<number | undefined>
+    getAllRight_X(): Promise<number[] | undefined>
+    getRight_Y(viewIndex: number): Promise<number | undefined>
+    getAllRight_Y(): Promise<number[] | undefined>
+    getRight_Z(viewIndex: number): Promise<number | undefined>
+    getAllRight_Z(): Promise<number[] | undefined>
+    getOrigin_X(viewIndex: number): Promise<number | undefined>
+    getAllOrigin_X(): Promise<number[] | undefined>
+    getOrigin_Y(viewIndex: number): Promise<number | undefined>
+    getAllOrigin_Y(): Promise<number[] | undefined>
+    getOrigin_Z(viewIndex: number): Promise<number | undefined>
+    getAllOrigin_Z(): Promise<number[] | undefined>
+    getViewDirection_X(viewIndex: number): Promise<number | undefined>
+    getAllViewDirection_X(): Promise<number[] | undefined>
+    getViewDirection_Y(viewIndex: number): Promise<number | undefined>
+    getAllViewDirection_Y(): Promise<number[] | undefined>
+    getViewDirection_Z(viewIndex: number): Promise<number | undefined>
+    getAllViewDirection_Z(): Promise<number[] | undefined>
+    getViewPosition_X(viewIndex: number): Promise<number | undefined>
+    getAllViewPosition_X(): Promise<number[] | undefined>
+    getViewPosition_Y(viewIndex: number): Promise<number | undefined>
+    getAllViewPosition_Y(): Promise<number[] | undefined>
+    getViewPosition_Z(viewIndex: number): Promise<number | undefined>
+    getAllViewPosition_Z(): Promise<number[] | undefined>
     getScale(viewIndex: number): Promise<number | undefined>
     getAllScale(): Promise<number[] | undefined>
-    getOutline(viewIndex: number): Promise<AABox2D | undefined>
-    getAllOutline(): Promise<AABox2D[] | undefined>
+    getOutline_Min_X(viewIndex: number): Promise<number | undefined>
+    getAllOutline_Min_X(): Promise<number[] | undefined>
+    getOutline_Min_Y(viewIndex: number): Promise<number | undefined>
+    getAllOutline_Min_Y(): Promise<number[] | undefined>
+    getOutline_Max_X(viewIndex: number): Promise<number | undefined>
+    getAllOutline_Max_X(): Promise<number[] | undefined>
+    getOutline_Max_Y(viewIndex: number): Promise<number | undefined>
+    getAllOutline_Max_Y(): Promise<number[] | undefined>
     getDetailLevel(viewIndex: number): Promise<number | undefined>
     getAllDetailLevel(): Promise<number[] | undefined>
     
@@ -4251,13 +4510,26 @@ export class View implements IView {
     index: number
     title?: string
     viewType?: string
-    up?: Vector3
-    right?: Vector3
-    origin?: Vector3
-    viewDirection?: Vector3
-    viewPosition?: Vector3
+    up_X?: number
+    up_Y?: number
+    up_Z?: number
+    right_X?: number
+    right_Y?: number
+    right_Z?: number
+    origin_X?: number
+    origin_Y?: number
+    origin_Z?: number
+    viewDirection_X?: number
+    viewDirection_Y?: number
+    viewDirection_Z?: number
+    viewPosition_X?: number
+    viewPosition_Y?: number
+    viewPosition_Z?: number
     scale?: number
-    outline?: AABox2D
+    outline_Min_X?: number
+    outline_Min_Y?: number
+    outline_Max_X?: number
+    outline_Max_Y?: number
     detailLevel?: number
     
     cameraIndex?: number
@@ -4274,13 +4546,26 @@ export class View implements IView {
         await Promise.all([
             table.getTitle(index).then(v => result.title = v),
             table.getViewType(index).then(v => result.viewType = v),
-            table.getUp(index).then(v => result.up = v),
-            table.getRight(index).then(v => result.right = v),
-            table.getOrigin(index).then(v => result.origin = v),
-            table.getViewDirection(index).then(v => result.viewDirection = v),
-            table.getViewPosition(index).then(v => result.viewPosition = v),
+            table.getUp_X(index).then(v => result.up_X = v),
+            table.getUp_Y(index).then(v => result.up_Y = v),
+            table.getUp_Z(index).then(v => result.up_Z = v),
+            table.getRight_X(index).then(v => result.right_X = v),
+            table.getRight_Y(index).then(v => result.right_Y = v),
+            table.getRight_Z(index).then(v => result.right_Z = v),
+            table.getOrigin_X(index).then(v => result.origin_X = v),
+            table.getOrigin_Y(index).then(v => result.origin_Y = v),
+            table.getOrigin_Z(index).then(v => result.origin_Z = v),
+            table.getViewDirection_X(index).then(v => result.viewDirection_X = v),
+            table.getViewDirection_Y(index).then(v => result.viewDirection_Y = v),
+            table.getViewDirection_Z(index).then(v => result.viewDirection_Z = v),
+            table.getViewPosition_X(index).then(v => result.viewPosition_X = v),
+            table.getViewPosition_Y(index).then(v => result.viewPosition_Y = v),
+            table.getViewPosition_Z(index).then(v => result.viewPosition_Z = v),
             table.getScale(index).then(v => result.scale = v),
-            table.getOutline(index).then(v => result.outline = v),
+            table.getOutline_Min_X(index).then(v => result.outline_Min_X = v),
+            table.getOutline_Min_Y(index).then(v => result.outline_Min_Y = v),
+            table.getOutline_Max_X(index).then(v => result.outline_Max_X = v),
+            table.getOutline_Max_Y(index).then(v => result.outline_Max_Y = v),
             table.getDetailLevel(index).then(v => result.detailLevel = v),
             table.getCameraIndex(index).then(v => result.cameraIndex = v),
             table.getFamilyTypeIndex(index).then(v => result.familyTypeIndex = v),
@@ -4322,19 +4607,26 @@ export class ViewTable implements IViewTable {
         
         let title: string[] | undefined
         let viewType: string[] | undefined
-        const upConverter = new Converters.Vector3Converter()
-        let up: Vector3[] | undefined
-        const rightConverter = new Converters.Vector3Converter()
-        let right: Vector3[] | undefined
-        const originConverter = new Converters.Vector3Converter()
-        let origin: Vector3[] | undefined
-        const viewDirectionConverter = new Converters.Vector3Converter()
-        let viewDirection: Vector3[] | undefined
-        const viewPositionConverter = new Converters.Vector3Converter()
-        let viewPosition: Vector3[] | undefined
+        let up_X: number[] | undefined
+        let up_Y: number[] | undefined
+        let up_Z: number[] | undefined
+        let right_X: number[] | undefined
+        let right_Y: number[] | undefined
+        let right_Z: number[] | undefined
+        let origin_X: number[] | undefined
+        let origin_Y: number[] | undefined
+        let origin_Z: number[] | undefined
+        let viewDirection_X: number[] | undefined
+        let viewDirection_Y: number[] | undefined
+        let viewDirection_Z: number[] | undefined
+        let viewPosition_X: number[] | undefined
+        let viewPosition_Y: number[] | undefined
+        let viewPosition_Z: number[] | undefined
         let scale: number[] | undefined
-        const outlineConverter = new Converters.AABox2DConverter()
-        let outline: AABox2D[] | undefined
+        let outline_Min_X: number[] | undefined
+        let outline_Min_Y: number[] | undefined
+        let outline_Max_X: number[] | undefined
+        let outline_Max_Y: number[] | undefined
         let detailLevel: number[] | undefined
         let cameraIndex: number[] | undefined
         let familyTypeIndex: number[] | undefined
@@ -4343,19 +4635,26 @@ export class ViewTable implements IViewTable {
         await Promise.all([
             (async () => { title = (await localTable.getStringArray("string:Title")) })(),
             (async () => { viewType = (await localTable.getStringArray("string:ViewType")) })(),
-            Promise.all(upConverter.columns.map(c => this.entityTable.getNumberArray("double:Up" + c)))
-                .then(a => up = Converters.convertArray(upConverter, a)),
-            Promise.all(rightConverter.columns.map(c => this.entityTable.getNumberArray("double:Right" + c)))
-                .then(a => right = Converters.convertArray(rightConverter, a)),
-            Promise.all(originConverter.columns.map(c => this.entityTable.getNumberArray("double:Origin" + c)))
-                .then(a => origin = Converters.convertArray(originConverter, a)),
-            Promise.all(viewDirectionConverter.columns.map(c => this.entityTable.getNumberArray("double:ViewDirection" + c)))
-                .then(a => viewDirection = Converters.convertArray(viewDirectionConverter, a)),
-            Promise.all(viewPositionConverter.columns.map(c => this.entityTable.getNumberArray("double:ViewPosition" + c)))
-                .then(a => viewPosition = Converters.convertArray(viewPositionConverter, a)),
+            (async () => { up_X = (await localTable.getNumberArray("double:Up.X")) })(),
+            (async () => { up_Y = (await localTable.getNumberArray("double:Up.Y")) })(),
+            (async () => { up_Z = (await localTable.getNumberArray("double:Up.Z")) })(),
+            (async () => { right_X = (await localTable.getNumberArray("double:Right.X")) })(),
+            (async () => { right_Y = (await localTable.getNumberArray("double:Right.Y")) })(),
+            (async () => { right_Z = (await localTable.getNumberArray("double:Right.Z")) })(),
+            (async () => { origin_X = (await localTable.getNumberArray("double:Origin.X")) })(),
+            (async () => { origin_Y = (await localTable.getNumberArray("double:Origin.Y")) })(),
+            (async () => { origin_Z = (await localTable.getNumberArray("double:Origin.Z")) })(),
+            (async () => { viewDirection_X = (await localTable.getNumberArray("double:ViewDirection.X")) })(),
+            (async () => { viewDirection_Y = (await localTable.getNumberArray("double:ViewDirection.Y")) })(),
+            (async () => { viewDirection_Z = (await localTable.getNumberArray("double:ViewDirection.Z")) })(),
+            (async () => { viewPosition_X = (await localTable.getNumberArray("double:ViewPosition.X")) })(),
+            (async () => { viewPosition_Y = (await localTable.getNumberArray("double:ViewPosition.Y")) })(),
+            (async () => { viewPosition_Z = (await localTable.getNumberArray("double:ViewPosition.Z")) })(),
             (async () => { scale = (await localTable.getNumberArray("double:Scale")) })(),
-            Promise.all(outlineConverter.columns.map(c => this.entityTable.getNumberArray("double:Outline" + c)))
-                .then(a => outline = Converters.convertArray(outlineConverter, a)),
+            (async () => { outline_Min_X = (await localTable.getNumberArray("double:Outline.Min.X")) })(),
+            (async () => { outline_Min_Y = (await localTable.getNumberArray("double:Outline.Min.Y")) })(),
+            (async () => { outline_Max_X = (await localTable.getNumberArray("double:Outline.Max.X")) })(),
+            (async () => { outline_Max_Y = (await localTable.getNumberArray("double:Outline.Max.Y")) })(),
             (async () => { detailLevel = (await localTable.getNumberArray("int:DetailLevel")) })(),
             (async () => { cameraIndex = (await localTable.getNumberArray("index:Vim.Camera:Camera")) })(),
             (async () => { familyTypeIndex = (await localTable.getNumberArray("index:Vim.FamilyType:FamilyType")) })(),
@@ -4369,13 +4668,26 @@ export class ViewTable implements IViewTable {
                 index: i,
                 title: title ? title[i] : undefined,
                 viewType: viewType ? viewType[i] : undefined,
-                up: up ? up[i] : undefined,
-                right: right ? right[i] : undefined,
-                origin: origin ? origin[i] : undefined,
-                viewDirection: viewDirection ? viewDirection[i] : undefined,
-                viewPosition: viewPosition ? viewPosition[i] : undefined,
+                up_X: up_X ? up_X[i] : undefined,
+                up_Y: up_Y ? up_Y[i] : undefined,
+                up_Z: up_Z ? up_Z[i] : undefined,
+                right_X: right_X ? right_X[i] : undefined,
+                right_Y: right_Y ? right_Y[i] : undefined,
+                right_Z: right_Z ? right_Z[i] : undefined,
+                origin_X: origin_X ? origin_X[i] : undefined,
+                origin_Y: origin_Y ? origin_Y[i] : undefined,
+                origin_Z: origin_Z ? origin_Z[i] : undefined,
+                viewDirection_X: viewDirection_X ? viewDirection_X[i] : undefined,
+                viewDirection_Y: viewDirection_Y ? viewDirection_Y[i] : undefined,
+                viewDirection_Z: viewDirection_Z ? viewDirection_Z[i] : undefined,
+                viewPosition_X: viewPosition_X ? viewPosition_X[i] : undefined,
+                viewPosition_Y: viewPosition_Y ? viewPosition_Y[i] : undefined,
+                viewPosition_Z: viewPosition_Z ? viewPosition_Z[i] : undefined,
                 scale: scale ? scale[i] : undefined,
-                outline: outline ? outline[i] : undefined,
+                outline_Min_X: outline_Min_X ? outline_Min_X[i] : undefined,
+                outline_Min_Y: outline_Min_Y ? outline_Min_Y[i] : undefined,
+                outline_Max_X: outline_Max_X ? outline_Max_X[i] : undefined,
+                outline_Max_Y: outline_Max_Y ? outline_Max_Y[i] : undefined,
                 detailLevel: detailLevel ? detailLevel[i] : undefined,
                 cameraIndex: cameraIndex ? cameraIndex[i] : undefined,
                 familyTypeIndex: familyTypeIndex ? familyTypeIndex[i] : undefined,
@@ -4402,84 +4714,124 @@ export class ViewTable implements IViewTable {
         return (await this.entityTable.getStringArray("string:ViewType"))
     }
     
-    async getUp(viewIndex: number): Promise<Vector3 | undefined> {
-        const converter = new Converters.Vector3Converter()
-        
-        let numbers = await Promise.all(converter.columns.map(c => this.entityTable.getNumber(viewIndex, "double:Up" + c)))
-        
-        return Converters.convert(converter, numbers)
+    async getUp_X(viewIndex: number): Promise<number | undefined> {
+        return (await this.entityTable.getNumber(viewIndex, "double:Up.X"))
     }
     
-    async getAllUp(): Promise<Vector3[] | undefined> {
-        const converter = new Converters.Vector3Converter()
-        
-        let numbers = await Promise.all(converter.columns.map(c => this.entityTable.getNumberArray("double:Up" + c)))
-        
-        return Converters.convertArray(converter, numbers)
+    async getAllUp_X(): Promise<number[] | undefined> {
+        return (await this.entityTable.getNumberArray("double:Up.X"))
     }
     
-    async getRight(viewIndex: number): Promise<Vector3 | undefined> {
-        const converter = new Converters.Vector3Converter()
-        
-        let numbers = await Promise.all(converter.columns.map(c => this.entityTable.getNumber(viewIndex, "double:Right" + c)))
-        
-        return Converters.convert(converter, numbers)
+    async getUp_Y(viewIndex: number): Promise<number | undefined> {
+        return (await this.entityTable.getNumber(viewIndex, "double:Up.Y"))
     }
     
-    async getAllRight(): Promise<Vector3[] | undefined> {
-        const converter = new Converters.Vector3Converter()
-        
-        let numbers = await Promise.all(converter.columns.map(c => this.entityTable.getNumberArray("double:Right" + c)))
-        
-        return Converters.convertArray(converter, numbers)
+    async getAllUp_Y(): Promise<number[] | undefined> {
+        return (await this.entityTable.getNumberArray("double:Up.Y"))
     }
     
-    async getOrigin(viewIndex: number): Promise<Vector3 | undefined> {
-        const converter = new Converters.Vector3Converter()
-        
-        let numbers = await Promise.all(converter.columns.map(c => this.entityTable.getNumber(viewIndex, "double:Origin" + c)))
-        
-        return Converters.convert(converter, numbers)
+    async getUp_Z(viewIndex: number): Promise<number | undefined> {
+        return (await this.entityTable.getNumber(viewIndex, "double:Up.Z"))
     }
     
-    async getAllOrigin(): Promise<Vector3[] | undefined> {
-        const converter = new Converters.Vector3Converter()
-        
-        let numbers = await Promise.all(converter.columns.map(c => this.entityTable.getNumberArray("double:Origin" + c)))
-        
-        return Converters.convertArray(converter, numbers)
+    async getAllUp_Z(): Promise<number[] | undefined> {
+        return (await this.entityTable.getNumberArray("double:Up.Z"))
     }
     
-    async getViewDirection(viewIndex: number): Promise<Vector3 | undefined> {
-        const converter = new Converters.Vector3Converter()
-        
-        let numbers = await Promise.all(converter.columns.map(c => this.entityTable.getNumber(viewIndex, "double:ViewDirection" + c)))
-        
-        return Converters.convert(converter, numbers)
+    async getRight_X(viewIndex: number): Promise<number | undefined> {
+        return (await this.entityTable.getNumber(viewIndex, "double:Right.X"))
     }
     
-    async getAllViewDirection(): Promise<Vector3[] | undefined> {
-        const converter = new Converters.Vector3Converter()
-        
-        let numbers = await Promise.all(converter.columns.map(c => this.entityTable.getNumberArray("double:ViewDirection" + c)))
-        
-        return Converters.convertArray(converter, numbers)
+    async getAllRight_X(): Promise<number[] | undefined> {
+        return (await this.entityTable.getNumberArray("double:Right.X"))
     }
     
-    async getViewPosition(viewIndex: number): Promise<Vector3 | undefined> {
-        const converter = new Converters.Vector3Converter()
-        
-        let numbers = await Promise.all(converter.columns.map(c => this.entityTable.getNumber(viewIndex, "double:ViewPosition" + c)))
-        
-        return Converters.convert(converter, numbers)
+    async getRight_Y(viewIndex: number): Promise<number | undefined> {
+        return (await this.entityTable.getNumber(viewIndex, "double:Right.Y"))
     }
     
-    async getAllViewPosition(): Promise<Vector3[] | undefined> {
-        const converter = new Converters.Vector3Converter()
-        
-        let numbers = await Promise.all(converter.columns.map(c => this.entityTable.getNumberArray("double:ViewPosition" + c)))
-        
-        return Converters.convertArray(converter, numbers)
+    async getAllRight_Y(): Promise<number[] | undefined> {
+        return (await this.entityTable.getNumberArray("double:Right.Y"))
+    }
+    
+    async getRight_Z(viewIndex: number): Promise<number | undefined> {
+        return (await this.entityTable.getNumber(viewIndex, "double:Right.Z"))
+    }
+    
+    async getAllRight_Z(): Promise<number[] | undefined> {
+        return (await this.entityTable.getNumberArray("double:Right.Z"))
+    }
+    
+    async getOrigin_X(viewIndex: number): Promise<number | undefined> {
+        return (await this.entityTable.getNumber(viewIndex, "double:Origin.X"))
+    }
+    
+    async getAllOrigin_X(): Promise<number[] | undefined> {
+        return (await this.entityTable.getNumberArray("double:Origin.X"))
+    }
+    
+    async getOrigin_Y(viewIndex: number): Promise<number | undefined> {
+        return (await this.entityTable.getNumber(viewIndex, "double:Origin.Y"))
+    }
+    
+    async getAllOrigin_Y(): Promise<number[] | undefined> {
+        return (await this.entityTable.getNumberArray("double:Origin.Y"))
+    }
+    
+    async getOrigin_Z(viewIndex: number): Promise<number | undefined> {
+        return (await this.entityTable.getNumber(viewIndex, "double:Origin.Z"))
+    }
+    
+    async getAllOrigin_Z(): Promise<number[] | undefined> {
+        return (await this.entityTable.getNumberArray("double:Origin.Z"))
+    }
+    
+    async getViewDirection_X(viewIndex: number): Promise<number | undefined> {
+        return (await this.entityTable.getNumber(viewIndex, "double:ViewDirection.X"))
+    }
+    
+    async getAllViewDirection_X(): Promise<number[] | undefined> {
+        return (await this.entityTable.getNumberArray("double:ViewDirection.X"))
+    }
+    
+    async getViewDirection_Y(viewIndex: number): Promise<number | undefined> {
+        return (await this.entityTable.getNumber(viewIndex, "double:ViewDirection.Y"))
+    }
+    
+    async getAllViewDirection_Y(): Promise<number[] | undefined> {
+        return (await this.entityTable.getNumberArray("double:ViewDirection.Y"))
+    }
+    
+    async getViewDirection_Z(viewIndex: number): Promise<number | undefined> {
+        return (await this.entityTable.getNumber(viewIndex, "double:ViewDirection.Z"))
+    }
+    
+    async getAllViewDirection_Z(): Promise<number[] | undefined> {
+        return (await this.entityTable.getNumberArray("double:ViewDirection.Z"))
+    }
+    
+    async getViewPosition_X(viewIndex: number): Promise<number | undefined> {
+        return (await this.entityTable.getNumber(viewIndex, "double:ViewPosition.X"))
+    }
+    
+    async getAllViewPosition_X(): Promise<number[] | undefined> {
+        return (await this.entityTable.getNumberArray("double:ViewPosition.X"))
+    }
+    
+    async getViewPosition_Y(viewIndex: number): Promise<number | undefined> {
+        return (await this.entityTable.getNumber(viewIndex, "double:ViewPosition.Y"))
+    }
+    
+    async getAllViewPosition_Y(): Promise<number[] | undefined> {
+        return (await this.entityTable.getNumberArray("double:ViewPosition.Y"))
+    }
+    
+    async getViewPosition_Z(viewIndex: number): Promise<number | undefined> {
+        return (await this.entityTable.getNumber(viewIndex, "double:ViewPosition.Z"))
+    }
+    
+    async getAllViewPosition_Z(): Promise<number[] | undefined> {
+        return (await this.entityTable.getNumberArray("double:ViewPosition.Z"))
     }
     
     async getScale(viewIndex: number): Promise<number | undefined> {
@@ -4490,20 +4842,36 @@ export class ViewTable implements IViewTable {
         return (await this.entityTable.getNumberArray("double:Scale"))
     }
     
-    async getOutline(viewIndex: number): Promise<AABox2D | undefined> {
-        const converter = new Converters.AABox2DConverter()
-        
-        let numbers = await Promise.all(converter.columns.map(c => this.entityTable.getNumber(viewIndex, "double:Outline" + c)))
-        
-        return Converters.convert(converter, numbers)
+    async getOutline_Min_X(viewIndex: number): Promise<number | undefined> {
+        return (await this.entityTable.getNumber(viewIndex, "double:Outline.Min.X"))
     }
     
-    async getAllOutline(): Promise<AABox2D[] | undefined> {
-        const converter = new Converters.AABox2DConverter()
-        
-        let numbers = await Promise.all(converter.columns.map(c => this.entityTable.getNumberArray("double:Outline" + c)))
-        
-        return Converters.convertArray(converter, numbers)
+    async getAllOutline_Min_X(): Promise<number[] | undefined> {
+        return (await this.entityTable.getNumberArray("double:Outline.Min.X"))
+    }
+    
+    async getOutline_Min_Y(viewIndex: number): Promise<number | undefined> {
+        return (await this.entityTable.getNumber(viewIndex, "double:Outline.Min.Y"))
+    }
+    
+    async getAllOutline_Min_Y(): Promise<number[] | undefined> {
+        return (await this.entityTable.getNumberArray("double:Outline.Min.Y"))
+    }
+    
+    async getOutline_Max_X(viewIndex: number): Promise<number | undefined> {
+        return (await this.entityTable.getNumber(viewIndex, "double:Outline.Max.X"))
+    }
+    
+    async getAllOutline_Max_X(): Promise<number[] | undefined> {
+        return (await this.entityTable.getNumberArray("double:Outline.Max.X"))
+    }
+    
+    async getOutline_Max_Y(viewIndex: number): Promise<number | undefined> {
+        return (await this.entityTable.getNumber(viewIndex, "double:Outline.Max.Y"))
+    }
+    
+    async getAllOutline_Max_Y(): Promise<number[] | undefined> {
+        return (await this.entityTable.getNumberArray("double:Outline.Max.Y"))
     }
     
     async getDetailLevel(viewIndex: number): Promise<number | undefined> {
@@ -4965,7 +5333,12 @@ export class AssetInViewTable implements IAssetInViewTable {
 
 export interface ILevelInView {
     index: number
-    extents?: AABox
+    extents_Min_X?: number
+    extents_Min_Y?: number
+    extents_Min_Z?: number
+    extents_Max_X?: number
+    extents_Max_Y?: number
+    extents_Max_Z?: number
     
     levelIndex?: number
     level?: ILevel
@@ -4978,8 +5351,18 @@ export interface ILevelInViewTable {
     get(levelInViewIndex: number): Promise<ILevelInView>
     getAll(): Promise<ILevelInView[]>
     
-    getExtents(levelInViewIndex: number): Promise<AABox | undefined>
-    getAllExtents(): Promise<AABox[] | undefined>
+    getExtents_Min_X(levelInViewIndex: number): Promise<number | undefined>
+    getAllExtents_Min_X(): Promise<number[] | undefined>
+    getExtents_Min_Y(levelInViewIndex: number): Promise<number | undefined>
+    getAllExtents_Min_Y(): Promise<number[] | undefined>
+    getExtents_Min_Z(levelInViewIndex: number): Promise<number | undefined>
+    getAllExtents_Min_Z(): Promise<number[] | undefined>
+    getExtents_Max_X(levelInViewIndex: number): Promise<number | undefined>
+    getAllExtents_Max_X(): Promise<number[] | undefined>
+    getExtents_Max_Y(levelInViewIndex: number): Promise<number | undefined>
+    getAllExtents_Max_Y(): Promise<number[] | undefined>
+    getExtents_Max_Z(levelInViewIndex: number): Promise<number | undefined>
+    getAllExtents_Max_Z(): Promise<number[] | undefined>
     
     getLevelIndex(levelInViewIndex: number): Promise<number | undefined>
     getAllLevelIndex(): Promise<number[] | undefined>
@@ -4991,7 +5374,12 @@ export interface ILevelInViewTable {
 
 export class LevelInView implements ILevelInView {
     index: number
-    extents?: AABox
+    extents_Min_X?: number
+    extents_Min_Y?: number
+    extents_Min_Z?: number
+    extents_Max_X?: number
+    extents_Max_Y?: number
+    extents_Max_Z?: number
     
     levelIndex?: number
     level?: ILevel
@@ -5003,7 +5391,12 @@ export class LevelInView implements ILevelInView {
         result.index = index
         
         await Promise.all([
-            table.getExtents(index).then(v => result.extents = v),
+            table.getExtents_Min_X(index).then(v => result.extents_Min_X = v),
+            table.getExtents_Min_Y(index).then(v => result.extents_Min_Y = v),
+            table.getExtents_Min_Z(index).then(v => result.extents_Min_Z = v),
+            table.getExtents_Max_X(index).then(v => result.extents_Max_X = v),
+            table.getExtents_Max_Y(index).then(v => result.extents_Max_Y = v),
+            table.getExtents_Max_Z(index).then(v => result.extents_Max_Z = v),
             table.getLevelIndex(index).then(v => result.levelIndex = v),
             table.getViewIndex(index).then(v => result.viewIndex = v),
         ])
@@ -5031,7 +5424,7 @@ export class LevelInViewTable implements ILevelInViewTable {
     }
     
     async getCount(): Promise<number> {
-        return (await this.entityTable.getNumberArray("double:Extents" + new Converters.AABoxConverter().columns[0]))?.length ?? 0
+        return ((await this.entityTable.getArray("double:Extents.Min.X")))?.length ?? 0
     }
     
     async get(levelInViewIndex: number): Promise<ILevelInView> {
@@ -5041,24 +5434,37 @@ export class LevelInViewTable implements ILevelInViewTable {
     async getAll(): Promise<ILevelInView[]> {
         const localTable = await this.entityTable.getLocal()
         
-        const extentsConverter = new Converters.AABoxConverter()
-        let extents: AABox[] | undefined
+        let extents_Min_X: number[] | undefined
+        let extents_Min_Y: number[] | undefined
+        let extents_Min_Z: number[] | undefined
+        let extents_Max_X: number[] | undefined
+        let extents_Max_Y: number[] | undefined
+        let extents_Max_Z: number[] | undefined
         let levelIndex: number[] | undefined
         let viewIndex: number[] | undefined
         
         await Promise.all([
-            Promise.all(extentsConverter.columns.map(c => this.entityTable.getNumberArray("double:Extents" + c)))
-                .then(a => extents = Converters.convertArray(extentsConverter, a)),
+            (async () => { extents_Min_X = (await localTable.getNumberArray("double:Extents.Min.X")) })(),
+            (async () => { extents_Min_Y = (await localTable.getNumberArray("double:Extents.Min.Y")) })(),
+            (async () => { extents_Min_Z = (await localTable.getNumberArray("double:Extents.Min.Z")) })(),
+            (async () => { extents_Max_X = (await localTable.getNumberArray("double:Extents.Max.X")) })(),
+            (async () => { extents_Max_Y = (await localTable.getNumberArray("double:Extents.Max.Y")) })(),
+            (async () => { extents_Max_Z = (await localTable.getNumberArray("double:Extents.Max.Z")) })(),
             (async () => { levelIndex = (await localTable.getNumberArray("index:Vim.Level:Level")) })(),
             (async () => { viewIndex = (await localTable.getNumberArray("index:Vim.View:View")) })(),
         ])
         
         let levelInView: ILevelInView[] = []
         
-        for (let i = 0; i < extents!.length; i++) {
+        for (let i = 0; i < extents_Min_X!.length; i++) {
             levelInView.push({
                 index: i,
-                extents: extents ? extents[i] : undefined,
+                extents_Min_X: extents_Min_X ? extents_Min_X[i] : undefined,
+                extents_Min_Y: extents_Min_Y ? extents_Min_Y[i] : undefined,
+                extents_Min_Z: extents_Min_Z ? extents_Min_Z[i] : undefined,
+                extents_Max_X: extents_Max_X ? extents_Max_X[i] : undefined,
+                extents_Max_Y: extents_Max_Y ? extents_Max_Y[i] : undefined,
+                extents_Max_Z: extents_Max_Z ? extents_Max_Z[i] : undefined,
                 levelIndex: levelIndex ? levelIndex[i] : undefined,
                 viewIndex: viewIndex ? viewIndex[i] : undefined
             })
@@ -5067,20 +5473,52 @@ export class LevelInViewTable implements ILevelInViewTable {
         return levelInView
     }
     
-    async getExtents(levelInViewIndex: number): Promise<AABox | undefined> {
-        const converter = new Converters.AABoxConverter()
-        
-        let numbers = await Promise.all(converter.columns.map(c => this.entityTable.getNumber(levelInViewIndex, "double:Extents" + c)))
-        
-        return Converters.convert(converter, numbers)
+    async getExtents_Min_X(levelInViewIndex: number): Promise<number | undefined> {
+        return (await this.entityTable.getNumber(levelInViewIndex, "double:Extents.Min.X"))
     }
     
-    async getAllExtents(): Promise<AABox[] | undefined> {
-        const converter = new Converters.AABoxConverter()
-        
-        let numbers = await Promise.all(converter.columns.map(c => this.entityTable.getNumberArray("double:Extents" + c)))
-        
-        return Converters.convertArray(converter, numbers)
+    async getAllExtents_Min_X(): Promise<number[] | undefined> {
+        return (await this.entityTable.getNumberArray("double:Extents.Min.X"))
+    }
+    
+    async getExtents_Min_Y(levelInViewIndex: number): Promise<number | undefined> {
+        return (await this.entityTable.getNumber(levelInViewIndex, "double:Extents.Min.Y"))
+    }
+    
+    async getAllExtents_Min_Y(): Promise<number[] | undefined> {
+        return (await this.entityTable.getNumberArray("double:Extents.Min.Y"))
+    }
+    
+    async getExtents_Min_Z(levelInViewIndex: number): Promise<number | undefined> {
+        return (await this.entityTable.getNumber(levelInViewIndex, "double:Extents.Min.Z"))
+    }
+    
+    async getAllExtents_Min_Z(): Promise<number[] | undefined> {
+        return (await this.entityTable.getNumberArray("double:Extents.Min.Z"))
+    }
+    
+    async getExtents_Max_X(levelInViewIndex: number): Promise<number | undefined> {
+        return (await this.entityTable.getNumber(levelInViewIndex, "double:Extents.Max.X"))
+    }
+    
+    async getAllExtents_Max_X(): Promise<number[] | undefined> {
+        return (await this.entityTable.getNumberArray("double:Extents.Max.X"))
+    }
+    
+    async getExtents_Max_Y(levelInViewIndex: number): Promise<number | undefined> {
+        return (await this.entityTable.getNumber(levelInViewIndex, "double:Extents.Max.Y"))
+    }
+    
+    async getAllExtents_Max_Y(): Promise<number[] | undefined> {
+        return (await this.entityTable.getNumberArray("double:Extents.Max.Y"))
+    }
+    
+    async getExtents_Max_Z(levelInViewIndex: number): Promise<number | undefined> {
+        return (await this.entityTable.getNumber(levelInViewIndex, "double:Extents.Max.Z"))
+    }
+    
+    async getAllExtents_Max_Z(): Promise<number[] | undefined> {
+        return (await this.entityTable.getNumberArray("double:Extents.Max.Z"))
     }
     
     async getLevelIndex(levelInViewIndex: number): Promise<number | undefined> {
@@ -5338,11 +5776,17 @@ export interface IMaterial {
     index: number
     name?: string
     materialCategory?: string
-    color?: Vector3
-    colorUvScaling?: Vector2
-    colorUvOffset?: Vector2
-    normalUvScaling?: Vector2
-    normalUvOffset?: Vector2
+    color_X?: number
+    color_Y?: number
+    color_Z?: number
+    colorUvScaling_X?: number
+    colorUvScaling_Y?: number
+    colorUvOffset_X?: number
+    colorUvOffset_Y?: number
+    normalUvScaling_X?: number
+    normalUvScaling_Y?: number
+    normalUvOffset_X?: number
+    normalUvOffset_Y?: number
     normalAmount?: number
     glossiness?: number
     smoothness?: number
@@ -5365,16 +5809,28 @@ export interface IMaterialTable {
     getAllName(): Promise<string[] | undefined>
     getMaterialCategory(materialIndex: number): Promise<string | undefined>
     getAllMaterialCategory(): Promise<string[] | undefined>
-    getColor(materialIndex: number): Promise<Vector3 | undefined>
-    getAllColor(): Promise<Vector3[] | undefined>
-    getColorUvScaling(materialIndex: number): Promise<Vector2 | undefined>
-    getAllColorUvScaling(): Promise<Vector2[] | undefined>
-    getColorUvOffset(materialIndex: number): Promise<Vector2 | undefined>
-    getAllColorUvOffset(): Promise<Vector2[] | undefined>
-    getNormalUvScaling(materialIndex: number): Promise<Vector2 | undefined>
-    getAllNormalUvScaling(): Promise<Vector2[] | undefined>
-    getNormalUvOffset(materialIndex: number): Promise<Vector2 | undefined>
-    getAllNormalUvOffset(): Promise<Vector2[] | undefined>
+    getColor_X(materialIndex: number): Promise<number | undefined>
+    getAllColor_X(): Promise<number[] | undefined>
+    getColor_Y(materialIndex: number): Promise<number | undefined>
+    getAllColor_Y(): Promise<number[] | undefined>
+    getColor_Z(materialIndex: number): Promise<number | undefined>
+    getAllColor_Z(): Promise<number[] | undefined>
+    getColorUvScaling_X(materialIndex: number): Promise<number | undefined>
+    getAllColorUvScaling_X(): Promise<number[] | undefined>
+    getColorUvScaling_Y(materialIndex: number): Promise<number | undefined>
+    getAllColorUvScaling_Y(): Promise<number[] | undefined>
+    getColorUvOffset_X(materialIndex: number): Promise<number | undefined>
+    getAllColorUvOffset_X(): Promise<number[] | undefined>
+    getColorUvOffset_Y(materialIndex: number): Promise<number | undefined>
+    getAllColorUvOffset_Y(): Promise<number[] | undefined>
+    getNormalUvScaling_X(materialIndex: number): Promise<number | undefined>
+    getAllNormalUvScaling_X(): Promise<number[] | undefined>
+    getNormalUvScaling_Y(materialIndex: number): Promise<number | undefined>
+    getAllNormalUvScaling_Y(): Promise<number[] | undefined>
+    getNormalUvOffset_X(materialIndex: number): Promise<number | undefined>
+    getAllNormalUvOffset_X(): Promise<number[] | undefined>
+    getNormalUvOffset_Y(materialIndex: number): Promise<number | undefined>
+    getAllNormalUvOffset_Y(): Promise<number[] | undefined>
     getNormalAmount(materialIndex: number): Promise<number | undefined>
     getAllNormalAmount(): Promise<number[] | undefined>
     getGlossiness(materialIndex: number): Promise<number | undefined>
@@ -5399,11 +5855,17 @@ export class Material implements IMaterial {
     index: number
     name?: string
     materialCategory?: string
-    color?: Vector3
-    colorUvScaling?: Vector2
-    colorUvOffset?: Vector2
-    normalUvScaling?: Vector2
-    normalUvOffset?: Vector2
+    color_X?: number
+    color_Y?: number
+    color_Z?: number
+    colorUvScaling_X?: number
+    colorUvScaling_Y?: number
+    colorUvOffset_X?: number
+    colorUvOffset_Y?: number
+    normalUvScaling_X?: number
+    normalUvScaling_Y?: number
+    normalUvOffset_X?: number
+    normalUvOffset_Y?: number
     normalAmount?: number
     glossiness?: number
     smoothness?: number
@@ -5423,11 +5885,17 @@ export class Material implements IMaterial {
         await Promise.all([
             table.getName(index).then(v => result.name = v),
             table.getMaterialCategory(index).then(v => result.materialCategory = v),
-            table.getColor(index).then(v => result.color = v),
-            table.getColorUvScaling(index).then(v => result.colorUvScaling = v),
-            table.getColorUvOffset(index).then(v => result.colorUvOffset = v),
-            table.getNormalUvScaling(index).then(v => result.normalUvScaling = v),
-            table.getNormalUvOffset(index).then(v => result.normalUvOffset = v),
+            table.getColor_X(index).then(v => result.color_X = v),
+            table.getColor_Y(index).then(v => result.color_Y = v),
+            table.getColor_Z(index).then(v => result.color_Z = v),
+            table.getColorUvScaling_X(index).then(v => result.colorUvScaling_X = v),
+            table.getColorUvScaling_Y(index).then(v => result.colorUvScaling_Y = v),
+            table.getColorUvOffset_X(index).then(v => result.colorUvOffset_X = v),
+            table.getColorUvOffset_Y(index).then(v => result.colorUvOffset_Y = v),
+            table.getNormalUvScaling_X(index).then(v => result.normalUvScaling_X = v),
+            table.getNormalUvScaling_Y(index).then(v => result.normalUvScaling_Y = v),
+            table.getNormalUvOffset_X(index).then(v => result.normalUvOffset_X = v),
+            table.getNormalUvOffset_Y(index).then(v => result.normalUvOffset_Y = v),
             table.getNormalAmount(index).then(v => result.normalAmount = v),
             table.getGlossiness(index).then(v => result.glossiness = v),
             table.getSmoothness(index).then(v => result.smoothness = v),
@@ -5472,16 +5940,17 @@ export class MaterialTable implements IMaterialTable {
         
         let name: string[] | undefined
         let materialCategory: string[] | undefined
-        const colorConverter = new Converters.Vector3Converter()
-        let color: Vector3[] | undefined
-        const colorUvScalingConverter = new Converters.Vector2Converter()
-        let colorUvScaling: Vector2[] | undefined
-        const colorUvOffsetConverter = new Converters.Vector2Converter()
-        let colorUvOffset: Vector2[] | undefined
-        const normalUvScalingConverter = new Converters.Vector2Converter()
-        let normalUvScaling: Vector2[] | undefined
-        const normalUvOffsetConverter = new Converters.Vector2Converter()
-        let normalUvOffset: Vector2[] | undefined
+        let color_X: number[] | undefined
+        let color_Y: number[] | undefined
+        let color_Z: number[] | undefined
+        let colorUvScaling_X: number[] | undefined
+        let colorUvScaling_Y: number[] | undefined
+        let colorUvOffset_X: number[] | undefined
+        let colorUvOffset_Y: number[] | undefined
+        let normalUvScaling_X: number[] | undefined
+        let normalUvScaling_Y: number[] | undefined
+        let normalUvOffset_X: number[] | undefined
+        let normalUvOffset_Y: number[] | undefined
         let normalAmount: number[] | undefined
         let glossiness: number[] | undefined
         let smoothness: number[] | undefined
@@ -5493,16 +5962,17 @@ export class MaterialTable implements IMaterialTable {
         await Promise.all([
             (async () => { name = (await localTable.getStringArray("string:Name")) })(),
             (async () => { materialCategory = (await localTable.getStringArray("string:MaterialCategory")) })(),
-            Promise.all(colorConverter.columns.map(c => this.entityTable.getNumberArray("double:Color" + c)))
-                .then(a => color = Converters.convertArray(colorConverter, a)),
-            Promise.all(colorUvScalingConverter.columns.map(c => this.entityTable.getNumberArray("double:ColorUvScaling" + c)))
-                .then(a => colorUvScaling = Converters.convertArray(colorUvScalingConverter, a)),
-            Promise.all(colorUvOffsetConverter.columns.map(c => this.entityTable.getNumberArray("double:ColorUvOffset" + c)))
-                .then(a => colorUvOffset = Converters.convertArray(colorUvOffsetConverter, a)),
-            Promise.all(normalUvScalingConverter.columns.map(c => this.entityTable.getNumberArray("double:NormalUvScaling" + c)))
-                .then(a => normalUvScaling = Converters.convertArray(normalUvScalingConverter, a)),
-            Promise.all(normalUvOffsetConverter.columns.map(c => this.entityTable.getNumberArray("double:NormalUvOffset" + c)))
-                .then(a => normalUvOffset = Converters.convertArray(normalUvOffsetConverter, a)),
+            (async () => { color_X = (await localTable.getNumberArray("double:Color.X")) })(),
+            (async () => { color_Y = (await localTable.getNumberArray("double:Color.Y")) })(),
+            (async () => { color_Z = (await localTable.getNumberArray("double:Color.Z")) })(),
+            (async () => { colorUvScaling_X = (await localTable.getNumberArray("double:ColorUvScaling.X")) })(),
+            (async () => { colorUvScaling_Y = (await localTable.getNumberArray("double:ColorUvScaling.Y")) })(),
+            (async () => { colorUvOffset_X = (await localTable.getNumberArray("double:ColorUvOffset.X")) })(),
+            (async () => { colorUvOffset_Y = (await localTable.getNumberArray("double:ColorUvOffset.Y")) })(),
+            (async () => { normalUvScaling_X = (await localTable.getNumberArray("double:NormalUvScaling.X")) })(),
+            (async () => { normalUvScaling_Y = (await localTable.getNumberArray("double:NormalUvScaling.Y")) })(),
+            (async () => { normalUvOffset_X = (await localTable.getNumberArray("double:NormalUvOffset.X")) })(),
+            (async () => { normalUvOffset_Y = (await localTable.getNumberArray("double:NormalUvOffset.Y")) })(),
             (async () => { normalAmount = (await localTable.getNumberArray("double:NormalAmount")) })(),
             (async () => { glossiness = (await localTable.getNumberArray("double:Glossiness")) })(),
             (async () => { smoothness = (await localTable.getNumberArray("double:Smoothness")) })(),
@@ -5519,11 +5989,17 @@ export class MaterialTable implements IMaterialTable {
                 index: i,
                 name: name ? name[i] : undefined,
                 materialCategory: materialCategory ? materialCategory[i] : undefined,
-                color: color ? color[i] : undefined,
-                colorUvScaling: colorUvScaling ? colorUvScaling[i] : undefined,
-                colorUvOffset: colorUvOffset ? colorUvOffset[i] : undefined,
-                normalUvScaling: normalUvScaling ? normalUvScaling[i] : undefined,
-                normalUvOffset: normalUvOffset ? normalUvOffset[i] : undefined,
+                color_X: color_X ? color_X[i] : undefined,
+                color_Y: color_Y ? color_Y[i] : undefined,
+                color_Z: color_Z ? color_Z[i] : undefined,
+                colorUvScaling_X: colorUvScaling_X ? colorUvScaling_X[i] : undefined,
+                colorUvScaling_Y: colorUvScaling_Y ? colorUvScaling_Y[i] : undefined,
+                colorUvOffset_X: colorUvOffset_X ? colorUvOffset_X[i] : undefined,
+                colorUvOffset_Y: colorUvOffset_Y ? colorUvOffset_Y[i] : undefined,
+                normalUvScaling_X: normalUvScaling_X ? normalUvScaling_X[i] : undefined,
+                normalUvScaling_Y: normalUvScaling_Y ? normalUvScaling_Y[i] : undefined,
+                normalUvOffset_X: normalUvOffset_X ? normalUvOffset_X[i] : undefined,
+                normalUvOffset_Y: normalUvOffset_Y ? normalUvOffset_Y[i] : undefined,
                 normalAmount: normalAmount ? normalAmount[i] : undefined,
                 glossiness: glossiness ? glossiness[i] : undefined,
                 smoothness: smoothness ? smoothness[i] : undefined,
@@ -5553,84 +6029,92 @@ export class MaterialTable implements IMaterialTable {
         return (await this.entityTable.getStringArray("string:MaterialCategory"))
     }
     
-    async getColor(materialIndex: number): Promise<Vector3 | undefined> {
-        const converter = new Converters.Vector3Converter()
-        
-        let numbers = await Promise.all(converter.columns.map(c => this.entityTable.getNumber(materialIndex, "double:Color" + c)))
-        
-        return Converters.convert(converter, numbers)
+    async getColor_X(materialIndex: number): Promise<number | undefined> {
+        return (await this.entityTable.getNumber(materialIndex, "double:Color.X"))
     }
     
-    async getAllColor(): Promise<Vector3[] | undefined> {
-        const converter = new Converters.Vector3Converter()
-        
-        let numbers = await Promise.all(converter.columns.map(c => this.entityTable.getNumberArray("double:Color" + c)))
-        
-        return Converters.convertArray(converter, numbers)
+    async getAllColor_X(): Promise<number[] | undefined> {
+        return (await this.entityTable.getNumberArray("double:Color.X"))
     }
     
-    async getColorUvScaling(materialIndex: number): Promise<Vector2 | undefined> {
-        const converter = new Converters.Vector2Converter()
-        
-        let numbers = await Promise.all(converter.columns.map(c => this.entityTable.getNumber(materialIndex, "double:ColorUvScaling" + c)))
-        
-        return Converters.convert(converter, numbers)
+    async getColor_Y(materialIndex: number): Promise<number | undefined> {
+        return (await this.entityTable.getNumber(materialIndex, "double:Color.Y"))
     }
     
-    async getAllColorUvScaling(): Promise<Vector2[] | undefined> {
-        const converter = new Converters.Vector2Converter()
-        
-        let numbers = await Promise.all(converter.columns.map(c => this.entityTable.getNumberArray("double:ColorUvScaling" + c)))
-        
-        return Converters.convertArray(converter, numbers)
+    async getAllColor_Y(): Promise<number[] | undefined> {
+        return (await this.entityTable.getNumberArray("double:Color.Y"))
     }
     
-    async getColorUvOffset(materialIndex: number): Promise<Vector2 | undefined> {
-        const converter = new Converters.Vector2Converter()
-        
-        let numbers = await Promise.all(converter.columns.map(c => this.entityTable.getNumber(materialIndex, "double:ColorUvOffset" + c)))
-        
-        return Converters.convert(converter, numbers)
+    async getColor_Z(materialIndex: number): Promise<number | undefined> {
+        return (await this.entityTable.getNumber(materialIndex, "double:Color.Z"))
     }
     
-    async getAllColorUvOffset(): Promise<Vector2[] | undefined> {
-        const converter = new Converters.Vector2Converter()
-        
-        let numbers = await Promise.all(converter.columns.map(c => this.entityTable.getNumberArray("double:ColorUvOffset" + c)))
-        
-        return Converters.convertArray(converter, numbers)
+    async getAllColor_Z(): Promise<number[] | undefined> {
+        return (await this.entityTable.getNumberArray("double:Color.Z"))
     }
     
-    async getNormalUvScaling(materialIndex: number): Promise<Vector2 | undefined> {
-        const converter = new Converters.Vector2Converter()
-        
-        let numbers = await Promise.all(converter.columns.map(c => this.entityTable.getNumber(materialIndex, "double:NormalUvScaling" + c)))
-        
-        return Converters.convert(converter, numbers)
+    async getColorUvScaling_X(materialIndex: number): Promise<number | undefined> {
+        return (await this.entityTable.getNumber(materialIndex, "double:ColorUvScaling.X"))
     }
     
-    async getAllNormalUvScaling(): Promise<Vector2[] | undefined> {
-        const converter = new Converters.Vector2Converter()
-        
-        let numbers = await Promise.all(converter.columns.map(c => this.entityTable.getNumberArray("double:NormalUvScaling" + c)))
-        
-        return Converters.convertArray(converter, numbers)
+    async getAllColorUvScaling_X(): Promise<number[] | undefined> {
+        return (await this.entityTable.getNumberArray("double:ColorUvScaling.X"))
     }
     
-    async getNormalUvOffset(materialIndex: number): Promise<Vector2 | undefined> {
-        const converter = new Converters.Vector2Converter()
-        
-        let numbers = await Promise.all(converter.columns.map(c => this.entityTable.getNumber(materialIndex, "double:NormalUvOffset" + c)))
-        
-        return Converters.convert(converter, numbers)
+    async getColorUvScaling_Y(materialIndex: number): Promise<number | undefined> {
+        return (await this.entityTable.getNumber(materialIndex, "double:ColorUvScaling.Y"))
     }
     
-    async getAllNormalUvOffset(): Promise<Vector2[] | undefined> {
-        const converter = new Converters.Vector2Converter()
-        
-        let numbers = await Promise.all(converter.columns.map(c => this.entityTable.getNumberArray("double:NormalUvOffset" + c)))
-        
-        return Converters.convertArray(converter, numbers)
+    async getAllColorUvScaling_Y(): Promise<number[] | undefined> {
+        return (await this.entityTable.getNumberArray("double:ColorUvScaling.Y"))
+    }
+    
+    async getColorUvOffset_X(materialIndex: number): Promise<number | undefined> {
+        return (await this.entityTable.getNumber(materialIndex, "double:ColorUvOffset.X"))
+    }
+    
+    async getAllColorUvOffset_X(): Promise<number[] | undefined> {
+        return (await this.entityTable.getNumberArray("double:ColorUvOffset.X"))
+    }
+    
+    async getColorUvOffset_Y(materialIndex: number): Promise<number | undefined> {
+        return (await this.entityTable.getNumber(materialIndex, "double:ColorUvOffset.Y"))
+    }
+    
+    async getAllColorUvOffset_Y(): Promise<number[] | undefined> {
+        return (await this.entityTable.getNumberArray("double:ColorUvOffset.Y"))
+    }
+    
+    async getNormalUvScaling_X(materialIndex: number): Promise<number | undefined> {
+        return (await this.entityTable.getNumber(materialIndex, "double:NormalUvScaling.X"))
+    }
+    
+    async getAllNormalUvScaling_X(): Promise<number[] | undefined> {
+        return (await this.entityTable.getNumberArray("double:NormalUvScaling.X"))
+    }
+    
+    async getNormalUvScaling_Y(materialIndex: number): Promise<number | undefined> {
+        return (await this.entityTable.getNumber(materialIndex, "double:NormalUvScaling.Y"))
+    }
+    
+    async getAllNormalUvScaling_Y(): Promise<number[] | undefined> {
+        return (await this.entityTable.getNumberArray("double:NormalUvScaling.Y"))
+    }
+    
+    async getNormalUvOffset_X(materialIndex: number): Promise<number | undefined> {
+        return (await this.entityTable.getNumber(materialIndex, "double:NormalUvOffset.X"))
+    }
+    
+    async getAllNormalUvOffset_X(): Promise<number[] | undefined> {
+        return (await this.entityTable.getNumberArray("double:NormalUvOffset.X"))
+    }
+    
+    async getNormalUvOffset_Y(materialIndex: number): Promise<number | undefined> {
+        return (await this.entityTable.getNumber(materialIndex, "double:NormalUvOffset.Y"))
+    }
+    
+    async getAllNormalUvOffset_Y(): Promise<number[] | undefined> {
+        return (await this.entityTable.getNumberArray("double:NormalUvOffset.Y"))
     }
     
     async getNormalAmount(materialIndex: number): Promise<number | undefined> {
@@ -6304,7 +6788,12 @@ export class NodeTable implements INodeTable {
 
 export interface IGeometry {
     index: number
-    box?: AABox
+    box_Min_X?: number
+    box_Min_Y?: number
+    box_Min_Z?: number
+    box_Max_X?: number
+    box_Max_Y?: number
+    box_Max_Z?: number
     vertexCount?: number
     faceCount?: number
 }
@@ -6314,8 +6803,18 @@ export interface IGeometryTable {
     get(geometryIndex: number): Promise<IGeometry>
     getAll(): Promise<IGeometry[]>
     
-    getBox(geometryIndex: number): Promise<AABox | undefined>
-    getAllBox(): Promise<AABox[] | undefined>
+    getBox_Min_X(geometryIndex: number): Promise<number | undefined>
+    getAllBox_Min_X(): Promise<number[] | undefined>
+    getBox_Min_Y(geometryIndex: number): Promise<number | undefined>
+    getAllBox_Min_Y(): Promise<number[] | undefined>
+    getBox_Min_Z(geometryIndex: number): Promise<number | undefined>
+    getAllBox_Min_Z(): Promise<number[] | undefined>
+    getBox_Max_X(geometryIndex: number): Promise<number | undefined>
+    getAllBox_Max_X(): Promise<number[] | undefined>
+    getBox_Max_Y(geometryIndex: number): Promise<number | undefined>
+    getAllBox_Max_Y(): Promise<number[] | undefined>
+    getBox_Max_Z(geometryIndex: number): Promise<number | undefined>
+    getAllBox_Max_Z(): Promise<number[] | undefined>
     getVertexCount(geometryIndex: number): Promise<number | undefined>
     getAllVertexCount(): Promise<number[] | undefined>
     getFaceCount(geometryIndex: number): Promise<number | undefined>
@@ -6324,7 +6823,12 @@ export interface IGeometryTable {
 
 export class Geometry implements IGeometry {
     index: number
-    box?: AABox
+    box_Min_X?: number
+    box_Min_Y?: number
+    box_Min_Z?: number
+    box_Max_X?: number
+    box_Max_Y?: number
+    box_Max_Z?: number
     vertexCount?: number
     faceCount?: number
     
@@ -6333,7 +6837,12 @@ export class Geometry implements IGeometry {
         result.index = index
         
         await Promise.all([
-            table.getBox(index).then(v => result.box = v),
+            table.getBox_Min_X(index).then(v => result.box_Min_X = v),
+            table.getBox_Min_Y(index).then(v => result.box_Min_Y = v),
+            table.getBox_Min_Z(index).then(v => result.box_Min_Z = v),
+            table.getBox_Max_X(index).then(v => result.box_Max_X = v),
+            table.getBox_Max_Y(index).then(v => result.box_Max_Y = v),
+            table.getBox_Max_Z(index).then(v => result.box_Max_Z = v),
             table.getVertexCount(index).then(v => result.vertexCount = v),
             table.getFaceCount(index).then(v => result.faceCount = v),
         ])
@@ -6359,7 +6868,7 @@ export class GeometryTable implements IGeometryTable {
     }
     
     async getCount(): Promise<number> {
-        return (await this.entityTable.getNumberArray("float:Box" + new Converters.AABoxConverter().columns[0]))?.length ?? 0
+        return ((await this.entityTable.getArray("float:Box.Min.X")))?.length ?? 0
     }
     
     async get(geometryIndex: number): Promise<IGeometry> {
@@ -6369,24 +6878,37 @@ export class GeometryTable implements IGeometryTable {
     async getAll(): Promise<IGeometry[]> {
         const localTable = await this.entityTable.getLocal()
         
-        const boxConverter = new Converters.AABoxConverter()
-        let box: AABox[] | undefined
+        let box_Min_X: number[] | undefined
+        let box_Min_Y: number[] | undefined
+        let box_Min_Z: number[] | undefined
+        let box_Max_X: number[] | undefined
+        let box_Max_Y: number[] | undefined
+        let box_Max_Z: number[] | undefined
         let vertexCount: number[] | undefined
         let faceCount: number[] | undefined
         
         await Promise.all([
-            Promise.all(boxConverter.columns.map(c => this.entityTable.getNumberArray("float:Box" + c)))
-                .then(a => box = Converters.convertArray(boxConverter, a)),
+            (async () => { box_Min_X = (await localTable.getNumberArray("float:Box.Min.X")) })(),
+            (async () => { box_Min_Y = (await localTable.getNumberArray("float:Box.Min.Y")) })(),
+            (async () => { box_Min_Z = (await localTable.getNumberArray("float:Box.Min.Z")) })(),
+            (async () => { box_Max_X = (await localTable.getNumberArray("float:Box.Max.X")) })(),
+            (async () => { box_Max_Y = (await localTable.getNumberArray("float:Box.Max.Y")) })(),
+            (async () => { box_Max_Z = (await localTable.getNumberArray("float:Box.Max.Z")) })(),
             (async () => { vertexCount = (await localTable.getNumberArray("int:VertexCount")) })(),
             (async () => { faceCount = (await localTable.getNumberArray("int:FaceCount")) })(),
         ])
         
         let geometry: IGeometry[] = []
         
-        for (let i = 0; i < box!.length; i++) {
+        for (let i = 0; i < box_Min_X!.length; i++) {
             geometry.push({
                 index: i,
-                box: box ? box[i] : undefined,
+                box_Min_X: box_Min_X ? box_Min_X[i] : undefined,
+                box_Min_Y: box_Min_Y ? box_Min_Y[i] : undefined,
+                box_Min_Z: box_Min_Z ? box_Min_Z[i] : undefined,
+                box_Max_X: box_Max_X ? box_Max_X[i] : undefined,
+                box_Max_Y: box_Max_Y ? box_Max_Y[i] : undefined,
+                box_Max_Z: box_Max_Z ? box_Max_Z[i] : undefined,
                 vertexCount: vertexCount ? vertexCount[i] : undefined,
                 faceCount: faceCount ? faceCount[i] : undefined
             })
@@ -6395,20 +6917,52 @@ export class GeometryTable implements IGeometryTable {
         return geometry
     }
     
-    async getBox(geometryIndex: number): Promise<AABox | undefined> {
-        const converter = new Converters.AABoxConverter()
-        
-        let numbers = await Promise.all(converter.columns.map(c => this.entityTable.getNumber(geometryIndex, "float:Box" + c)))
-        
-        return Converters.convert(converter, numbers)
+    async getBox_Min_X(geometryIndex: number): Promise<number | undefined> {
+        return (await this.entityTable.getNumber(geometryIndex, "float:Box.Min.X"))
     }
     
-    async getAllBox(): Promise<AABox[] | undefined> {
-        const converter = new Converters.AABoxConverter()
-        
-        let numbers = await Promise.all(converter.columns.map(c => this.entityTable.getNumberArray("float:Box" + c)))
-        
-        return Converters.convertArray(converter, numbers)
+    async getAllBox_Min_X(): Promise<number[] | undefined> {
+        return (await this.entityTable.getNumberArray("float:Box.Min.X"))
+    }
+    
+    async getBox_Min_Y(geometryIndex: number): Promise<number | undefined> {
+        return (await this.entityTable.getNumber(geometryIndex, "float:Box.Min.Y"))
+    }
+    
+    async getAllBox_Min_Y(): Promise<number[] | undefined> {
+        return (await this.entityTable.getNumberArray("float:Box.Min.Y"))
+    }
+    
+    async getBox_Min_Z(geometryIndex: number): Promise<number | undefined> {
+        return (await this.entityTable.getNumber(geometryIndex, "float:Box.Min.Z"))
+    }
+    
+    async getAllBox_Min_Z(): Promise<number[] | undefined> {
+        return (await this.entityTable.getNumberArray("float:Box.Min.Z"))
+    }
+    
+    async getBox_Max_X(geometryIndex: number): Promise<number | undefined> {
+        return (await this.entityTable.getNumber(geometryIndex, "float:Box.Max.X"))
+    }
+    
+    async getAllBox_Max_X(): Promise<number[] | undefined> {
+        return (await this.entityTable.getNumberArray("float:Box.Max.X"))
+    }
+    
+    async getBox_Max_Y(geometryIndex: number): Promise<number | undefined> {
+        return (await this.entityTable.getNumber(geometryIndex, "float:Box.Max.Y"))
+    }
+    
+    async getAllBox_Max_Y(): Promise<number[] | undefined> {
+        return (await this.entityTable.getNumberArray("float:Box.Max.Y"))
+    }
+    
+    async getBox_Max_Z(geometryIndex: number): Promise<number | undefined> {
+        return (await this.entityTable.getNumber(geometryIndex, "float:Box.Max.Z"))
+    }
+    
+    async getAllBox_Max_Z(): Promise<number[] | undefined> {
+        return (await this.entityTable.getNumberArray("float:Box.Max.Z"))
     }
     
     async getVertexCount(geometryIndex: number): Promise<number | undefined> {
@@ -7345,8 +7899,12 @@ export class ElementInWarningTable implements IElementInWarningTable {
 export interface IBasePoint {
     index: number
     isSurveyPoint?: boolean
-    position?: Vector3
-    sharedPosition?: Vector3
+    position_X?: number
+    position_Y?: number
+    position_Z?: number
+    sharedPosition_X?: number
+    sharedPosition_Y?: number
+    sharedPosition_Z?: number
     
     elementIndex?: number
     element?: IElement
@@ -7359,10 +7917,18 @@ export interface IBasePointTable {
     
     getIsSurveyPoint(basePointIndex: number): Promise<boolean | undefined>
     getAllIsSurveyPoint(): Promise<boolean[] | undefined>
-    getPosition(basePointIndex: number): Promise<Vector3 | undefined>
-    getAllPosition(): Promise<Vector3[] | undefined>
-    getSharedPosition(basePointIndex: number): Promise<Vector3 | undefined>
-    getAllSharedPosition(): Promise<Vector3[] | undefined>
+    getPosition_X(basePointIndex: number): Promise<number | undefined>
+    getAllPosition_X(): Promise<number[] | undefined>
+    getPosition_Y(basePointIndex: number): Promise<number | undefined>
+    getAllPosition_Y(): Promise<number[] | undefined>
+    getPosition_Z(basePointIndex: number): Promise<number | undefined>
+    getAllPosition_Z(): Promise<number[] | undefined>
+    getSharedPosition_X(basePointIndex: number): Promise<number | undefined>
+    getAllSharedPosition_X(): Promise<number[] | undefined>
+    getSharedPosition_Y(basePointIndex: number): Promise<number | undefined>
+    getAllSharedPosition_Y(): Promise<number[] | undefined>
+    getSharedPosition_Z(basePointIndex: number): Promise<number | undefined>
+    getAllSharedPosition_Z(): Promise<number[] | undefined>
     
     getElementIndex(basePointIndex: number): Promise<number | undefined>
     getAllElementIndex(): Promise<number[] | undefined>
@@ -7372,8 +7938,12 @@ export interface IBasePointTable {
 export class BasePoint implements IBasePoint {
     index: number
     isSurveyPoint?: boolean
-    position?: Vector3
-    sharedPosition?: Vector3
+    position_X?: number
+    position_Y?: number
+    position_Z?: number
+    sharedPosition_X?: number
+    sharedPosition_Y?: number
+    sharedPosition_Z?: number
     
     elementIndex?: number
     element?: IElement
@@ -7384,8 +7954,12 @@ export class BasePoint implements IBasePoint {
         
         await Promise.all([
             table.getIsSurveyPoint(index).then(v => result.isSurveyPoint = v),
-            table.getPosition(index).then(v => result.position = v),
-            table.getSharedPosition(index).then(v => result.sharedPosition = v),
+            table.getPosition_X(index).then(v => result.position_X = v),
+            table.getPosition_Y(index).then(v => result.position_Y = v),
+            table.getPosition_Z(index).then(v => result.position_Z = v),
+            table.getSharedPosition_X(index).then(v => result.sharedPosition_X = v),
+            table.getSharedPosition_Y(index).then(v => result.sharedPosition_Y = v),
+            table.getSharedPosition_Z(index).then(v => result.sharedPosition_Z = v),
             table.getElementIndex(index).then(v => result.elementIndex = v),
         ])
         
@@ -7423,18 +7997,22 @@ export class BasePointTable implements IBasePointTable {
         const localTable = await this.entityTable.getLocal()
         
         let isSurveyPoint: boolean[] | undefined
-        const positionConverter = new Converters.Vector3Converter()
-        let position: Vector3[] | undefined
-        const sharedPositionConverter = new Converters.Vector3Converter()
-        let sharedPosition: Vector3[] | undefined
+        let position_X: number[] | undefined
+        let position_Y: number[] | undefined
+        let position_Z: number[] | undefined
+        let sharedPosition_X: number[] | undefined
+        let sharedPosition_Y: number[] | undefined
+        let sharedPosition_Z: number[] | undefined
         let elementIndex: number[] | undefined
         
         await Promise.all([
             (async () => { isSurveyPoint = (await localTable.getBooleanArray("byte:IsSurveyPoint")) })(),
-            Promise.all(positionConverter.columns.map(c => this.entityTable.getNumberArray("double:Position" + c)))
-                .then(a => position = Converters.convertArray(positionConverter, a)),
-            Promise.all(sharedPositionConverter.columns.map(c => this.entityTable.getNumberArray("double:SharedPosition" + c)))
-                .then(a => sharedPosition = Converters.convertArray(sharedPositionConverter, a)),
+            (async () => { position_X = (await localTable.getNumberArray("double:Position.X")) })(),
+            (async () => { position_Y = (await localTable.getNumberArray("double:Position.Y")) })(),
+            (async () => { position_Z = (await localTable.getNumberArray("double:Position.Z")) })(),
+            (async () => { sharedPosition_X = (await localTable.getNumberArray("double:SharedPosition.X")) })(),
+            (async () => { sharedPosition_Y = (await localTable.getNumberArray("double:SharedPosition.Y")) })(),
+            (async () => { sharedPosition_Z = (await localTable.getNumberArray("double:SharedPosition.Z")) })(),
             (async () => { elementIndex = (await localTable.getNumberArray("index:Vim.Element:Element")) })(),
         ])
         
@@ -7444,8 +8022,12 @@ export class BasePointTable implements IBasePointTable {
             basePoint.push({
                 index: i,
                 isSurveyPoint: isSurveyPoint ? isSurveyPoint[i] : undefined,
-                position: position ? position[i] : undefined,
-                sharedPosition: sharedPosition ? sharedPosition[i] : undefined,
+                position_X: position_X ? position_X[i] : undefined,
+                position_Y: position_Y ? position_Y[i] : undefined,
+                position_Z: position_Z ? position_Z[i] : undefined,
+                sharedPosition_X: sharedPosition_X ? sharedPosition_X[i] : undefined,
+                sharedPosition_Y: sharedPosition_Y ? sharedPosition_Y[i] : undefined,
+                sharedPosition_Z: sharedPosition_Z ? sharedPosition_Z[i] : undefined,
                 elementIndex: elementIndex ? elementIndex[i] : undefined
             })
         }
@@ -7461,36 +8043,52 @@ export class BasePointTable implements IBasePointTable {
         return (await this.entityTable.getBooleanArray("byte:IsSurveyPoint"))
     }
     
-    async getPosition(basePointIndex: number): Promise<Vector3 | undefined> {
-        const converter = new Converters.Vector3Converter()
-        
-        let numbers = await Promise.all(converter.columns.map(c => this.entityTable.getNumber(basePointIndex, "double:Position" + c)))
-        
-        return Converters.convert(converter, numbers)
+    async getPosition_X(basePointIndex: number): Promise<number | undefined> {
+        return (await this.entityTable.getNumber(basePointIndex, "double:Position.X"))
     }
     
-    async getAllPosition(): Promise<Vector3[] | undefined> {
-        const converter = new Converters.Vector3Converter()
-        
-        let numbers = await Promise.all(converter.columns.map(c => this.entityTable.getNumberArray("double:Position" + c)))
-        
-        return Converters.convertArray(converter, numbers)
+    async getAllPosition_X(): Promise<number[] | undefined> {
+        return (await this.entityTable.getNumberArray("double:Position.X"))
     }
     
-    async getSharedPosition(basePointIndex: number): Promise<Vector3 | undefined> {
-        const converter = new Converters.Vector3Converter()
-        
-        let numbers = await Promise.all(converter.columns.map(c => this.entityTable.getNumber(basePointIndex, "double:SharedPosition" + c)))
-        
-        return Converters.convert(converter, numbers)
+    async getPosition_Y(basePointIndex: number): Promise<number | undefined> {
+        return (await this.entityTable.getNumber(basePointIndex, "double:Position.Y"))
     }
     
-    async getAllSharedPosition(): Promise<Vector3[] | undefined> {
-        const converter = new Converters.Vector3Converter()
-        
-        let numbers = await Promise.all(converter.columns.map(c => this.entityTable.getNumberArray("double:SharedPosition" + c)))
-        
-        return Converters.convertArray(converter, numbers)
+    async getAllPosition_Y(): Promise<number[] | undefined> {
+        return (await this.entityTable.getNumberArray("double:Position.Y"))
+    }
+    
+    async getPosition_Z(basePointIndex: number): Promise<number | undefined> {
+        return (await this.entityTable.getNumber(basePointIndex, "double:Position.Z"))
+    }
+    
+    async getAllPosition_Z(): Promise<number[] | undefined> {
+        return (await this.entityTable.getNumberArray("double:Position.Z"))
+    }
+    
+    async getSharedPosition_X(basePointIndex: number): Promise<number | undefined> {
+        return (await this.entityTable.getNumber(basePointIndex, "double:SharedPosition.X"))
+    }
+    
+    async getAllSharedPosition_X(): Promise<number[] | undefined> {
+        return (await this.entityTable.getNumberArray("double:SharedPosition.X"))
+    }
+    
+    async getSharedPosition_Y(basePointIndex: number): Promise<number | undefined> {
+        return (await this.entityTable.getNumber(basePointIndex, "double:SharedPosition.Y"))
+    }
+    
+    async getAllSharedPosition_Y(): Promise<number[] | undefined> {
+        return (await this.entityTable.getNumberArray("double:SharedPosition.Y"))
+    }
+    
+    async getSharedPosition_Z(basePointIndex: number): Promise<number | undefined> {
+        return (await this.entityTable.getNumber(basePointIndex, "double:SharedPosition.Z"))
+    }
+    
+    async getAllSharedPosition_Z(): Promise<number[] | undefined> {
+        return (await this.entityTable.getNumberArray("double:SharedPosition.Z"))
     }
     
     async getElementIndex(basePointIndex: number): Promise<number | undefined> {
@@ -7682,10 +8280,19 @@ export class PhaseFilterTable implements IPhaseFilterTable {
 
 export interface IGrid {
     index: number
-    startPoint?: Vector3
-    endPoint?: Vector3
+    startPoint_X?: number
+    startPoint_Y?: number
+    startPoint_Z?: number
+    endPoint_X?: number
+    endPoint_Y?: number
+    endPoint_Z?: number
     isCurved?: boolean
-    extents?: AABox
+    extents_Min_X?: number
+    extents_Min_Y?: number
+    extents_Min_Z?: number
+    extents_Max_X?: number
+    extents_Max_Y?: number
+    extents_Max_Z?: number
     
     familyTypeIndex?: number
     familyType?: IFamilyType
@@ -7698,14 +8305,32 @@ export interface IGridTable {
     get(gridIndex: number): Promise<IGrid>
     getAll(): Promise<IGrid[]>
     
-    getStartPoint(gridIndex: number): Promise<Vector3 | undefined>
-    getAllStartPoint(): Promise<Vector3[] | undefined>
-    getEndPoint(gridIndex: number): Promise<Vector3 | undefined>
-    getAllEndPoint(): Promise<Vector3[] | undefined>
+    getStartPoint_X(gridIndex: number): Promise<number | undefined>
+    getAllStartPoint_X(): Promise<number[] | undefined>
+    getStartPoint_Y(gridIndex: number): Promise<number | undefined>
+    getAllStartPoint_Y(): Promise<number[] | undefined>
+    getStartPoint_Z(gridIndex: number): Promise<number | undefined>
+    getAllStartPoint_Z(): Promise<number[] | undefined>
+    getEndPoint_X(gridIndex: number): Promise<number | undefined>
+    getAllEndPoint_X(): Promise<number[] | undefined>
+    getEndPoint_Y(gridIndex: number): Promise<number | undefined>
+    getAllEndPoint_Y(): Promise<number[] | undefined>
+    getEndPoint_Z(gridIndex: number): Promise<number | undefined>
+    getAllEndPoint_Z(): Promise<number[] | undefined>
     getIsCurved(gridIndex: number): Promise<boolean | undefined>
     getAllIsCurved(): Promise<boolean[] | undefined>
-    getExtents(gridIndex: number): Promise<AABox | undefined>
-    getAllExtents(): Promise<AABox[] | undefined>
+    getExtents_Min_X(gridIndex: number): Promise<number | undefined>
+    getAllExtents_Min_X(): Promise<number[] | undefined>
+    getExtents_Min_Y(gridIndex: number): Promise<number | undefined>
+    getAllExtents_Min_Y(): Promise<number[] | undefined>
+    getExtents_Min_Z(gridIndex: number): Promise<number | undefined>
+    getAllExtents_Min_Z(): Promise<number[] | undefined>
+    getExtents_Max_X(gridIndex: number): Promise<number | undefined>
+    getAllExtents_Max_X(): Promise<number[] | undefined>
+    getExtents_Max_Y(gridIndex: number): Promise<number | undefined>
+    getAllExtents_Max_Y(): Promise<number[] | undefined>
+    getExtents_Max_Z(gridIndex: number): Promise<number | undefined>
+    getAllExtents_Max_Z(): Promise<number[] | undefined>
     
     getFamilyTypeIndex(gridIndex: number): Promise<number | undefined>
     getAllFamilyTypeIndex(): Promise<number[] | undefined>
@@ -7717,10 +8342,19 @@ export interface IGridTable {
 
 export class Grid implements IGrid {
     index: number
-    startPoint?: Vector3
-    endPoint?: Vector3
+    startPoint_X?: number
+    startPoint_Y?: number
+    startPoint_Z?: number
+    endPoint_X?: number
+    endPoint_Y?: number
+    endPoint_Z?: number
     isCurved?: boolean
-    extents?: AABox
+    extents_Min_X?: number
+    extents_Min_Y?: number
+    extents_Min_Z?: number
+    extents_Max_X?: number
+    extents_Max_Y?: number
+    extents_Max_Z?: number
     
     familyTypeIndex?: number
     familyType?: IFamilyType
@@ -7732,10 +8366,19 @@ export class Grid implements IGrid {
         result.index = index
         
         await Promise.all([
-            table.getStartPoint(index).then(v => result.startPoint = v),
-            table.getEndPoint(index).then(v => result.endPoint = v),
+            table.getStartPoint_X(index).then(v => result.startPoint_X = v),
+            table.getStartPoint_Y(index).then(v => result.startPoint_Y = v),
+            table.getStartPoint_Z(index).then(v => result.startPoint_Z = v),
+            table.getEndPoint_X(index).then(v => result.endPoint_X = v),
+            table.getEndPoint_Y(index).then(v => result.endPoint_Y = v),
+            table.getEndPoint_Z(index).then(v => result.endPoint_Z = v),
             table.getIsCurved(index).then(v => result.isCurved = v),
-            table.getExtents(index).then(v => result.extents = v),
+            table.getExtents_Min_X(index).then(v => result.extents_Min_X = v),
+            table.getExtents_Min_Y(index).then(v => result.extents_Min_Y = v),
+            table.getExtents_Min_Z(index).then(v => result.extents_Min_Z = v),
+            table.getExtents_Max_X(index).then(v => result.extents_Max_X = v),
+            table.getExtents_Max_Y(index).then(v => result.extents_Max_Y = v),
+            table.getExtents_Max_Z(index).then(v => result.extents_Max_Z = v),
             table.getFamilyTypeIndex(index).then(v => result.familyTypeIndex = v),
             table.getElementIndex(index).then(v => result.elementIndex = v),
         ])
@@ -7763,7 +8406,7 @@ export class GridTable implements IGridTable {
     }
     
     async getCount(): Promise<number> {
-        return (await this.entityTable.getNumberArray("double:StartPoint" + new Converters.Vector3Converter().columns[0]))?.length ?? 0
+        return ((await this.entityTable.getArray("double:StartPoint.X")))?.length ?? 0
     }
     
     async get(gridIndex: number): Promise<IGrid> {
@@ -7773,37 +8416,58 @@ export class GridTable implements IGridTable {
     async getAll(): Promise<IGrid[]> {
         const localTable = await this.entityTable.getLocal()
         
-        const startPointConverter = new Converters.Vector3Converter()
-        let startPoint: Vector3[] | undefined
-        const endPointConverter = new Converters.Vector3Converter()
-        let endPoint: Vector3[] | undefined
+        let startPoint_X: number[] | undefined
+        let startPoint_Y: number[] | undefined
+        let startPoint_Z: number[] | undefined
+        let endPoint_X: number[] | undefined
+        let endPoint_Y: number[] | undefined
+        let endPoint_Z: number[] | undefined
         let isCurved: boolean[] | undefined
-        const extentsConverter = new Converters.AABoxConverter()
-        let extents: AABox[] | undefined
+        let extents_Min_X: number[] | undefined
+        let extents_Min_Y: number[] | undefined
+        let extents_Min_Z: number[] | undefined
+        let extents_Max_X: number[] | undefined
+        let extents_Max_Y: number[] | undefined
+        let extents_Max_Z: number[] | undefined
         let familyTypeIndex: number[] | undefined
         let elementIndex: number[] | undefined
         
         await Promise.all([
-            Promise.all(startPointConverter.columns.map(c => this.entityTable.getNumberArray("double:StartPoint" + c)))
-                .then(a => startPoint = Converters.convertArray(startPointConverter, a)),
-            Promise.all(endPointConverter.columns.map(c => this.entityTable.getNumberArray("double:EndPoint" + c)))
-                .then(a => endPoint = Converters.convertArray(endPointConverter, a)),
+            (async () => { startPoint_X = (await localTable.getNumberArray("double:StartPoint.X")) })(),
+            (async () => { startPoint_Y = (await localTable.getNumberArray("double:StartPoint.Y")) })(),
+            (async () => { startPoint_Z = (await localTable.getNumberArray("double:StartPoint.Z")) })(),
+            (async () => { endPoint_X = (await localTable.getNumberArray("double:EndPoint.X")) })(),
+            (async () => { endPoint_Y = (await localTable.getNumberArray("double:EndPoint.Y")) })(),
+            (async () => { endPoint_Z = (await localTable.getNumberArray("double:EndPoint.Z")) })(),
             (async () => { isCurved = (await localTable.getBooleanArray("byte:IsCurved")) })(),
-            Promise.all(extentsConverter.columns.map(c => this.entityTable.getNumberArray("double:Extents" + c)))
-                .then(a => extents = Converters.convertArray(extentsConverter, a)),
+            (async () => { extents_Min_X = (await localTable.getNumberArray("double:Extents.Min.X")) })(),
+            (async () => { extents_Min_Y = (await localTable.getNumberArray("double:Extents.Min.Y")) })(),
+            (async () => { extents_Min_Z = (await localTable.getNumberArray("double:Extents.Min.Z")) })(),
+            (async () => { extents_Max_X = (await localTable.getNumberArray("double:Extents.Max.X")) })(),
+            (async () => { extents_Max_Y = (await localTable.getNumberArray("double:Extents.Max.Y")) })(),
+            (async () => { extents_Max_Z = (await localTable.getNumberArray("double:Extents.Max.Z")) })(),
             (async () => { familyTypeIndex = (await localTable.getNumberArray("index:Vim.FamilyType:FamilyType")) })(),
             (async () => { elementIndex = (await localTable.getNumberArray("index:Vim.Element:Element")) })(),
         ])
         
         let grid: IGrid[] = []
         
-        for (let i = 0; i < startPoint!.length; i++) {
+        for (let i = 0; i < startPoint_X!.length; i++) {
             grid.push({
                 index: i,
-                startPoint: startPoint ? startPoint[i] : undefined,
-                endPoint: endPoint ? endPoint[i] : undefined,
+                startPoint_X: startPoint_X ? startPoint_X[i] : undefined,
+                startPoint_Y: startPoint_Y ? startPoint_Y[i] : undefined,
+                startPoint_Z: startPoint_Z ? startPoint_Z[i] : undefined,
+                endPoint_X: endPoint_X ? endPoint_X[i] : undefined,
+                endPoint_Y: endPoint_Y ? endPoint_Y[i] : undefined,
+                endPoint_Z: endPoint_Z ? endPoint_Z[i] : undefined,
                 isCurved: isCurved ? isCurved[i] : undefined,
-                extents: extents ? extents[i] : undefined,
+                extents_Min_X: extents_Min_X ? extents_Min_X[i] : undefined,
+                extents_Min_Y: extents_Min_Y ? extents_Min_Y[i] : undefined,
+                extents_Min_Z: extents_Min_Z ? extents_Min_Z[i] : undefined,
+                extents_Max_X: extents_Max_X ? extents_Max_X[i] : undefined,
+                extents_Max_Y: extents_Max_Y ? extents_Max_Y[i] : undefined,
+                extents_Max_Z: extents_Max_Z ? extents_Max_Z[i] : undefined,
                 familyTypeIndex: familyTypeIndex ? familyTypeIndex[i] : undefined,
                 elementIndex: elementIndex ? elementIndex[i] : undefined
             })
@@ -7812,36 +8476,52 @@ export class GridTable implements IGridTable {
         return grid
     }
     
-    async getStartPoint(gridIndex: number): Promise<Vector3 | undefined> {
-        const converter = new Converters.Vector3Converter()
-        
-        let numbers = await Promise.all(converter.columns.map(c => this.entityTable.getNumber(gridIndex, "double:StartPoint" + c)))
-        
-        return Converters.convert(converter, numbers)
+    async getStartPoint_X(gridIndex: number): Promise<number | undefined> {
+        return (await this.entityTable.getNumber(gridIndex, "double:StartPoint.X"))
     }
     
-    async getAllStartPoint(): Promise<Vector3[] | undefined> {
-        const converter = new Converters.Vector3Converter()
-        
-        let numbers = await Promise.all(converter.columns.map(c => this.entityTable.getNumberArray("double:StartPoint" + c)))
-        
-        return Converters.convertArray(converter, numbers)
+    async getAllStartPoint_X(): Promise<number[] | undefined> {
+        return (await this.entityTable.getNumberArray("double:StartPoint.X"))
     }
     
-    async getEndPoint(gridIndex: number): Promise<Vector3 | undefined> {
-        const converter = new Converters.Vector3Converter()
-        
-        let numbers = await Promise.all(converter.columns.map(c => this.entityTable.getNumber(gridIndex, "double:EndPoint" + c)))
-        
-        return Converters.convert(converter, numbers)
+    async getStartPoint_Y(gridIndex: number): Promise<number | undefined> {
+        return (await this.entityTable.getNumber(gridIndex, "double:StartPoint.Y"))
     }
     
-    async getAllEndPoint(): Promise<Vector3[] | undefined> {
-        const converter = new Converters.Vector3Converter()
-        
-        let numbers = await Promise.all(converter.columns.map(c => this.entityTable.getNumberArray("double:EndPoint" + c)))
-        
-        return Converters.convertArray(converter, numbers)
+    async getAllStartPoint_Y(): Promise<number[] | undefined> {
+        return (await this.entityTable.getNumberArray("double:StartPoint.Y"))
+    }
+    
+    async getStartPoint_Z(gridIndex: number): Promise<number | undefined> {
+        return (await this.entityTable.getNumber(gridIndex, "double:StartPoint.Z"))
+    }
+    
+    async getAllStartPoint_Z(): Promise<number[] | undefined> {
+        return (await this.entityTable.getNumberArray("double:StartPoint.Z"))
+    }
+    
+    async getEndPoint_X(gridIndex: number): Promise<number | undefined> {
+        return (await this.entityTable.getNumber(gridIndex, "double:EndPoint.X"))
+    }
+    
+    async getAllEndPoint_X(): Promise<number[] | undefined> {
+        return (await this.entityTable.getNumberArray("double:EndPoint.X"))
+    }
+    
+    async getEndPoint_Y(gridIndex: number): Promise<number | undefined> {
+        return (await this.entityTable.getNumber(gridIndex, "double:EndPoint.Y"))
+    }
+    
+    async getAllEndPoint_Y(): Promise<number[] | undefined> {
+        return (await this.entityTable.getNumberArray("double:EndPoint.Y"))
+    }
+    
+    async getEndPoint_Z(gridIndex: number): Promise<number | undefined> {
+        return (await this.entityTable.getNumber(gridIndex, "double:EndPoint.Z"))
+    }
+    
+    async getAllEndPoint_Z(): Promise<number[] | undefined> {
+        return (await this.entityTable.getNumberArray("double:EndPoint.Z"))
     }
     
     async getIsCurved(gridIndex: number): Promise<boolean | undefined> {
@@ -7852,20 +8532,52 @@ export class GridTable implements IGridTable {
         return (await this.entityTable.getBooleanArray("byte:IsCurved"))
     }
     
-    async getExtents(gridIndex: number): Promise<AABox | undefined> {
-        const converter = new Converters.AABoxConverter()
-        
-        let numbers = await Promise.all(converter.columns.map(c => this.entityTable.getNumber(gridIndex, "double:Extents" + c)))
-        
-        return Converters.convert(converter, numbers)
+    async getExtents_Min_X(gridIndex: number): Promise<number | undefined> {
+        return (await this.entityTable.getNumber(gridIndex, "double:Extents.Min.X"))
     }
     
-    async getAllExtents(): Promise<AABox[] | undefined> {
-        const converter = new Converters.AABoxConverter()
-        
-        let numbers = await Promise.all(converter.columns.map(c => this.entityTable.getNumberArray("double:Extents" + c)))
-        
-        return Converters.convertArray(converter, numbers)
+    async getAllExtents_Min_X(): Promise<number[] | undefined> {
+        return (await this.entityTable.getNumberArray("double:Extents.Min.X"))
+    }
+    
+    async getExtents_Min_Y(gridIndex: number): Promise<number | undefined> {
+        return (await this.entityTable.getNumber(gridIndex, "double:Extents.Min.Y"))
+    }
+    
+    async getAllExtents_Min_Y(): Promise<number[] | undefined> {
+        return (await this.entityTable.getNumberArray("double:Extents.Min.Y"))
+    }
+    
+    async getExtents_Min_Z(gridIndex: number): Promise<number | undefined> {
+        return (await this.entityTable.getNumber(gridIndex, "double:Extents.Min.Z"))
+    }
+    
+    async getAllExtents_Min_Z(): Promise<number[] | undefined> {
+        return (await this.entityTable.getNumberArray("double:Extents.Min.Z"))
+    }
+    
+    async getExtents_Max_X(gridIndex: number): Promise<number | undefined> {
+        return (await this.entityTable.getNumber(gridIndex, "double:Extents.Max.X"))
+    }
+    
+    async getAllExtents_Max_X(): Promise<number[] | undefined> {
+        return (await this.entityTable.getNumberArray("double:Extents.Max.X"))
+    }
+    
+    async getExtents_Max_Y(gridIndex: number): Promise<number | undefined> {
+        return (await this.entityTable.getNumber(gridIndex, "double:Extents.Max.Y"))
+    }
+    
+    async getAllExtents_Max_Y(): Promise<number[] | undefined> {
+        return (await this.entityTable.getNumberArray("double:Extents.Max.Y"))
+    }
+    
+    async getExtents_Max_Z(gridIndex: number): Promise<number | undefined> {
+        return (await this.entityTable.getNumber(gridIndex, "double:Extents.Max.Z"))
+    }
+    
+    async getAllExtents_Max_Z(): Promise<number[] | undefined> {
+        return (await this.entityTable.getNumberArray("double:Extents.Max.Z"))
     }
     
     async getFamilyTypeIndex(gridIndex: number): Promise<number | undefined> {
