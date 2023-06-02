@@ -54,8 +54,8 @@ export class AssetTable implements IAssetTable {
         return table
     }
     
-    async getCount(): Promise<number> {
-        return ((await this.entityTable.getArray("string:BufferName")))?.length ?? 0
+    getCount(): Promise<number> {
+        return this.entityTable.getCount()
     }
     
     async get(assetIndex: number): Promise<IAsset> {
@@ -149,8 +149,8 @@ export class DisplayUnitTable implements IDisplayUnitTable {
         return table
     }
     
-    async getCount(): Promise<number> {
-        return ((await this.entityTable.getArray("string:Spec")))?.length ?? 0
+    getCount(): Promise<number> {
+        return this.entityTable.getCount()
     }
     
     async get(displayUnitIndex: number): Promise<IDisplayUnit> {
@@ -304,8 +304,8 @@ export class ParameterDescriptorTable implements IParameterDescriptorTable {
         return table
     }
     
-    async getCount(): Promise<number> {
-        return ((await this.entityTable.getArray("string:Name")))?.length ?? 0
+    getCount(): Promise<number> {
+        return this.entityTable.getCount()
     }
     
     async get(parameterDescriptorIndex: number): Promise<IParameterDescriptor> {
@@ -508,8 +508,8 @@ export class ParameterTable implements IParameterTable {
         return table
     }
     
-    async getCount(): Promise<number> {
-        return ((await this.entityTable.getArray("string:Value")))?.length ?? 0
+    getCount(): Promise<number> {
+        return this.entityTable.getCount()
     }
     
     async get(parameterIndex: number): Promise<IParameter> {
@@ -768,8 +768,8 @@ export class ElementTable implements IElementTable {
         return table
     }
     
-    async getCount(): Promise<number> {
-        return ((await this.entityTable.getArray("long:Id")) ?? (await this.entityTable.getArray("int:Id")))?.length ?? 0
+    getCount(): Promise<number> {
+        return this.entityTable.getCount()
     }
     
     async get(elementIndex: number): Promise<IElement> {
@@ -1215,8 +1215,8 @@ export class WorksetTable implements IWorksetTable {
         return table
     }
     
-    async getCount(): Promise<number> {
-        return ((await this.entityTable.getArray("int:Id")))?.length ?? 0
+    getCount(): Promise<number> {
+        return this.entityTable.getCount()
     }
     
     async get(worksetIndex: number): Promise<IWorkset> {
@@ -1415,8 +1415,8 @@ export class AssemblyInstanceTable implements IAssemblyInstanceTable {
         return table
     }
     
-    async getCount(): Promise<number> {
-        return ((await this.entityTable.getArray("string:AssemblyTypeName")))?.length ?? 0
+    getCount(): Promise<number> {
+        return this.entityTable.getCount()
     }
     
     async get(assemblyInstanceIndex: number): Promise<IAssemblyInstance> {
@@ -1582,8 +1582,8 @@ export class GroupTable implements IGroupTable {
         return table
     }
     
-    async getCount(): Promise<number> {
-        return ((await this.entityTable.getArray("string:GroupType")))?.length ?? 0
+    getCount(): Promise<number> {
+        return this.entityTable.getCount()
     }
     
     async get(groupIndex: number): Promise<IGroup> {
@@ -1734,8 +1734,8 @@ export class DesignOptionTable implements IDesignOptionTable {
         return table
     }
     
-    async getCount(): Promise<number> {
-        return ((await this.entityTable.getArray("byte:IsPrimary")))?.length ?? 0
+    getCount(): Promise<number> {
+        return this.entityTable.getCount()
     }
     
     async get(designOptionIndex: number): Promise<IDesignOption> {
@@ -1861,8 +1861,8 @@ export class LevelTable implements ILevelTable {
         return table
     }
     
-    async getCount(): Promise<number> {
-        return ((await this.entityTable.getArray("double:Elevation")))?.length ?? 0
+    getCount(): Promise<number> {
+        return this.entityTable.getCount()
     }
     
     async get(levelIndex: number): Promise<ILevel> {
@@ -1995,8 +1995,8 @@ export class PhaseTable implements IPhaseTable {
         return table
     }
     
-    async getCount(): Promise<number> {
-        return (await this.entityTable.getNumberArray("index:Vim.Element:Element"))?.length ?? 0
+    getCount(): Promise<number> {
+        return this.entityTable.getCount()
     }
     
     async get(phaseIndex: number): Promise<IPhase> {
@@ -2141,8 +2141,8 @@ export class RoomTable implements IRoomTable {
         return table
     }
     
-    async getCount(): Promise<number> {
-        return ((await this.entityTable.getArray("double:BaseOffset")))?.length ?? 0
+    getCount(): Promise<number> {
+        return this.entityTable.getCount()
     }
     
     async get(roomIndex: number): Promise<IRoom> {
@@ -2506,8 +2506,8 @@ export class BimDocumentTable implements IBimDocumentTable {
         return table
     }
     
-    async getCount(): Promise<number> {
-        return ((await this.entityTable.getArray("string:Title")))?.length ?? 0
+    getCount(): Promise<number> {
+        return this.entityTable.getCount()
     }
     
     async get(bimDocumentIndex: number): Promise<IBimDocument> {
@@ -2987,8 +2987,8 @@ export class DisplayUnitInBimDocumentTable implements IDisplayUnitInBimDocumentT
         return table
     }
     
-    async getCount(): Promise<number> {
-        return (await this.entityTable.getNumberArray("index:Vim.DisplayUnit:DisplayUnit"))?.length ?? 0
+    getCount(): Promise<number> {
+        return this.entityTable.getCount()
     }
     
     async get(displayUnitInBimDocumentIndex: number): Promise<IDisplayUnitInBimDocument> {
@@ -3124,8 +3124,8 @@ export class PhaseOrderInBimDocumentTable implements IPhaseOrderInBimDocumentTab
         return table
     }
     
-    async getCount(): Promise<number> {
-        return ((await this.entityTable.getArray("int:OrderIndex")))?.length ?? 0
+    getCount(): Promise<number> {
+        return this.entityTable.getCount()
     }
     
     async get(phaseOrderInBimDocumentIndex: number): Promise<IPhaseOrderInBimDocument> {
@@ -3302,8 +3302,8 @@ export class CategoryTable implements ICategoryTable {
         return table
     }
     
-    async getCount(): Promise<number> {
-        return ((await this.entityTable.getArray("string:Name")))?.length ?? 0
+    getCount(): Promise<number> {
+        return this.entityTable.getCount()
     }
     
     async get(categoryIndex: number): Promise<ICategory> {
@@ -3531,8 +3531,8 @@ export class FamilyTable implements IFamilyTable {
         return table
     }
     
-    async getCount(): Promise<number> {
-        return ((await this.entityTable.getArray("string:StructuralMaterialType")))?.length ?? 0
+    getCount(): Promise<number> {
+        return this.entityTable.getCount()
     }
     
     async get(familyIndex: number): Promise<IFamily> {
@@ -3720,8 +3720,8 @@ export class FamilyTypeTable implements IFamilyTypeTable {
         return table
     }
     
-    async getCount(): Promise<number> {
-        return ((await this.entityTable.getArray("byte:IsSystemFamilyType")))?.length ?? 0
+    getCount(): Promise<number> {
+        return this.entityTable.getCount()
     }
     
     async get(familyTypeIndex: number): Promise<IFamilyType> {
@@ -4023,8 +4023,8 @@ export class FamilyInstanceTable implements IFamilyInstanceTable {
         return table
     }
     
-    async getCount(): Promise<number> {
-        return ((await this.entityTable.getArray("byte:FacingFlipped")))?.length ?? 0
+    getCount(): Promise<number> {
+        return this.entityTable.getCount()
     }
     
     async get(familyInstanceIndex: number): Promise<IFamilyInstance> {
@@ -4594,8 +4594,8 @@ export class ViewTable implements IViewTable {
         return table
     }
     
-    async getCount(): Promise<number> {
-        return ((await this.entityTable.getArray("string:Title")))?.length ?? 0
+    getCount(): Promise<number> {
+        return this.entityTable.getCount()
     }
     
     async get(viewIndex: number): Promise<IView> {
@@ -4999,8 +4999,8 @@ export class ElementInViewTable implements IElementInViewTable {
         return table
     }
     
-    async getCount(): Promise<number> {
-        return (await this.entityTable.getNumberArray("index:Vim.View:View"))?.length ?? 0
+    getCount(): Promise<number> {
+        return this.entityTable.getCount()
     }
     
     async get(elementInViewIndex: number): Promise<IElementInView> {
@@ -5130,8 +5130,8 @@ export class ShapeInViewTable implements IShapeInViewTable {
         return table
     }
     
-    async getCount(): Promise<number> {
-        return (await this.entityTable.getNumberArray("index:Vim.Shape:Shape"))?.length ?? 0
+    getCount(): Promise<number> {
+        return this.entityTable.getCount()
     }
     
     async get(shapeInViewIndex: number): Promise<IShapeInView> {
@@ -5261,8 +5261,8 @@ export class AssetInViewTable implements IAssetInViewTable {
         return table
     }
     
-    async getCount(): Promise<number> {
-        return (await this.entityTable.getNumberArray("index:Vim.Asset:Asset"))?.length ?? 0
+    getCount(): Promise<number> {
+        return this.entityTable.getCount()
     }
     
     async get(assetInViewIndex: number): Promise<IAssetInView> {
@@ -5423,8 +5423,8 @@ export class LevelInViewTable implements ILevelInViewTable {
         return table
     }
     
-    async getCount(): Promise<number> {
-        return ((await this.entityTable.getArray("double:Extents.Min.X")))?.length ?? 0
+    getCount(): Promise<number> {
+        return this.entityTable.getCount()
     }
     
     async get(levelInViewIndex: number): Promise<ILevelInView> {
@@ -5645,8 +5645,8 @@ export class CameraTable implements ICameraTable {
         return table
     }
     
-    async getCount(): Promise<number> {
-        return ((await this.entityTable.getArray("int:Id")))?.length ?? 0
+    getCount(): Promise<number> {
+        return this.entityTable.getCount()
     }
     
     async get(cameraIndex: number): Promise<ICamera> {
@@ -5927,8 +5927,8 @@ export class MaterialTable implements IMaterialTable {
         return table
     }
     
-    async getCount(): Promise<number> {
-        return ((await this.entityTable.getArray("string:Name")))?.length ?? 0
+    getCount(): Promise<number> {
+        return this.entityTable.getCount()
     }
     
     async get(materialIndex: number): Promise<IMaterial> {
@@ -6282,8 +6282,8 @@ export class MaterialInElementTable implements IMaterialInElementTable {
         return table
     }
     
-    async getCount(): Promise<number> {
-        return ((await this.entityTable.getArray("double:Area")))?.length ?? 0
+    getCount(): Promise<number> {
+        return this.entityTable.getCount()
     }
     
     async get(materialInElementIndex: number): Promise<IMaterialInElement> {
@@ -6462,8 +6462,8 @@ export class CompoundStructureLayerTable implements ICompoundStructureLayerTable
         return table
     }
     
-    async getCount(): Promise<number> {
-        return ((await this.entityTable.getArray("int:OrderIndex")))?.length ?? 0
+    getCount(): Promise<number> {
+        return this.entityTable.getCount()
     }
     
     async get(compoundStructureLayerIndex: number): Promise<ICompoundStructureLayer> {
@@ -6624,8 +6624,8 @@ export class CompoundStructureTable implements ICompoundStructureTable {
         return table
     }
     
-    async getCount(): Promise<number> {
-        return ((await this.entityTable.getArray("double:Width")))?.length ?? 0
+    getCount(): Promise<number> {
+        return this.entityTable.getCount()
     }
     
     async get(compoundStructureIndex: number): Promise<ICompoundStructure> {
@@ -6737,8 +6737,8 @@ export class NodeTable implements INodeTable {
         return table
     }
     
-    async getCount(): Promise<number> {
-        return (await this.entityTable.getNumberArray("index:Vim.Element:Element"))?.length ?? 0
+    getCount(): Promise<number> {
+        return this.entityTable.getCount()
     }
     
     async get(nodeIndex: number): Promise<INode> {
@@ -6867,8 +6867,8 @@ export class GeometryTable implements IGeometryTable {
         return table
     }
     
-    async getCount(): Promise<number> {
-        return ((await this.entityTable.getArray("float:Box.Min.X")))?.length ?? 0
+    getCount(): Promise<number> {
+        return this.entityTable.getCount()
     }
     
     async get(geometryIndex: number): Promise<IGeometry> {
@@ -7036,8 +7036,8 @@ export class ShapeTable implements IShapeTable {
         return table
     }
     
-    async getCount(): Promise<number> {
-        return (await this.entityTable.getNumberArray("index:Vim.Element:Element"))?.length ?? 0
+    getCount(): Promise<number> {
+        return this.entityTable.getCount()
     }
     
     async get(shapeIndex: number): Promise<IShape> {
@@ -7138,8 +7138,8 @@ export class ShapeCollectionTable implements IShapeCollectionTable {
         return table
     }
     
-    async getCount(): Promise<number> {
-        return (await this.entityTable.getNumberArray("index:Vim.Element:Element"))?.length ?? 0
+    getCount(): Promise<number> {
+        return this.entityTable.getCount()
     }
     
     async get(shapeCollectionIndex: number): Promise<IShapeCollection> {
@@ -7248,8 +7248,8 @@ export class ShapeInShapeCollectionTable implements IShapeInShapeCollectionTable
         return table
     }
     
-    async getCount(): Promise<number> {
-        return (await this.entityTable.getNumberArray("index:Vim.Shape:Shape"))?.length ?? 0
+    getCount(): Promise<number> {
+        return this.entityTable.getCount()
     }
     
     async get(shapeInShapeCollectionIndex: number): Promise<IShapeInShapeCollection> {
@@ -7385,8 +7385,8 @@ export class SystemTable implements ISystemTable {
         return table
     }
     
-    async getCount(): Promise<number> {
-        return ((await this.entityTable.getArray("int:SystemType")))?.length ?? 0
+    getCount(): Promise<number> {
+        return this.entityTable.getCount()
     }
     
     async get(systemIndex: number): Promise<ISystem> {
@@ -7533,8 +7533,8 @@ export class ElementInSystemTable implements IElementInSystemTable {
         return table
     }
     
-    async getCount(): Promise<number> {
-        return ((await this.entityTable.getArray("int:Roles")))?.length ?? 0
+    getCount(): Promise<number> {
+        return this.entityTable.getCount()
     }
     
     async get(elementInSystemIndex: number): Promise<IElementInSystem> {
@@ -7683,8 +7683,8 @@ export class WarningTable implements IWarningTable {
         return table
     }
     
-    async getCount(): Promise<number> {
-        return ((await this.entityTable.getArray("string:Guid")))?.length ?? 0
+    getCount(): Promise<number> {
+        return this.entityTable.getCount()
     }
     
     async get(warningIndex: number): Promise<IWarning> {
@@ -7826,8 +7826,8 @@ export class ElementInWarningTable implements IElementInWarningTable {
         return table
     }
     
-    async getCount(): Promise<number> {
-        return (await this.entityTable.getNumberArray("index:Vim.Warning:Warning"))?.length ?? 0
+    getCount(): Promise<number> {
+        return this.entityTable.getCount()
     }
     
     async get(elementInWarningIndex: number): Promise<IElementInWarning> {
@@ -7985,8 +7985,8 @@ export class BasePointTable implements IBasePointTable {
         return table
     }
     
-    async getCount(): Promise<number> {
-        return ((await this.entityTable.getArray("byte:IsSurveyPoint")))?.length ?? 0
+    getCount(): Promise<number> {
+        return this.entityTable.getCount()
     }
     
     async get(basePointIndex: number): Promise<IBasePoint> {
@@ -8185,8 +8185,8 @@ export class PhaseFilterTable implements IPhaseFilterTable {
         return table
     }
     
-    async getCount(): Promise<number> {
-        return ((await this.entityTable.getArray("int:New")))?.length ?? 0
+    getCount(): Promise<number> {
+        return this.entityTable.getCount()
     }
     
     async get(phaseFilterIndex: number): Promise<IPhaseFilter> {
@@ -8405,8 +8405,8 @@ export class GridTable implements IGridTable {
         return table
     }
     
-    async getCount(): Promise<number> {
-        return ((await this.entityTable.getArray("double:StartPoint.X")))?.length ?? 0
+    getCount(): Promise<number> {
+        return this.entityTable.getCount()
     }
     
     async get(gridIndex: number): Promise<IGrid> {
@@ -8700,8 +8700,8 @@ export class AreaTable implements IAreaTable {
         return table
     }
     
-    async getCount(): Promise<number> {
-        return ((await this.entityTable.getArray("double:Value")))?.length ?? 0
+    getCount(): Promise<number> {
+        return this.entityTable.getCount()
     }
     
     async get(areaIndex: number): Promise<IArea> {
@@ -8873,8 +8873,8 @@ export class AreaSchemeTable implements IAreaSchemeTable {
         return table
     }
     
-    async getCount(): Promise<number> {
-        return ((await this.entityTable.getArray("byte:IsGrossBuildingArea")))?.length ?? 0
+    getCount(): Promise<number> {
+        return this.entityTable.getCount()
     }
     
     async get(areaSchemeIndex: number): Promise<IAreaScheme> {
@@ -8986,8 +8986,8 @@ export class ScheduleTable implements IScheduleTable {
         return table
     }
     
-    async getCount(): Promise<number> {
-        return (await this.entityTable.getNumberArray("index:Vim.Element:Element"))?.length ?? 0
+    getCount(): Promise<number> {
+        return this.entityTable.getCount()
     }
     
     async get(scheduleIndex: number): Promise<ISchedule> {
@@ -9099,8 +9099,8 @@ export class ScheduleColumnTable implements IScheduleColumnTable {
         return table
     }
     
-    async getCount(): Promise<number> {
-        return ((await this.entityTable.getArray("string:Name")))?.length ?? 0
+    getCount(): Promise<number> {
+        return this.entityTable.getCount()
     }
     
     async get(scheduleColumnIndex: number): Promise<IScheduleColumn> {
@@ -9234,8 +9234,8 @@ export class ScheduleCellTable implements IScheduleCellTable {
         return table
     }
     
-    async getCount(): Promise<number> {
-        return ((await this.entityTable.getArray("string:Value")))?.length ?? 0
+    getCount(): Promise<number> {
+        return this.entityTable.getCount()
     }
     
     async get(scheduleCellIndex: number): Promise<IScheduleCell> {

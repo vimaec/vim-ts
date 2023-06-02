@@ -2,7 +2,7 @@
  * @module vim-ts
  */
 
-import { BFast, NumericArray } from './bfast'
+import { BFast, NumericArray, Range } from './bfast'
 
 export class EntityTable {
     private readonly bfast: BFast
@@ -15,6 +15,42 @@ export class EntityTable {
 
     async getLocal() {
         return new EntityTable(await this.bfast.getSelf(), this.strings)
+    }
+
+    static getTypeSize(colName: string): number {
+        if (colName.startsWith('index:') ||
+            colName.startsWith('string:') ||
+            colName.startsWith('int') ||
+            colName.startsWith('uint:') ||
+            colName.startsWith('float:')) {
+            return 4 // 4 bytes
+        }
+        
+        if (colName.startsWith('double:') ||
+            colName.startsWith('long:') ||
+            colName.startsWith('ulong')) {
+            return 8 // 8 bytes
+        }
+        
+        if (colName.startsWith('byte:') || 
+            colName.startsWith('ubyte:')) {
+            return 1 // 1 byte
+        }
+
+        return 1 // default to 1 byte
+    }
+
+    async getCount(): Promise<number> {
+        const ranges = await this.bfast.getRanges()
+        if (!ranges || ranges.size === 0)
+            return 0
+
+        const [colName, range] = ranges.entries().next().value as [string, Range]
+
+        const rangeSize = range.length
+        const typeSize = EntityTable.getTypeSize(colName)
+
+        return rangeSize / typeSize
     }
 
     getArray(columnName: string): Promise<NumericArray | undefined> {
