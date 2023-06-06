@@ -20,7 +20,7 @@ export class EntityTable {
     static getTypeSize(colName: string): number {
         if (colName.startsWith('index:') ||
             colName.startsWith('string:') ||
-            colName.startsWith('int') ||
+            colName.startsWith('int:') ||
             colName.startsWith('uint:') ||
             colName.startsWith('float:')) {
             return 4 // 4 bytes
@@ -32,9 +32,14 @@ export class EntityTable {
             return 8 // 8 bytes
         }
         
-        if (colName.startsWith('byte:') || 
+        if (colName.startsWith('byte:') ||
             colName.startsWith('ubyte:')) {
             return 1 // 1 byte
+        }
+
+        if (colName.startsWith('short:') ||
+            colName.startsWith('ushort:')) {
+            return 2 // 2 bytes
         }
 
         return 1 // default to 1 byte
