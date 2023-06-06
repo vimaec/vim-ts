@@ -91,6 +91,7 @@ export function parseName(name: string): [number, NumericArrayConstructor]{
      case 'ushort':
        return 2
      case 'int':
+     case 'uint':
      case 'float':
        return 4
      case 'long':
