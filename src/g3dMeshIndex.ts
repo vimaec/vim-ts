@@ -4,6 +4,7 @@
 
 import { AbstractG3d } from './abstractG3d'
 import { BFast } from './bfast'
+import { MeshSection } from './g3d'
 import { G3dBuilderCursor } from './g3dBuilder'
 
 /**
@@ -13,18 +14,28 @@ export class MeshIndexAttributes {
 
   static instanceFiles = 'g3d:instance:file:0:int32:1'
   static meshInstanceCounts = 'g3d:mesh:instancecount:0:int32:1'
+  static meshMaterialCounts = 'g3d:mesh:materialcount:0:int32:1'
+  
   static meshSubmeshCounts = 'g3d:mesh:submeshcount:0:int32:1'
   static meshIndexCounts = 'g3d:mesh:indexcount:0:int32:1'
   static meshVertexCounts = 'g3d:mesh:vertexcount:0:int32:1'
-  static meshMaterialCounts = 'g3d:mesh:materialcount:0:int32:1'
+
+  static meshOpaqueSubmeshCount = "g3d:mesh:opaquesubmeshcount:0:int32:1"
+  static meshOpaqueIndexCount = "g3d:mesh:opaqueindexcount:0:int32:1"
+  static meshOpaqueVertexCount = "g3d:mesh:opaquevertexcount:0:int32:1"
 
   static all = [
     MeshIndexAttributes.instanceFiles,
     MeshIndexAttributes.meshInstanceCounts,
-    MeshIndexAttributes.meshSubmeshCounts,
-    MeshIndexAttributes.meshVertexCounts,
-    MeshIndexAttributes.meshIndexCounts,
     MeshIndexAttributes.meshMaterialCounts,
+
+    MeshIndexAttributes.meshSubmeshCounts,
+    MeshIndexAttributes.meshIndexCounts,
+    MeshIndexAttributes.meshVertexCounts,
+
+    MeshIndexAttributes.meshOpaqueSubmeshCount,
+    MeshIndexAttributes.meshOpaqueIndexCount,
+    MeshIndexAttributes.meshOpaqueVertexCount,
   ]
 }
 
@@ -39,21 +50,33 @@ export class G3dMeshIndex {
   rawG3d: AbstractG3d
 
   instanceFiles: Int32Array
-
   meshInstanceCounts: Int32Array
+  meshMaterialCounts: Int32Array
+
   meshSubmeshCounts: Int32Array
   meshIndexCounts: Int32Array
   meshVertexCounts: Int32Array
-  meshMaterialCounts: Int32Array
+
+  meshOpaqueSubmeshCounts: Int32Array
+  meshOpaqueIndexCounts: Int32Array
+  meshOpaqueVertexCounts: Int32Array
+
 
   constructor(
     rawG3d: AbstractG3d,
     instanceFiles: Int32Array,
+
     meshInstanceCounts: Int32Array,
+    meshMaterialCounts : Int32Array,
+
     meshSubmeshCounts: Int32Array,
     meshIndexCounts : Int32Array,
     meshVertexCounts: Int32Array, 
-    meshMaterialCounts : Int32Array){
+    
+    meshOpaqueSubmeshCounts: Int32Array,
+    meshOpaqueIndexCounts: Int32Array,
+    meshOpaqueVertexCounts: Int32Array,
+    ){
 
     this.rawG3d = rawG3d
     this.instanceFiles = instanceFiles
@@ -62,6 +85,9 @@ export class G3dMeshIndex {
     this.meshIndexCounts = meshIndexCounts
     this.meshVertexCounts = meshVertexCounts
     this.meshMaterialCounts = meshMaterialCounts
+    this.meshOpaqueSubmeshCounts = meshOpaqueSubmeshCounts
+    this.meshOpaqueIndexCounts = meshOpaqueIndexCounts
+    this.meshOpaqueVertexCounts = meshOpaqueVertexCounts
   }
 
   static createFromAbstract(g3d: AbstractG3d) {
@@ -74,12 +100,17 @@ export class G3dMeshIndex {
 
     return new G3dMeshIndex(
       g3d,
-      getArray(MeshIndexAttributes.instanceFiles) ,
+      getArray(MeshIndexAttributes.instanceFiles),
       getArray(MeshIndexAttributes.meshInstanceCounts),
+      getArray(MeshIndexAttributes.meshMaterialCounts),
+
       getArray(MeshIndexAttributes.meshSubmeshCounts),
       getArray(MeshIndexAttributes.meshIndexCounts),
       getArray(MeshIndexAttributes.meshVertexCounts),
-      getArray(MeshIndexAttributes.meshMaterialCounts),
+
+      getArray(MeshIndexAttributes.meshOpaqueSubmeshCount),
+      getArray(MeshIndexAttributes.meshOpaqueIndexCount),
+      getArray(MeshIndexAttributes.meshOpaqueVertexCount),
     )
   }
 
@@ -99,11 +130,36 @@ export class G3dMeshIndex {
     return this.meshInstanceCounts.length
   }
 
-  meshOffsets(meshes: number[]){
-    return G3dMeshOffsets.fromIndexMeshes(this, meshes)
+  getSubmeshCount(mesh:number, section: MeshSection){
+    const all = this.meshSubmeshCounts[mesh]
+    if(section === 'all') return all;
+    const opaque = this.meshOpaqueSubmeshCounts[mesh]
+    return section === 'opaque' ? opaque : all - opaque
   }
 
-  getAttributeCounts(meshes: number[]){
+  getIndexCount(mesh: number, section: MeshSection){
+    const all = this.meshIndexCounts[mesh]
+    if(section === 'all') return all;
+    const opaque = this.meshOpaqueIndexCounts[mesh]
+    return section === 'opaque' ? opaque : all - opaque
+  }
+
+  getVertexCount(mesh:number, section: MeshSection){
+    const all = this.meshVertexCounts[mesh]
+    if(section === 'all') return all;
+    const opaque = this.meshOpaqueVertexCounts[mesh]
+    return section === 'opaque' ? opaque : all - opaque
+  }
+
+  getMeshOffsets(meshes: number[], section: MeshSection){
+    return G3dMeshOffsets.fromIndexMeshes(this, meshes, section)
+  }
+
+  getMergedMeshOffsets(meshes: number[], section: MeshSection){
+    return G3dMeshOffsets.fromIndexMeshes(this, meshes, section, true)
+  }
+
+  getAttributeCounts(meshes: number[], section: MeshSection = 'all', merge = false){
 
     let instanceCount = 0
     let submeshCount = 0
@@ -111,14 +167,18 @@ export class G3dMeshIndex {
     let vertexCount = 0
     let materialCount = 0
 
-      for(let i=0; i < meshes.length; i++){
-        const m = meshes[i]
-        instanceCount += this.meshInstanceCounts[m]
-        submeshCount += this.meshSubmeshCounts[m]
-        indexCount += this.meshIndexCounts[m]
-        vertexCount += this.meshVertexCounts[m]
-        materialCount += this.meshMaterialCounts[m]
-      }
+    for(let i=0; i < meshes.length; i++){
+      const m = meshes[i]
+      const submeshes = this.getSubmeshCount(m, section)
+      const indices =  this.getIndexCount(m, section)
+      const vertice = this.getVertexCount(m, section)
+
+      instanceCount += this.meshInstanceCounts[m]
+      submeshCount += submeshes * (merge ? this.meshInstanceCounts[m] : 1)
+      indexCount += indices * (merge ? this.meshInstanceCounts[m] : 1)
+      vertexCount += vertice * (merge ? this.meshInstanceCounts[m] : 1)
+      materialCount += this.meshMaterialCounts[m]
+    }
 
     return {
       instanceCount,
@@ -152,23 +212,24 @@ export class G3dMeshOffsets {
     this.materialOffsets = materialOffsets
   }
 
-  static fromIndexMeshes(index: G3dMeshIndex, meshes: number[]){
-    function computeOffsets(array: Int32Array){
+  static fromIndexMeshes(index: G3dMeshIndex, meshes: number[], section: MeshSection, merge = false){
+    function computeOffsets(getter: (i: number) => number, multiplier? : Int32Array){
       const offsets = new Int32Array(meshes.length)
   
       for(let i=1; i < offsets.length; i ++){
         var m = meshes[i-1]
-        offsets[i] = offsets[i-1] + array[m]
+        const v = getter(m) * (multiplier?.[m] ?? 1)
+        offsets[i] = offsets[i-1] + v
       }
       return offsets
     }
 
     return new G3dMeshOffsets(
-      computeOffsets(index.meshInstanceCounts),
-      computeOffsets(index.meshSubmeshCounts),
-      computeOffsets(index.meshIndexCounts),
-      computeOffsets(index.meshVertexCounts),
-      computeOffsets(index.meshMaterialCounts)
+      computeOffsets((i) => index.meshInstanceCounts[i]),
+      computeOffsets((i) => index.getSubmeshCount(i, section), merge ? index.meshInstanceCounts: undefined),
+      computeOffsets((i) => index.getIndexCount(i, section), merge ? index.meshInstanceCounts: undefined),
+      computeOffsets((i) => index.getVertexCount(i, section), merge ? index.meshInstanceCounts : undefined),
+      computeOffsets((i) => index.meshMaterialCounts[i])
     )
   }
   

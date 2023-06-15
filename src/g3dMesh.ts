@@ -14,7 +14,9 @@ export class MeshAttributes {
   static instanceNodes = 'g3d:instance:node:0:int32:1'
   static instanceTransforms = 'g3d:instance:transform:0:float32:16'
   static instanceFlags = 'g3d:instance:flags:0:uint16:1'
+  static meshOpaqueSubmeshCount = 'g3d:mesh:opaquesubmeshcount:0:int32:1'
   static submeshIndexOffsets = 'g3d:submesh:indexoffset:0:int32:1'
+  static submeshVertexOffsets = 'g3d:submesh:vertexoffset:0:int32:1'
   static submeshMaterials = 'g3d:submesh:material:0:int32:1'
   static positions = 'g3d:vertex:position:0:float32:3'
   static indices = 'g3d:corner:index:0:int32:1'
@@ -24,7 +26,9 @@ export class MeshAttributes {
     MeshAttributes.instanceNodes,
     MeshAttributes.instanceTransforms,
     MeshAttributes.instanceFlags,
+    MeshAttributes.meshOpaqueSubmeshCount,
     MeshAttributes.submeshIndexOffsets,
+    MeshAttributes.submeshVertexOffsets,
     MeshAttributes.submeshMaterials,
     MeshAttributes.positions,
     MeshAttributes.indices,
@@ -46,7 +50,10 @@ export class G3dMesh {
   instanceTransforms: Float32Array
   instanceFlags: Uint16Array
 
+  meshOpaqueSubmeshCount : number
+
   submeshIndexOffset: Int32Array
+  submeshVertexOffset: Int32Array
   submeshMaterial: Int32Array
 
   positions: Float32Array
@@ -69,7 +76,9 @@ export class G3dMesh {
     instanceNodes: Int32Array | undefined,
     instanceTransforms: Float32Array,
     instanceFlags: Uint16Array | undefined, 
+    meshOpaqueSubmeshCount : number,
     submeshIndexOffsets : Int32Array,
+    submeshVertexOffsets : Int32Array,
     submeshMaterials : Int32Array,
     indices: Int32Array | Uint32Array,
     positions: Float32Array,
@@ -78,8 +87,9 @@ export class G3dMesh {
     this.instanceNodes = instanceNodes
     this.instanceTransforms = instanceTransforms
     this.instanceFlags = instanceFlags
-
+    this.meshOpaqueSubmeshCount = meshOpaqueSubmeshCount
     this.submeshIndexOffset = submeshIndexOffsets
+    this.submeshVertexOffset = submeshVertexOffsets
     this.submeshMaterial = submeshMaterials
     this.indices = indices instanceof Uint32Array ? indices : new Uint32Array(indices.buffer)
     this.positions = positions
@@ -107,8 +117,17 @@ export class G3dMesh {
       (g3d.findAttribute(MeshAttributes.instanceFlags)?.data as Uint16Array) ??
       new Uint16Array(instanceNodes.length)
 
-    const submeshIndexOffset = g3d.findAttribute(
+    const meshOpaqueSubmeshCountArray = g3d.findAttribute(
+        MeshAttributes.meshOpaqueSubmeshCount
+      )?.data as Int32Array
+    const meshOpaqueSubmeshCount = meshOpaqueSubmeshCountArray[0]
+
+    const submeshIndexOffsets = g3d.findAttribute(
       MeshAttributes.submeshIndexOffsets
+    )?.data as Int32Array
+
+    const submeshVertexOffsets = g3d.findAttribute(
+      MeshAttributes.submeshVertexOffsets
     )?.data as Int32Array
   
     const submeshMaterial = g3d.findAttribute(MeshAttributes.submeshMaterials)
@@ -126,7 +145,9 @@ export class G3dMesh {
       instanceNodes,
       instanceTransforms,
       instanceFlags,
-      submeshIndexOffset,
+      meshOpaqueSubmeshCount,
+      submeshIndexOffsets,
+      submeshVertexOffsets,
       submeshMaterial,
       indices,
       positions,
@@ -170,26 +191,6 @@ export class G3dMesh {
     )
   }
 
-  static allocate(
-    instanceCount: number,
-    submeshCont: number, 
-    indexCount: number, 
-    vertexCount: number,
-    materialCount: number
-  ){
-      var g3d = new G3dMesh(
-        new Int32Array(instanceCount),
-        new Float32Array(instanceCount * G3dMesh.MATRIX_SIZE),
-        new Uint16Array(instanceCount),
-        new Int32Array(submeshCont),
-        new Int32Array(submeshCont),
-        new Uint32Array(indexCount), 
-        new Float32Array(vertexCount * G3dMesh.POSITION_SIZE), 
-        new Float32Array(materialCount * G3dMesh.COLOR_SIZE)
-      )
-    return g3d
-  }
-
   insert(g3d: G3dMesh,
     instanceStart: number,
     submesStart: number, 
@@ -223,21 +224,54 @@ export class G3dMesh {
   }
 
   // ------------- Mesh -----------------
-  getVertexCount = () => this.positions.length / G3dMesh.POSITION_SIZE
+
+  getVertexStart(section: MeshSection = 'all'){
+    const sub = this.getSubmeshStart(section)
+    return this.getSubmeshVertexStart(sub)
+  }
+
+  getVertexEnd(section: MeshSection = 'all'){
+    const sub = this.getSubmeshEnd(section)
+    return this.getSubmeshVertexStart(sub)
+  }
+
+  getVertexCount(section: MeshSection = 'all'){
+    return this.getVertexEnd(section) - this.getVertexStart(section)
+  }
+
+  getIndexStart(section: MeshSection = 'all'){
+    const sub = this.getSubmeshStart(section)
+    return this.getSubmeshIndexStart(sub)
+  }
+
+  getIndexEnd(section: MeshSection = 'all'){
+    const sub = this.getSubmeshEnd(section)
+    return this.getSubmeshIndexStart(sub)
+  }
 
   getIndexCount (section: MeshSection = 'all'): number {
-    // TODO  : Implement section
-    return this.indices.length 
+    return this.getIndexEnd(section) - this.getIndexStart(section)
   }
 
   getHasTransparency () {
-    return this.opaqueCount < this.getSubmeshCount()
-  }
+    return this.meshOpaqueSubmeshCount < this.submeshIndexOffset.length}
 
   // ------------- Submeshes -----------------
 
-  getSubmeshCount (): number {
-    return this.submeshIndexOffset.length
+  getSubmeshStart(section: MeshSection){
+    if(section === 'all') return 0
+    if(section === 'opaque') return 0
+    return this.meshOpaqueSubmeshCount
+  }
+
+  getSubmeshEnd(section: MeshSection){
+    if(section === 'all') return this.submeshIndexOffset.length
+    if(section === 'transparent') return this.submeshIndexOffset.length
+    return this.meshOpaqueSubmeshCount
+  }
+
+  getSubmeshCount(section: MeshSection){
+    return this.getSubmeshEnd(section) - this.getSubmeshStart(section)
   }
 
   getSubmeshIndexStart (submesh: number): number {
@@ -254,6 +288,22 @@ export class G3dMesh {
 
   getSubmeshIndexCount (submesh: number): number {
     return this.getSubmeshIndexEnd(submesh) - this.getSubmeshIndexStart(submesh)
+  }
+
+  getSubmeshVertexStart(submesh: number){
+    return submesh < this.submeshIndexOffset.length
+      ? this.submeshVertexOffset[submesh]
+      : this.positions.length / G3d.POSITION_SIZE
+  }
+
+  getSubmeshVertexEnd (submesh: number): number {
+    return submesh < this.submeshVertexOffset.length - 1
+      ? this.submeshVertexOffset[submesh + 1]
+      : this.positions.length / G3d.POSITION_SIZE
+  }
+
+  getSubmeshVertexCount (submesh: number): number {
+    return this.getSubmeshVertexEnd(submesh) - this.getSubmeshVertexStart(submesh)
   }
 
   /**
