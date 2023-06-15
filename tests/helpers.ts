@@ -4,12 +4,11 @@ import { G3d, VimAttributes } from '../src/g3d'
 import { RemoteG3d } from '../src/remoteG3d'
 import { AbstractG3d } from '../src/abstractG3d'
 
-const vimFilePath = `${__dirname}/../data/Wolford_Residence.r2023.vim`
+export const testVimFilePath = `${__dirname}/../data/Wolford_Residence.r2023.om_v4.4.0.vim`
 
 export function getFilterTestFile(instance : number){
   return 'tests/filter_'+instance+'.txt'
 }
-
 
 export function loadFile(path: string) {
     return new Promise<ArrayBuffer | undefined>((resolve, reject) => {
@@ -29,7 +28,7 @@ export function loadFile(path: string) {
     })
 }
 
-export async function loadBoth(){
+export async function loadBoth(vimFilePath: string){
   const arrayBuffer = await loadFile(vimFilePath)
   const bfast = new BFast((arrayBuffer as ArrayBuffer)!)
   const g3dBfast = await bfast.getBfast('geometry')
@@ -38,7 +37,7 @@ export async function loadBoth(){
   return [g3d, remote] as [G3d, RemoteG3d]
 }
 
-export async function loadRemote(){
+export async function loadRemote(vimFilePath: string){
   const arrayBuffer = await loadFile(vimFilePath)
   const bfast = new BFast((arrayBuffer as ArrayBuffer)!)
   const g3dBfast = await bfast.getBfast('geometry')
@@ -46,7 +45,7 @@ export async function loadRemote(){
   return remote 
 }
 
-export async function loadAbstract(){
+export async function loadAbstract(vimFilePath: string){
   const arrayBuffer = await loadFile(vimFilePath)
   const bfast = new BFast((arrayBuffer as ArrayBuffer)!)
   const g3dBfast = await bfast.getBfast('geometry')
@@ -54,7 +53,7 @@ export async function loadAbstract(){
   return remote 
 }
 
-export async function loadG3d(){
+export async function loadG3d(vimFilePath: string){
   const arrayBuffer = await loadFile(vimFilePath)
   const bfast = new BFast((arrayBuffer as ArrayBuffer)!)
   const g3dBfast = await bfast.getBfast('geometry')
