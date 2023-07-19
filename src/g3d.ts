@@ -4,7 +4,6 @@
 
 import { AbstractG3d } from './abstractG3d'
 import { BFast } from './bfast'
-import { G3dBuilder } from './g3dBuilder'
 
 
 export type MeshSection = 'opaque' | 'transparent' | 'all'

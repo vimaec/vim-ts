@@ -20,7 +20,6 @@ export class MeshAttributes {
   static submeshMaterials = 'g3d:submesh:material:0:int32:1'
   static positions = 'g3d:vertex:position:0:float32:3'
   static indices = 'g3d:corner:index:0:int32:1'
-  static materialColors = 'g3d:material:color:0:float32:4'
 
   static all = [
     MeshAttributes.instanceNodes,
@@ -32,7 +31,6 @@ export class MeshAttributes {
     MeshAttributes.submeshMaterials,
     MeshAttributes.positions,
     MeshAttributes.indices,
-    MeshAttributes.materialColors
   ]
 }
 
@@ -82,7 +80,7 @@ export class G3dMesh {
     submeshMaterials : Int32Array,
     indices: Int32Array | Uint32Array,
     positions: Float32Array,
-    materialColors: Float32Array){
+    ){
 
     this.instanceNodes = instanceNodes
     this.instanceTransforms = instanceTransforms
@@ -93,7 +91,6 @@ export class G3dMesh {
     this.submeshMaterial = submeshMaterials
     this.indices = indices instanceof Uint32Array ? indices : new Uint32Array(indices.buffer)
     this.positions = positions
-    this.materialColors = materialColors
 
     if(this.instanceFlags === undefined){
       this.instanceFlags = new Uint16Array(this.instanceNodes.length)
@@ -138,9 +135,6 @@ export class G3dMesh {
     const positions = g3d.findAttribute(MeshAttributes.positions)
       ?.data as Float32Array
 
-    const materialColors = g3d.findAttribute(MeshAttributes.materialColors)
-      ?.data as Float32Array
-
     const result = new G3dMesh(
       instanceNodes,
       instanceTransforms,
@@ -151,7 +145,6 @@ export class G3dMesh {
       submeshMaterial,
       indices,
       positions,
-      materialColors
     )
     result.rawG3d = g3d
 

@@ -64,6 +64,8 @@ export type TypedArray =
   | Uint32Array
   | Float32Array
   | Uint32Array
+  | BigUint64Array
+  | BigInt64Array
   | Float64Array
 
 export class G3dAttribute {
@@ -123,11 +125,18 @@ export class G3dAttribute {
           bytes.byteOffset,
           bytes.byteLength / 4
         )
-
       case 'int64':
+        return new BigInt64Array(
+          bytes.buffer,
+          bytes.byteOffset,
+          bytes.byteLength / 8
+        )
       case 'uint64':
-        console.error('G3d: 64-bit buffers unsuported')
-        return
+        return new BigUint64Array(
+          bytes.buffer,
+          bytes.byteOffset,
+          bytes.byteLength / 8
+        )
       default:
         console.error('Unrecognized attribute data type ' + dataType)
     }
