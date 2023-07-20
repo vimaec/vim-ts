@@ -263,6 +263,10 @@ export class G3dMeshIndexSubset{
     return this.meshToInstances ? this.meshToInstances.get(mesh)?.length : this.index.meshInstanceCounts[mesh] 
   }
 
+  getMeshInstance(mesh: number, index:number){
+    return this.meshToInstances ? this.meshToInstances.get(mesh)[index] : index 
+  }
+
   getOffsets(section: MeshSection, merge:boolean){
     return new G3dMeshOffsets(this, section, merge)
   }
@@ -278,12 +282,12 @@ export class G3dMeshCounts{
 }
 
 export class G3dMeshOffsets {
-  index: G3dMeshIndex
-  meshes: number[]
-  instances : Map<number, number[]> | undefined
+  // inputs
+  subset: G3dMeshIndexSubset
   section: MeshSection
-  merge :boolean
+  merge : boolean
 
+  // computed
   counts : G3dMeshCounts
   instanceOffsets: Int32Array
   submeshOffsets: Int32Array
@@ -292,35 +296,41 @@ export class G3dMeshOffsets {
   materialOffsets: Int32Array
 
   constructor(
-    slice: G3dMeshIndexSubset,
+    subset: G3dMeshIndexSubset,
     section: MeshSection,
     merge : boolean
     ){
 
-    this.index = slice.index
-    this.meshes = slice.meshes
-    this.instances = slice.meshToInstances
+    this.subset = subset
     this.section = section
     this.merge = merge
    
-    const getInstanceCount =
-     ! merge ?      (mesh: number) => 1   
-     : (mesh) => slice.getMeshInstanceCount(mesh)
+    this.counts = subset.index.getAttributeCounts(subset.meshes, section, (m) => subset.getMeshInstanceCount(m))
+    this.instanceOffsets = this.computeOffsets((m) => subset.index.meshInstanceCounts[m]),
+    this.submeshOffsets = this.computeOffsets((m) => subset.index.getSubmeshCount(m, section) * subset.getMeshInstanceCount(m)),
+    this.indexOffsets = this.computeOffsets((m) => subset.index.getIndexCount(m, section) * subset.getMeshInstanceCount(m)),
+    this.vertexOffsets = this.computeOffsets((m) => subset.index.getVertexCount(m, section) * subset.getMeshInstanceCount(m)),
+    this.materialOffsets = this.computeOffsets((m) => subset.index.meshMaterialCounts[m])
+  }
 
-    this.counts = this.index.getAttributeCounts(this.meshes, section, getInstanceCount)
+  getInstanceCount(mesh: number){
+    if(!this.merge) return 1
+    return this.subset.getMeshInstanceCount(mesh)
+  }
 
-    this.instanceOffsets = this.computeOffsets((m) => this.index.meshInstanceCounts[m]),
-    this.submeshOffsets = this.computeOffsets((m) => this.index.getSubmeshCount(m, section) * getInstanceCount(m)),
-    this.indexOffsets = this.computeOffsets((m) => this.index.getIndexCount(m, section) * getInstanceCount(m)),
-    this.vertexOffsets = this.computeOffsets((m) => this.index.getVertexCount(m, section) * getInstanceCount(m)),
-    this.materialOffsets = this.computeOffsets((m) => this.index.meshMaterialCounts[m])
+  getInstance(mesh: number, index: number){
+    return this.subset.getMeshInstance(mesh, index)
+  }
+
+  getMesh(mesh: number){
+    return this.subset.meshes[mesh]
   }
 
   private computeOffsets(getter: (mesh: number) => number){
-    const offsets = new Int32Array(this.meshes.length)
+    const offsets = new Int32Array(this.subset.meshes.length)
 
     for(let i=1; i < offsets.length; i ++){
-      var m = this.meshes[i-1]
+      var m = this.subset.meshes[i-1]
       offsets[i] = offsets[i-1] + getter(m)
     }
     return offsets

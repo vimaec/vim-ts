@@ -5,6 +5,7 @@
 import { AbstractG3d } from './abstractG3d'
 import { BFast } from './bfast'
 import { G3d, MeshSection } from './g3d'
+import { G3dMaterial } from './g3dMaterials'
 
 /**
  * See https://github.com/vimaec/vim#vim-geometry-attributes
@@ -57,11 +58,6 @@ export class G3dMesh {
   positions: Float32Array
   indices: Uint32Array
 
-  materialColors: Float32Array
-
-  // computed
-  opaqueCount: number
-
   static MATRIX_SIZE = 16
   static COLOR_SIZE = 4
   static POSITION_SIZE = 3
@@ -95,8 +91,6 @@ export class G3dMesh {
     if(this.instanceFlags === undefined){
       this.instanceFlags = new Uint16Array(this.instanceNodes.length)
     }
-
-    this.opaqueCount = this.computeMeshOpaqueCount()
   }
 
   static createFromAbstract(g3d: AbstractG3d) {
@@ -104,7 +98,6 @@ export class G3dMesh {
     const instanceNodes = g3d.findAttribute(
       MeshAttributes.instanceNodes
       )?.data as Int32Array
-
 
     const instanceTransforms = g3d.findAttribute(
       MeshAttributes.instanceTransforms
@@ -169,7 +162,7 @@ export class G3dMesh {
     return G3dMesh.createFromAbstract(g3d)
   }
 
-  toG3d(){
+  toG3d(materials : G3dMaterial){
     return new G3d(
       new Int32Array(this.getInstanceCount()),
       this.instanceFlags,
@@ -180,7 +173,7 @@ export class G3dMesh {
       this.submeshMaterial,
       this.indices,
       this.positions,
-      this.materialColors
+      materials.materialColors
     )
   }
 
@@ -200,20 +193,6 @@ export class G3dMesh {
 
     this.indices.set(g3d.indices, indexStart)
     this.positions.set(g3d.positions, vertexStart)
-    
-    this.materialColors.set(g3d.materialColors, materialStart * G3dMesh.COLOR_SIZE)
-  }
-
-  /**
-   * Computes an array where true if any of the materials used by a mesh has transparency.
-   */
-  private computeMeshOpaqueCount () {
-    let result = 0
-    for (let s = 0; s < this.submeshMaterial.length; s++) {
-      const alpha = this.getSubmeshAlpha(s)
-      result += alpha === 1 ? 1 : 0
-    }
-    return result
   }
 
   // ------------- Mesh -----------------
@@ -299,30 +278,6 @@ export class G3dMesh {
     return this.getSubmeshVertexEnd(submesh) - this.getSubmeshVertexStart(submesh)
   }
 
-  /**
-   * Returns color of given submesh as a 4-number array (RGBA)
-   * @param submesh g3d submesh index
-   */
-  getSubmeshColor (submesh: number): Float32Array {
-    return this.getMaterialColor(this.submeshMaterial[submesh])
-  }
-
-  /**
-   * Returns color of given submesh as a 4-number array (RGBA)
-   * @param submesh g3d submesh index
-   */
-  getSubmeshAlpha (submesh: number): number {
-    return this.getMaterialAlpha(this.submeshMaterial[submesh])
-  }
-
-  /**
-   * Returns true if submesh is transparent.
-   * @param submesh g3d submesh index
-   */
-  getSubmeshIsTransparent (submesh: number): boolean {
-    return this.getSubmeshAlpha(submesh) < 1
-  }
-
   // ------------- Instances -----------------
   getInstanceCount = () => this.instanceNodes.length
 
@@ -339,29 +294,6 @@ export class G3dMesh {
       instance * G3dMesh.MATRIX_SIZE,
       (instance + 1) * G3dMesh.MATRIX_SIZE
     )
-  }
-
-  // ------------- Material -----------------
-
-  getMaterialCount = () => this.materialColors.length / G3dMesh.COLOR_SIZE
-
-  /**
-   * Returns color of given material as a 4-number array (RGBA)
-   * @param material g3d material index
-   */
-  getMaterialColor (material: number): Float32Array {
-    if (material < 0) return this.DEFAULT_COLOR
-    return this.materialColors.subarray(
-      material * G3dMesh.COLOR_SIZE,
-      (material + 1) * G3dMesh.COLOR_SIZE
-    )
-  }
-
-  getMaterialAlpha (material: number): number {
-    if (material < 0) return 1
-    const index = material * G3dMesh.COLOR_SIZE + G3dMesh.COLOR_SIZE - 1
-    const result = this.materialColors[index]
-    return result
   }
 }
 
