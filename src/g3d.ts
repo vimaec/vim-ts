@@ -422,6 +422,10 @@ export class G3d {
   // ------------- Meshes -----------------
   getMeshCount = () => this.meshSubmeshes.length
 
+  getMeshInstanceCount(mesh: number){
+    return this.meshInstances[mesh].length
+  }
+
   getMeshIndexStart (mesh: number, section: MeshSection = 'all'): number {
     const sub = this.getMeshSubmeshStart(mesh, section)
     return this.getSubmeshIndexStart(sub)

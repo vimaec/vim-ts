@@ -4,7 +4,7 @@
 
 import { AbstractG3d } from './abstractG3d'
 import { BFast } from './bfast'
-import { MeshSection } from './g3d'
+import { G3d, MeshSection } from './g3d'
 
 export type FilterMode = undefined | 'mesh' | 'instance' | 'group' | 'tag'
 
@@ -241,7 +241,6 @@ export class G3dMeshIndex {
       counts.submeshes += submeshCount * multiplier(m)
       counts.indices += indexCount * multiplier(m)
       counts.vertices += vertexCount * multiplier(m)
-      counts.materials += this.meshMaterialCounts[m]
     }
 
     return counts
@@ -268,7 +267,7 @@ export class G3dMeshIndexSubset{
   }
 
   getOffsets(section: MeshSection, merge:boolean){
-    return new G3dMeshOffsets(this, section, merge)
+    return G3dMeshOffsets.fromSubset(this, section, merge)
   }
 }
 
@@ -278,7 +277,6 @@ export class G3dMeshCounts{
   submeshes : number = 0
   indices : number = 0
   vertices : number = 0
-  materials : number = 0
 }
 
 export class G3dMeshOffsets {
@@ -293,24 +291,62 @@ export class G3dMeshOffsets {
   submeshOffsets: Int32Array
   indexOffsets: Int32Array
   vertexOffsets: Int32Array
-  materialOffsets: Int32Array
 
-  constructor(
+  static fromSubset (
     subset: G3dMeshIndexSubset,
     section: MeshSection,
-    merge : boolean
-    ){
+    merge : boolean){
+      var result = new G3dMeshOffsets()
+      result.subset = subset
+      result.section = section
+      result.merge = merge
+     
 
-    this.subset = subset
-    this.section = section
-    this.merge = merge
-   
-    this.counts = subset.index.getAttributeCounts(subset.meshes, section, (m) => subset.getMeshInstanceCount(m))
-    this.instanceOffsets = this.computeOffsets((m) => subset.index.meshInstanceCounts[m]),
-    this.submeshOffsets = this.computeOffsets((m) => subset.index.getSubmeshCount(m, section) * subset.getMeshInstanceCount(m)),
-    this.indexOffsets = this.computeOffsets((m) => subset.index.getIndexCount(m, section) * subset.getMeshInstanceCount(m)),
-    this.vertexOffsets = this.computeOffsets((m) => subset.index.getVertexCount(m, section) * subset.getMeshInstanceCount(m)),
-    this.materialOffsets = this.computeOffsets((m) => subset.index.meshMaterialCounts[m])
+      function computeOffsets(getter: (mesh: number) => number){
+        const offsets = new Int32Array(this.subset.meshes.length)
+    
+        for(let i=1; i < offsets.length; i ++){
+          var m = this.subset.meshes[i-1]
+          offsets[i] = offsets[i-1] + getter(m)
+        }
+        return offsets
+      }
+
+      result.counts = subset.index.getAttributeCounts(subset.meshes, section, (m) => subset.getMeshInstanceCount(m))
+      result.instanceOffsets = computeOffsets((m) => subset.index.meshInstanceCounts[m])
+      result.submeshOffsets = computeOffsets((m) => subset.index.getSubmeshCount(m, section) * subset.getMeshInstanceCount(m))
+      result.indexOffsets = computeOffsets((m) => subset.index.getIndexCount(m, section) * subset.getMeshInstanceCount(m))
+      result.vertexOffsets = computeOffsets((m) => subset.index.getVertexCount(m, section) * subset.getMeshInstanceCount(m))
+
+      return result
+  }
+
+  static fromG3d(g3d: G3d, section: MeshSection){
+    const result = new G3dMeshOffsets()
+    result.counts = new G3dMeshCounts()
+    result.counts.instances = g3d.getInstanceCount()
+    result.counts.meshes = g3d.getMeshCount()
+    result.counts.submeshes = g3d.getSubmeshCount()
+    result.counts.indices = g3d.getIndexCount()
+    result.counts.vertices = g3d.getVertexCount()
+
+    function computeOffsets(getter: (mesh: number) => number){
+      const offsets = new Int32Array(this.subset.meshes.length)
+  
+      for(let i=1; i < offsets.length; i ++){
+        var m = this.subset.meshes[i-1]
+        offsets[i] = offsets[i-1] + getter(m)
+      }
+      return offsets
+    }
+
+    result.instanceOffsets = computeOffsets((m) => g3d.getMeshInstanceCount(m))
+    result.submeshOffsets = computeOffsets((m) => g3d.getMeshSubmeshCount(m, section) * g3d.getMeshInstanceCount(m))
+    result.indexOffsets = computeOffsets((m) => g3d.getMeshIndexCount(m, section) * g3d.getMeshInstanceCount(m))
+    // TODO Add section to getMeshVertexCount
+    result.vertexOffsets = computeOffsets((m) => g3d.getMeshVertexCount(m) * g3d.getMeshInstanceCount(m))
+    return result
+
   }
 
   getInstanceCount(mesh: number){
@@ -326,13 +362,5 @@ export class G3dMeshOffsets {
     return this.subset.meshes[mesh]
   }
 
-  private computeOffsets(getter: (mesh: number) => number){
-    const offsets = new Int32Array(this.subset.meshes.length)
 
-    for(let i=1; i < offsets.length; i ++){
-      var m = this.subset.meshes[i-1]
-      offsets[i] = offsets[i-1] + getter(m)
-    }
-    return offsets
-  }
 }
