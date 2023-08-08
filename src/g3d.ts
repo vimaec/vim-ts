@@ -61,6 +61,10 @@ export class G3d {
   meshInstances: Array<Array<number>>
   meshOpaqueCount: Int32Array
 
+  submeshVertexStart: Int32Array
+  submeshVertexEnd: Int32Array
+
+
   rawG3d: AbstractG3d
 
   static MATRIX_SIZE = 16
@@ -110,6 +114,29 @@ export class G3d {
     this.meshInstances = this.computeMeshInstances()
     this.meshOpaqueCount = this.computeMeshOpaqueCount()
     this.sortSubmeshes()
+    const range = this.computeSubmeshVertexRange()
+    this.submeshVertexStart = range.start
+    this.submeshVertexEnd = range.end
+  }
+
+  private computeSubmeshVertexRange(){
+    const submeshCount = this.getSubmeshCount()
+    const start = new Int32Array(submeshCount) 
+    const end = new Int32Array(submeshCount) 
+    for(let sub = 0; sub < submeshCount; sub++){
+      let min = Number.MAX_SAFE_INTEGER
+      let max = Number.MIN_SAFE_INTEGER
+      const subStart = this.getSubmeshIndexStart(sub)
+      const subEnd = this.getSubmeshIndexEnd(sub)
+      for(let i =subStart; i < subEnd; i ++){
+        const index = this.indices[i]
+        min = Math.min(min, index)
+        max = Math.max(min, index)
+      }
+      start[sub] = min
+      end[sub] = max
+    }
+    return {start, end}
   }
 
   static createFromAbstract(g3d: AbstractG3d) {
@@ -423,7 +450,7 @@ export class G3d {
   getMeshCount = () => this.meshSubmeshes.length
 
   getMeshInstanceCount(mesh: number){
-    return this.meshInstances[mesh].length
+    return this.meshInstances[mesh]?.length ?? 0
   }
 
   getMeshIndexStart (mesh: number, section: MeshSection = 'all'): number {
@@ -503,6 +530,18 @@ export class G3d {
     return this.getSubmeshIndexEnd(submesh) - this.getSubmeshIndexStart(submesh)
   }
 
+  getSubmeshVertexStart(submesh: number) : number {
+    return this.submeshVertexStart[submesh]
+  }
+
+  getSubmeshVertexEnd(submesh: number) : number {
+    return this.submeshVertexEnd[submesh]
+  }
+
+  getSubmeshVertexCount(submesh: number) : number {
+    return this.getSubmeshVertexEnd(submesh) - this.getSubmeshVertexStart(submesh)
+  }
+
   /**
    * Returns color of given submesh as a 4-number array (RGBA)
    * @param submesh g3d submesh index
@@ -537,6 +576,11 @@ export class G3d {
   // ------------- Instances -----------------
   getInstanceCount = () => this.instanceMeshes.length
 
+  /**
+   * Returns true if instance has given flag enabled.
+   * @param instance instance to check.
+   * @param flag to check against.
+   */
   getInstanceHasFlag(instance: number, flag: number){
     return (this.instanceFlags[instance] & flag) > 0
   }
@@ -576,6 +620,10 @@ export class G3d {
     )
   }
 
+  /**
+   * Returns the alpha component of given material
+   * @param material 
+   */
   getMaterialAlpha (material: number): number {
     if (material < 0) return 1
     const index = material * G3d.COLOR_SIZE + G3d.COLOR_SIZE - 1
@@ -583,6 +631,10 @@ export class G3d {
     return result
   }
 
+  /**
+   * Concatenates two g3ds into a new g3d.
+   * @deprecated
+   */
   append(other: G3d){
     const _instanceFlags = new Uint16Array(this.instanceFlags.length +  other.instanceFlags.length)
     _instanceFlags.set(this.instanceFlags)
@@ -640,11 +692,18 @@ export class G3d {
     return g3d
   }
  
-  
+  /**
+   * Returns a new g3d containing the single instance provided as argument
+   * @deprecated
+   */
   slice(instance: number){
     return this.filter([instance])
   }
 
+   /**
+   * Returns a new g3d containing the instances given as argument
+   * @deprecated
+   */
   filter(instances: number[]){
     const instanceSet = new Set(instances)
     
